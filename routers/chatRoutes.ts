@@ -1,6 +1,7 @@
 import express from "express";
 import chatController from "../controllers/chatController";
 import withUserConnection from "../middleware/authMiddleware";
+import { checkAdminOrPass } from "../middleware/authorizationMiddleware";
 
 const router = express.Router();
 
@@ -15,6 +16,16 @@ router.get(
   "/rooms/:roomId/messages",
   withUserConnection,
   chatController.getRoomMessages,
+);
+router.get(
+  "/rooms/:roomId/messages/latest",
+  withUserConnection,
+  chatController.getLatestRoomMessage,
+);
+router.get(
+  "/rooms/:roomId/messages/search",
+  withUserConnection,
+  chatController.searchRoomMessages,
 );
 router.post(
   "/rooms/:roomId/messages",
@@ -42,6 +53,7 @@ router.get(
 router.get(
   "/departments/:departmentId/room",
   withUserConnection,
+  checkAdminOrPass,
   chatController.getOrCreateDepartmentRoom,
 );
 

@@ -1,0 +1,12 @@
+### Test Create Department API
+
+POST http://localhost:3000/api/department/
+Content-Type: application/json
+
+{
+  "tenpb": "HR",
+  "matruongphg": "NV27CA4"
+}
+
+###
+

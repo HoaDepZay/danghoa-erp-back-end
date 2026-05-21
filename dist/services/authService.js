@@ -57,7 +57,39 @@ const normalizeGenderToTinyInt = (value) => {
     }
     throw new Error("Giới tính không hợp lệ. Dùng Nam/Nữ hoặc 1/0");
 };
+const stripInvisibleChars = (value) => String(value || "")
+    .normalize("NFKC")
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, "-");
 const RESET_OTP_EXPIRE_MINUTES = 10;
+const validateSqlPasswordPolicy = (password, email) => {
+    const normalizedPassword = String(password || "");
+    const normalizedEmail = String(email || "")
+        .trim()
+        .toLowerCase();
+    const localPart = normalizedEmail.split("@")[0] || "";
+    if (normalizedPassword.length < 8) {
+        throw new Error("Mật khẩu mới phải có ít nhất 8 ký tự!");
+    }
+    const hasLowercase = /[a-z]/.test(normalizedPassword);
+    const hasUppercase = /[A-Z]/.test(normalizedPassword);
+    const hasDigit = /[0-9]/.test(normalizedPassword);
+    const hasSpecial = /[^A-Za-z0-9]/.test(normalizedPassword);
+    const categoryCount = [
+        hasLowercase,
+        hasUppercase,
+        hasDigit,
+        hasSpecial,
+    ].filter(Boolean).length;
+    if (categoryCount < 3) {
+        throw new Error("Mật khẩu mới chưa đủ mạnh. Hãy dùng ít nhất 3 nhóm ký tự: chữ hoa, chữ thường, số và ký tự đặc biệt.");
+    }
+    if (localPart && normalizedPassword.toLowerCase().includes(localPart)) {
+        throw new Error("Mật khẩu mới không được chứa email đăng nhập.");
+    }
+};
 const authService = {
     register: async (userData) => {
         // Kiểm tra xem Email đã tồn tại chính thức chưa
@@ -115,37 +147,61 @@ const authService = {
             console.error("   Password:", password);
             throw new Error("Dữ liệu không hợp lệ - Email/Password phải là chuỗi text");
         }
-        // Xóa khoảng trắng thừa
-        const trimmedEmail = email.trim();
-        const trimmedPassword = password.trim();
+        // Chuẩn hóa input để giảm lỗi nhập liệu từ mobile keyboard/autofill
+        const trimmedEmail = stripInvisibleChars(email).trim().toLowerCase();
+        const trimmedPassword = stripInvisibleChars(password).trim();
         console.log("After trim:", { email: trimmedEmail, password: "***" });
         // 1. THỬ KẾT NỐI TRỰC TIẾP VÀO SQL SERVER ĐỂ XÁC THỰC MẬT KHẨU
         const sqlAuthUser = buildAzureSqlAuthUser(trimmedEmail);
-        const loginConfig = {
-            user: sqlAuthUser,
-            password: trimmedPassword,
-            server: process.env.DB_SERVER,
-            database: process.env.DB_NAME,
-            options: {
-                encrypt: true,
-                trustServerCertificate: true,
-                connectionTimeout: 30000,
-                requestTimeout: 30000,
-            },
-        };
+        const rawPassword = String(password || "");
+        const passwordCandidates = Array.from(new Set([
+            trimmedPassword,
+            stripInvisibleChars(rawPassword),
+            stripInvisibleChars(rawPassword).trim(),
+            rawPassword.normalize("NFKC"),
+            rawPassword.normalize("NFKC").trim(),
+        ])).filter(Boolean);
+        let effectivePassword = trimmedPassword;
         console.log("📤 Attempting SQL Server connection with:");
         console.log({
-            user: loginConfig.user,
+            user: sqlAuthUser,
             password: "***",
-            server: loginConfig.server,
-            database: loginConfig.database,
+            server: process.env.DB_SERVER,
+            database: process.env.DB_NAME,
+            passwordCandidateCount: passwordCandidates.length,
         });
         // Login cho khách hàng
         try {
-            const tempConn = new mssql_1.default.ConnectionPool(loginConfig);
-            await tempConn.connect();
+            let authPassed = false;
+            for (const candidatePassword of passwordCandidates) {
+                const loginConfig = {
+                    user: sqlAuthUser,
+                    password: candidatePassword,
+                    server: process.env.DB_SERVER,
+                    database: process.env.DB_NAME,
+                    options: {
+                        encrypt: true,
+                        trustServerCertificate: true,
+                        connectionTimeout: 30000,
+                        requestTimeout: 30000,
+                    },
+                };
+                try {
+                    const tempConn = new mssql_1.default.ConnectionPool(loginConfig);
+                    await tempConn.connect();
+                    await tempConn.close();
+                    effectivePassword = candidatePassword;
+                    authPassed = true;
+                    break;
+                }
+                catch (_candidateError) {
+                    // thử candidate tiếp theo
+                }
+            }
+            if (!authPassed) {
+                throw new Error("SQL_AUTH_FAILED");
+            }
             console.log("✅ SQL Server authentication successful!");
-            await tempConn.close();
         }
         catch (err) {
             console.error("❌ SQL Server login failed:", err.message);
@@ -164,7 +220,7 @@ const authService = {
             if (pending?.RegistrationStatus === REGISTRATION_STATUS.EXPIRED) {
                 throw new Error("Mã OTP đã hết hạn. Vui lòng đăng ký lại.");
             }
-            throw new Error("Mật khẩu không chính xác!");
+            throw new Error("Mật khẩu không chính xác! Nếu đang dùng điện thoại, hãy tắt tự động viết hoa/sửa chính tả và thử nhập lại.");
         }
         // 2. Lấy profile nhân viên sau khi SQL Login thành công (không dùng để chặn đăng nhập)
         const userResult = await userRepository_1.default.getUserByEmail(trimmedEmail);
@@ -183,8 +239,8 @@ const authService = {
             email: user?.EMAIL || trimmedEmail,
             role: user?.CHUCVU || "",
         };
-        const token = (0, jwtHelper_1.generateToken)(tokenPayload, trimmedPassword);
-        const refreshToken = (0, jwtHelper_1.generateRefreshToken)((0, jwtHelper_1.createAccessPayload)(tokenPayload, trimmedPassword));
+        const token = (0, jwtHelper_1.generateToken)(tokenPayload, effectivePassword);
+        const refreshToken = (0, jwtHelper_1.generateRefreshToken)((0, jwtHelper_1.createAccessPayload)(tokenPayload, effectivePassword));
         console.log("✅ Login successful for user:", trimmedEmail);
         console.log("=== END LOGIN DEBUG ===\n");
         return {
@@ -318,9 +374,10 @@ const authService = {
         if (!normalizedEmail || !normalizedOtp || !newPassword) {
             throw new Error("Vui lòng nhập đầy đủ email, mã OTP và mật khẩu mới!");
         }
-        if (newPassword.length < 6) {
-            throw new Error("Mật khẩu mới phải có ít nhất 6 ký tự!");
+        if (newPassword.length < 8) {
+            throw new Error("Mật khẩu mới phải có ít nhất 8 ký tự!");
         }
+        validateSqlPasswordPolicy(newPassword, normalizedEmail);
         const userResult = await userRepository_1.default.getUserByEmail(normalizedEmail);
         const user = userResult.recordset[0];
         if (!user) {
@@ -343,9 +400,10 @@ const authService = {
         if (!oldPassword || !newPassword) {
             throw new Error("Vui lòng nhập đầy đủ mật khẩu cũ và mới!");
         }
-        if (newPassword.length < 6) {
-            throw new Error("Mật khẩu mới phải có ít nhất 6 ký tự!");
+        if (newPassword.length < 8) {
+            throw new Error("Mật khẩu mới phải có ít nhất 8 ký tự!");
         }
+        validateSqlPasswordPolicy(newPassword, email);
         if (oldPassword === newPassword) {
             throw new Error("Mật khẩu mới phải khác mật khẩu cũ!");
         }

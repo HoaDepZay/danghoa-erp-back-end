@@ -13,7 +13,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-  
+
   schemas:
     Department:
       type: object
@@ -27,7 +27,7 @@ components:
           format: date-time
         MaTruongPhg:
           type: string
-    
+
     Employee:
       type: object
       properties:
@@ -64,7 +64,7 @@ components:
           format: date
         trangthai:
           type: string
-  
+
   responses:
     SuccessCreate:
       description: Thêm mới thành công
@@ -120,8 +120,8 @@ paths:
                 hoten:
                   type: string
       responses:
-        '201':
-          $ref: '#/components/responses/SuccessCreate'
+        "201":
+          $ref: "#/components/responses/SuccessCreate"
 
   /auth/verify:
     post:
@@ -141,8 +141,8 @@ paths:
                 otpCode:
                   type: string
       responses:
-        '200':
-          $ref: '#/components/responses/SuccessUpdate'
+        "200":
+          $ref: "#/components/responses/SuccessUpdate"
 
   /auth/login:
     post:
@@ -162,7 +162,7 @@ paths:
                 password:
                   type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -194,8 +194,8 @@ paths:
                 newPassword:
                   type: string
       responses:
-        '200':
-          $ref: '#/components/responses/SuccessUpdate'
+        "200":
+          $ref: "#/components/responses/SuccessUpdate"
 
   # =========================================================================
   # NHÂN VIÊN
@@ -220,7 +220,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Trả về danh sách
     post:
       summary: HR/Admin tạo mới nhân sự
@@ -230,10 +230,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Employee'
+              $ref: "#/components/schemas/Employee"
       responses:
-        '201':
-          $ref: '#/components/responses/SuccessCreate'
+        "201":
+          $ref: "#/components/responses/SuccessCreate"
 
   /employees/{id}:
     get:
@@ -246,7 +246,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Trả về thông tin NV
     put:
       summary: Cập nhật thông tin nhân viên
@@ -262,10 +262,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Employee'
+              $ref: "#/components/schemas/Employee"
       responses:
-        '200':
-          $ref: '#/components/responses/SuccessUpdate'
+        "200":
+          $ref: "#/components/responses/SuccessUpdate"
 
   # =========================================================================
   # PHÒNG BAN
@@ -275,7 +275,7 @@ paths:
       summary: Lấy danh sách phòng ban
       tags: [Departments]
       responses:
-        '200':
+        "200":
           description: Danh sách phòng ban
     post:
       summary: Thêm phòng ban
@@ -295,8 +295,8 @@ paths:
                 matruongphg:
                   type: string
       responses:
-        '201':
-          $ref: '#/components/responses/SuccessCreate'
+        "201":
+          $ref: "#/components/responses/SuccessCreate"
 
   /departments/{id}:
     get:
@@ -309,7 +309,7 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: Chi tiết
     put:
       summary: Sửa đổi (Đổi tên, Trưởng phòng)
@@ -331,8 +331,8 @@ paths:
                 matruongphg:
                   type: string
       responses:
-        '200':
-          $ref: '#/components/responses/SuccessUpdate'
+        "200":
+          $ref: "#/components/responses/SuccessUpdate"
 
   # =========================================================================
   # DỰ ÁN
@@ -342,7 +342,7 @@ paths:
       summary: Lấy danh sách toàn bộ dự án
       tags: [Projects]
       responses:
-        '200':
+        "200":
           description: Trả về mảng dự án
     post:
       summary: Tạo mới dự án
@@ -352,10 +352,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Project'
+              $ref: "#/components/schemas/Project"
       responses:
-        '201':
-          $ref: '#/components/responses/SuccessCreate'
+        "201":
+          $ref: "#/components/responses/SuccessCreate"
 
   /projects/{id}:
     get:
@@ -368,7 +368,7 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: Chi tiết Project
     put:
       summary: Cập nhật trạng thái dự án
@@ -383,11 +383,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Project'
+              $ref: "#/components/schemas/Project"
       responses:
-        '200':
-          $ref: '#/components/responses/SuccessUpdate'
-          
+        "200":
+          $ref: "#/components/responses/SuccessUpdate"
+
   /projects/employee/{id}:
     get:
       summary: Lấy danh sách các dự án mà 1 nhân viên tham gia
@@ -400,7 +400,7 @@ paths:
             type: string
             description: Mã nhân viên
       responses:
-        '200':
+        "200":
           description: Danh sách dự án cá nhân
 
   /projects/{id}/members:
@@ -426,8 +426,8 @@ paths:
                 vaitroduan:
                   type: string
       responses:
-        '201':
-          $ref: '#/components/responses/SuccessCreate'
+        "201":
+          $ref: "#/components/responses/SuccessCreate"
 
   # =========================================================================
   # TÍNH LƯƠNG
@@ -448,55 +448,29 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: Trả về danh sách lương của tháng
-          
-  /payroll/generate:
-    post:
-      summary: "QUAN TRỌNG Trigger hệ thống tự động chốt và tạo bảng lương"
-      tags: [Payroll]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [month, year]
-              properties:
-                month:
-                  type: integer
-                  example: 3
-                year:
-                  type: integer
-                  example: 2026
-      responses:
-        '201':
-          description: Sinh lương thành công
 
-  /payroll/{maBl}:
-    put:
-      summary: HR Cập nhật bổ sung thưởng/khấu trừ thủ công cho 1 dòng lương
+  /payroll/employee/{id}:
+    get:
+      summary: Xem phiếu lương cá nhân theo tháng/năm
       tags: [Payroll]
       parameters:
         - in: path
-          name: maBl
+          name: id
           required: true
           schema:
+            type: string
+        - in: query
+          name: month
+          required: false
+          schema:
             type: integer
-            description: Mã dòng lương
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                thuong:
-                  type: number
-                khautrubhxh:
-                  type: number
-                thuclanh:
-                  type: number
+        - in: query
+          name: year
+          required: false
+          schema:
+            type: integer
       responses:
-        '200':
-          $ref: '#/components/responses/SuccessUpdate'
+        "200":
+          description: Trả về phiếu lương của nhân viên

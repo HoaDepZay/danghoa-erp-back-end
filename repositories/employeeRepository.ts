@@ -86,12 +86,23 @@ const employeeRepository = {
 
   // 5. Xóa/Khóa nhân viên (cập nhật status)
   deleteEmployee: async (manv) => {
+    const transaction = new sql.Transaction(appPool);
+    await transaction.begin();
+
     try {
-      await appPool
-        .request()
+      await new sql.Request(transaction).input("MaNV", sql.NVarChar, manv)
+        .query(`
+          DELETE FROM THANH_VIEN_PHONG
+          WHERE MaNV = @MaNV
+        `);
+
+      await new sql.Request(transaction)
         .input("MaNV", sql.NVarChar, manv)
         .execute("sp_deleteEmployeeFull");
+
+      await transaction.commit();
     } catch (error) {
+      await transaction.rollback().catch(() => undefined);
       throw error;
     }
   },

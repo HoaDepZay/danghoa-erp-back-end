@@ -62,6 +62,51 @@ const chatService = {
     };
   },
 
+  getLatestMessageForMember: async (roomId, requesterMaNv) => {
+    const maPhong = Number(roomId);
+    if (!maPhong) {
+      throw new Error("Mã phòng không hợp lệ.");
+    }
+
+    const isMember = await chatRepository.isRoomMember(maPhong, requesterMaNv);
+    if (!isMember) {
+      throw new Error("Bạn không phải thành viên của phòng chat.");
+    }
+
+    const message = await chatRepository.getLatestMessageByRoom(maPhong);
+    return {
+      success: true,
+      data: message,
+    };
+  },
+
+  searchMessagesForMember: async (roomId, requesterMaNv, keyword) => {
+    const maPhong = Number(roomId);
+    const tuKhoa = String(keyword || "").trim();
+
+    if (!maPhong) {
+      throw new Error("Mã phòng không hợp lệ.");
+    }
+
+    if (!tuKhoa) {
+      throw new Error("Từ khóa tìm kiếm không được để trống.");
+    }
+
+    const isMember = await chatRepository.isRoomMember(maPhong, requesterMaNv);
+    if (!isMember) {
+      throw new Error("Bạn không phải thành viên của phòng chat.");
+    }
+
+    const messages = await chatRepository.searchMessagesByKeyword(
+      maPhong,
+      tuKhoa,
+    );
+    return {
+      success: true,
+      data: messages,
+    };
+  },
+
   sendMessageToRoom: async (roomId, requesterMaNv, noiDung) => {
     const maPhong = Number(roomId);
     const content = String(noiDung || "").trim();
@@ -188,14 +233,19 @@ const chatService = {
     return { success: true, data: { ...room, thanhVien: members } };
   },
 
-  getOrCreateDepartmentRoomForMember: async (departmentId, requesterMaNv) => {
+  getOrCreateDepartmentRoomForMember: async (
+    departmentId,
+    requesterMaNv,
+    isAdmin = false,
+  ) => {
     const maPhg = Number(departmentId);
     if (!maPhg) {
       throw new Error("Mã phòng ban không hợp lệ.");
     }
 
     const departmentMembers = await chatRepository.getDepartmentMembers(maPhg);
-    if (!departmentMembers.includes(requesterMaNv)) {
+    // Nếu không phải admin thì check quyền
+    if (!isAdmin && !departmentMembers.includes(requesterMaNv)) {
       throw new Error("Bạn không thuộc phòng ban này.");
     }
 

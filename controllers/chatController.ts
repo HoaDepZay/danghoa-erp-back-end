@@ -41,6 +41,36 @@ const chatController = {
     }
   },
 
+  getLatestRoomMessage: async (req, res) => {
+    try {
+      const requesterMaNv = req.user?.userInfo?.manv;
+      const { roomId } = req.params;
+      const result = await chatService.getLatestMessageForMember(
+        roomId,
+        requesterMaNv,
+      );
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(403).json({ success: false, message: error.message });
+    }
+  },
+
+  searchRoomMessages: async (req, res) => {
+    try {
+      const requesterMaNv = req.user?.userInfo?.manv;
+      const { roomId } = req.params;
+      const { keyword } = req.query;
+      const result = await chatService.searchMessagesForMember(
+        roomId,
+        requesterMaNv,
+        keyword,
+      );
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
   sendMessage: async (req, res) => {
     try {
       const requesterMaNv = req.user?.userInfo?.manv;
@@ -119,9 +149,11 @@ const chatController = {
     try {
       const requesterMaNv = req.user?.userInfo?.manv;
       const { departmentId } = req.params;
+      const isAdmin = req.isAdmin || false;
       const result = await chatService.getOrCreateDepartmentRoomForMember(
         departmentId,
         requesterMaNv,
+        isAdmin,
       );
       return res.status(200).json(result);
     } catch (error) {

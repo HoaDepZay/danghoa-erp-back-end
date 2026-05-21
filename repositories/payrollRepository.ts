@@ -1,13 +1,117 @@
 import { appPool, sql } from "../config/db";
 
 const payrollRepository = {
+  checkIn: async (maNv) => {
+    const result = await appPool
+      .request()
+      .input("MaNV", sql.VarChar, maNv)
+      .output("Result", sql.Int)
+      .output("ErrorDetail", sql.NVarChar(500))
+      .execute("sp_CheckIn");
+
+    return {
+      success: result.output.Result === 1,
+      result: result.output.Result,
+      message: result.output.ErrorDetail,
+    };
+  },
+
+  checkOut: async (maNv) => {
+    const result = await appPool
+      .request()
+      .input("MaNV", sql.VarChar, maNv)
+      .output("Result", sql.Int)
+      .output("ErrorDetail", sql.NVarChar(500))
+      .execute("sp_CheckOut");
+
+    return {
+      success: result.output.Result === 1,
+      result: result.output.Result,
+      message: result.output.ErrorDetail,
+    };
+  },
+
+  // Lấy danh sách chấm công theo ngày
+  getAttendanceByDate: async (date) => {
+    const result = await appPool.request().input("Ngay", sql.Date, date).query(`
+        SELECT
+          bc.MaCC,
+          bc.MaNV,
+          nv.HOTEN,
+          bc.Ngay,
+          bc.GioVao,
+          bc.GioRa,
+          bc.DiTre,
+          bc.BuoiLamViec,
+          bc.TrangThai
+        FROM BAN_CHAM_CONG bc
+        LEFT JOIN NHAN_VIEN nv ON nv.MANV = bc.MaNV
+        WHERE bc.Ngay = @Ngay
+        ORDER BY bc.MaNV
+      `);
+    return result.recordset;
+  },
+
+  // Lấy chấm công của nhân viên theo ngày hoặc khoảng ngày
+  getEmployeeAttendance: async (maNv, fromDate, toDate) => {
+    let query = `
+      SELECT
+        bc.MaCC,
+        bc.MaNV,
+        nv.HOTEN,
+        bc.Ngay,
+        bc.GioVao,
+        bc.GioRa,
+        bc.DiTre,
+        bc.BuoiLamViec,
+        bc.TrangThai
+      FROM BAN_CHAM_CONG bc
+      LEFT JOIN NHAN_VIEN nv ON nv.MANV = bc.MaNV
+      WHERE bc.MaNV = @MaNV
+    `;
+
+    const request = appPool.request();
+    request.input("MaNV", sql.VarChar, maNv);
+
+    if (fromDate) {
+      query += ` AND bc.Ngay >= @FromDate`;
+      request.input("FromDate", sql.Date, fromDate);
+    }
+
+    if (toDate) {
+      query += ` AND bc.Ngay <= @ToDate`;
+      request.input("ToDate", sql.Date, toDate);
+    }
+
+    query += ` ORDER BY bc.Ngay DESC`;
+
+    const result = await request.query(query);
+    return result.recordset;
+  },
+
   // Lấy danh sách lương tháng
   getPayrollByMonth: async (month, year) => {
     const result = await appPool
       .request()
       .input("Thang", sql.Int, month)
-      .input("Nam", sql.Int, year)
-      .execute("sp_getPayrollByMonth");
+      .input("Nam", sql.Int, year).query(`
+        SELECT
+          bl.MaNV,
+          nv.HOTEN,
+          bl.Thang,
+          bl.Nam,
+          bl.GiolamViec,
+          bl.PhuCap,
+          bl.BHXH,
+          bl.Thuong,
+          bl.ThueTNCN,
+          bl.ThucLanh
+        FROM BANG_LUONG bl
+        LEFT JOIN NHAN_VIEN nv ON nv.MANV = bl.MaNV
+        WHERE bl.Thang = @Thang
+          AND bl.Nam = @Nam
+        ORDER BY bl.MaNV
+      `);
     return result.recordset;
   },
 
@@ -17,61 +121,25 @@ const payrollRepository = {
       .request()
       .input("MaNV", sql.VarChar, maNv)
       .input("Thang", sql.Int, month)
-      .input("Nam", sql.Int, year)
-      .execute("sp_getEmployeePayslip");
+      .input("Nam", sql.Int, year).query(`
+        SELECT TOP 1
+          bl.MaNV,
+          nv.HOTEN,
+          bl.Thang,
+          bl.Nam,
+          bl.GiolamViec,
+          bl.PhuCap,
+          bl.BHXH,
+          bl.Thuong,
+          bl.ThueTNCN,
+          bl.ThucLanh
+        FROM BANG_LUONG bl
+        LEFT JOIN NHAN_VIEN nv ON nv.MANV = bl.MaNV
+        WHERE bl.MaNV = @MaNV
+          AND bl.Thang = @Thang
+          AND bl.Nam = @Nam
+      `);
     return result.recordset[0] || null;
-  },
-
-  // Xóa bảng lương tháng cũ nếu chạy lại generator
-  deletePayrollByMonth: async (month, year) => {
-    await appPool
-      .request()
-      .input("Thang", sql.Int, month)
-      .input("Nam", sql.Int, year)
-      .execute("sp_deletePayrollByMonth");
-  },
-
-  // Chèn một dòng lương mới
-  createPayrollRecord: async (data, transactionRequest) => {
-    const request = transactionRequest || appPool.request();
-    await request
-      .input("MaNV", sql.VarChar, data.manv)
-      .input("Thang", sql.Int, data.thang)
-      .input("Nam", sql.Int, data.nam)
-      .input("SoNgayCong", sql.Float, data.songaycong)
-      .input("LuongCoBan", sql.Decimal(18, 2), data.luongcoban)
-      .input("PhuCap", sql.Decimal(18, 2), data.phucap)
-      .input("Thuong", sql.Decimal(18, 2), data.thuong || 0)
-      .input("KhauTruBHXH", sql.Decimal(18, 2), data.khautru || 0)
-      .input("ThucLanh", sql.Decimal(18, 2), data.thuclanh)
-      .execute("sp_createPayrollRecord");
-  },
-
-  updatePayrollRecord: async (maBl, data) => {
-    const request = appPool.request();
-    request.input("MaBL", sql.Int, maBl);
-
-    if (data.thuong !== undefined) {
-      request.input("Thuong", sql.Decimal(18, 2), data.thuong);
-    }
-    if (data.khautrubhxh !== undefined) {
-      request.input("KhauTruBHXH", sql.Decimal(18, 2), data.khautrubhxh);
-    }
-    if (data.thuclanh !== undefined) {
-      request.input("ThucLanh", sql.Decimal(18, 2), data.thuclanh);
-    }
-
-    await request.execute("sp_updatePayrollRecord");
-  },
-
-  // (Helper) Lấy dữ liệu công nền cho việc tính lương
-  getRawDataForPayroll: async (month, year) => {
-    const result = await appPool
-      .request()
-      .input("Thang", sql.Int, month)
-      .input("Nam", sql.Int, year)
-      .execute("sp_getRawDataForPayroll");
-    return result.recordset;
   },
 };
 

@@ -8,28 +8,36 @@ const REGISTRATION_STATUS = {
     REJECTED: "REJECTED",
     EXPIRED: "EXPIRED",
 };
+const getMasterDbConfig = () => ({
+    user: process.env.DB_MASTER_USER || process.env.DB_USER,
+    password: process.env.DB_MASTER_PASS || process.env.DB_PASS,
+    server: process.env.DB_SERVER || "",
+    port: parseInt(process.env.DB_PORT || "1433"),
+    database: process.env.DB_MASTER || "master",
+    options: {
+        encrypt: true,
+        trustServerCertificate: true,
+        connectTimeout: 30000,
+    },
+    pool: {
+        max: 3,
+        min: 0,
+        idleTimeoutMillis: 30000,
+    },
+});
 const userRepository = {
     // 1. Tạo hoặc xóa contained database user ở DB nghiệp vụ
     handleDatabaseUser: async (email, password, action) => {
         const normalizedAction = String(action || "").toUpperCase();
-        const safeIdentifier = `[${String(email).replace(/]/g, "]]")}]`;
-        const safeEmailLiteral = String(email).replace(/'/g, "''");
-        const safePassword = String(password).replace(/'/g, "''");
-        if (normalizedAction === "CREATE") {
-            await db_1.appPool.request().query(`IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'${safeEmailLiteral}')
-         BEGIN
-           CREATE USER ${safeIdentifier} WITH PASSWORD = '${safePassword}';
-         END`);
-            return;
+        if (normalizedAction !== "CREATE" && normalizedAction !== "DROP") {
+            throw new Error("Action không hợp lệ. Chỉ hỗ trợ CREATE hoặc DROP");
         }
-        if (normalizedAction === "DROP") {
-            await db_1.appPool.request().query(`IF EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'${safeEmailLiteral}')
-         BEGIN
-           DROP USER ${safeIdentifier};
-         END`);
-            return;
-        }
-        throw new Error("Action không hợp lệ. Chỉ hỗ trợ CREATE hoặc DROP");
+        await db_1.appPool
+            .request()
+            .input("Email", db_1.sql.NVarChar(100), email)
+            .input("Password", db_1.sql.NVarChar(255), password)
+            .input("Action", db_1.sql.VarChar(10), normalizedAction)
+            .execute("sp_handleDatabaseUser");
     },
     // 2. Lưu thông tin đăng ký tạm + OTP vào DANG_KY_CHO
     savePendingRegistration: async (data) => {
@@ -43,31 +51,8 @@ const userRepository = {
             .input("Luong", db_1.sql.Decimal(18, 2), data.luong ?? 0)
             .input("ChucVu", db_1.sql.NVarChar(100), data.chucvu || "Nhân viên")
             .input("OtpCode", db_1.sql.NVarChar(6), data.otpCode)
-            .input("ExpiredAt", db_1.sql.DateTime, data.expiredAt).query(`
-        MERGE [dbo].[DANG_KY_CHO] AS target
-        USING (SELECT @Email AS Email) AS source
-        ON (target.Email = source.Email)
-        WHEN MATCHED THEN
-            UPDATE SET
-              MaNV = @MaNV,
-              PasswordMaHoa = @PassEnc,
-              HoTen = @HoTen,
-              MaPhg = @MaPhg,
-              Luong = @Luong,
-              ChucVu = @ChucVu,
-              OtpCode = @OtpCode,
-              ExpiredAt = @ExpiredAt,
-              CreatedAt = GETDATE(),
-              RegistrationStatus = '${REGISTRATION_STATUS.PENDING_OTP}',
-              OtpVerifiedAt = NULL,
-              ApprovedAt = NULL,
-              ApprovedBy = NULL,
-              RejectReason = NULL,
-              RejectedAt = NULL
-        WHEN NOT MATCHED THEN
-            INSERT (MaNV, Email, PasswordMaHoa, HoTen, MaPhg, Luong, ChucVu, OtpCode, ExpiredAt, RegistrationStatus, OtpVerifiedAt, ApprovedAt, ApprovedBy, RejectReason, RejectedAt)
-            VALUES (@MaNV, @Email, @PassEnc, @HoTen, @MaPhg, @Luong, @ChucVu, @OtpCode, @ExpiredAt, '${REGISTRATION_STATUS.PENDING_OTP}', NULL, NULL, NULL, NULL, NULL);
-      `);
+            .input("ExpiredAt", db_1.sql.DateTime, data.expiredAt)
+            .execute("sp_savePendingRegistration");
         return {
             Success: 1,
             Message: "Đã lưu thông tin tạm thời và gửi OTP",
@@ -113,24 +98,7 @@ const userRepository = {
                 throw error;
             }
         }
-        const masterConfig = {
-            user: process.env.DB_USER,
-            password: process.env.DB_PASS,
-            server: process.env.DB_SERVER || "",
-            port: parseInt(process.env.DB_PORT || "1433"),
-            database: "master",
-            options: {
-                encrypt: true,
-                trustServerCertificate: true,
-                connectTimeout: 30000,
-            },
-            pool: {
-                max: 3,
-                min: 0,
-                idleTimeoutMillis: 30000,
-            },
-        };
-        const masterPool = new db_1.sql.ConnectionPool(masterConfig);
+        const masterPool = new db_1.sql.ConnectionPool(getMasterDbConfig());
         try {
             await masterPool.connect();
             await masterPool.request().query(`
@@ -141,6 +109,12 @@ const userRepository = {
       `);
         }
         catch (error) {
+            const errMessage = String(error?.message || "");
+            if (errMessage.includes("does not meet policy requirements") ||
+                errMessage.includes("not complex enough") ||
+                errMessage.includes("Password validation failed")) {
+                throw new Error("Mật khẩu mới không đạt chính sách SQL Server. Hãy dùng tối thiểu 8 ký tự và kết hợp chữ hoa, chữ thường, số, ký tự đặc biệt.");
+            }
             throw new Error("Không thể đổi mật khẩu SQL Login trên master. Hãy kiểm tra quyền ALTER ANY LOGIN hoặc SECURITYADMIN. Chi tiết: " +
                 error.message);
         }

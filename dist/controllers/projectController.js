@@ -4,7 +4,56 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const projectService_1 = __importDefault(require("../services/projectService"));
+const normalizeRole = (role) => String(role || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .trim();
 const projectController = {
+    getProjectTasksForMember: async (req, res) => {
+        try {
+            const { id: maDa } = req.params;
+            const requesterMaNv = req.user?.userInfo?.manv;
+            const result = await projectService_1.default.getProjectTasksForMember(maDa, requesterMaNv);
+            return res.status(200).json(result);
+        }
+        catch (error) {
+            return res.status(403).json({ success: false, message: error.message });
+        }
+    },
+    createTaskForMember: async (req, res) => {
+        try {
+            const { id: maDa } = req.params;
+            const requesterMaNv = req.user?.userInfo?.manv;
+            const result = await projectService_1.default.createTaskForMember(maDa, requesterMaNv, req.body);
+            return res.status(201).json(result);
+        }
+        catch (error) {
+            return res.status(400).json({ success: false, message: error.message });
+        }
+    },
+    updateTaskForMember: async (req, res) => {
+        try {
+            const { id: maDa, taskId } = req.params;
+            const requesterMaNv = req.user?.userInfo?.manv;
+            const result = await projectService_1.default.updateTaskForMember(maDa, taskId, requesterMaNv, req.body);
+            return res.status(200).json(result);
+        }
+        catch (error) {
+            return res.status(400).json({ success: false, message: error.message });
+        }
+    },
+    getMyJoinedProjectsWithMembers: async (req, res) => {
+        try {
+            const requesterMaNv = req.user?.userInfo?.manv;
+            const result = await projectService_1.default.getMyJoinedProjectsWithMembers(requesterMaNv);
+            return res.status(200).json(result);
+        }
+        catch (error) {
+            return res.status(403).json({ success: false, message: error.message });
+        }
+    },
     getAllProjects: async (req, res) => {
         try {
             const result = await projectService_1.default.getAllProjects();
@@ -17,16 +66,27 @@ const projectController = {
     getProjectById: async (req, res) => {
         try {
             const { id } = req.params;
-            const result = await projectService_1.default.getProjectById(id);
+            const requesterMaNv = req.user?.userInfo?.manv;
+            const requesterRole = req.user?.userInfo?.role;
+            const result = await projectService_1.default.getProjectById(id, requesterMaNv, requesterRole);
             return res.status(200).json(result);
         }
         catch (error) {
-            return res.status(404).json({ success: false, message: error.message });
+            return res.status(403).json({ success: false, message: error.message });
         }
     },
     getEmployeeProjects: async (req, res) => {
         try {
             const { id } = req.params; // Lấy employeeId
+            const requesterMaNv = String(req.user?.userInfo?.manv || "").trim();
+            const requesterRole = req.user?.userInfo?.role;
+            const isAdmin = normalizeRole(requesterRole) === "admin";
+            if (!isAdmin && requesterMaNv !== String(id || "").trim()) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Bạn không có quyền xem danh sách dự án của nhân viên khác.",
+                });
+            }
             const result = await projectService_1.default.getEmployeeProjects(id);
             return res.status(200).json(result);
         }
@@ -77,12 +137,13 @@ const projectController = {
     removeProjectMember: async (req, res) => {
         try {
             const { id: maDa, employeeId: maNv } = req.params;
-            const result = await projectService_1.default.removeProjectMember(maDa, maNv);
+            const requesterMaNv = req.user?.userInfo?.manv;
+            const result = await projectService_1.default.removeProjectMember(maDa, maNv, requesterMaNv);
             return res.status(200).json(result);
         }
         catch (error) {
             return res.status(400).json({ success: false, message: error.message });
         }
-    }
+    },
 };
 exports.default = projectController;

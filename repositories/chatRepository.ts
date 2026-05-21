@@ -52,6 +52,29 @@ const chatRepository = {
     return result.recordset.reverse();
   },
 
+  getLatestMessageByRoom: async (maPhong) => {
+    const result = await appPool.request().input("MaPhong", sql.Int, maPhong)
+      .query(`
+        SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui
+        FROM dbo.fn_LayTinNhanMoiNhat(@MaPhong)
+      `);
+
+    return result.recordset[0] || null;
+  },
+
+  searchMessagesByKeyword: async (maPhong, tuKhoa) => {
+    const result = await appPool
+      .request()
+      .input("MaPhong", sql.Int, maPhong)
+      .input("TuKhoa", sql.NVarChar(sql.MAX), tuKhoa).query(`
+        SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui
+        FROM dbo.fn_TimKiemTinNhan(@MaPhong, @TuKhoa)
+        ORDER BY ThoiGianGui DESC
+      `);
+
+    return result.recordset;
+  },
+
   sendMessage: async (maPhong, maNvGui, noiDung) => {
     const result = await appPool
       .request()

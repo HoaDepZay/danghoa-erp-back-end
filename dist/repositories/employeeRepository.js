@@ -5,43 +5,15 @@ const employeeRepository = {
     // 1. Lấy danh sách nhâ n viên (có phân trang + tìm kiếm)
     getAllEmployees: async (pageNum = 1, pageSize = 10, searchKeyword = "") => {
         const request = db_1.appPool.request();
-        const offset = (pageNum - 1) * pageSize;
-        let query = `
-      SELECT 
-        nv.MANV, 
-        nv.HOTEN, 
-        nv.EMAIL, 
-        nv.CHUCVU, 
-        nv.LUONG,
-        pb.TENPB,
-        nv.MAPHG,
-        nv.NgaySinh AS NGAYSINH,
-        nv.GioiTinh AS GIOITINH,
-        nv.DiaChi AS DIACHINHAN,
-        nv.NgayTuyenDung AS NGAYVAOLAM
-      FROM NHAN_VIEN nv
-      LEFT JOIN PHONG_BAN pb ON nv.MAPHG = pb.MAPHG
-    `;
+        request.input("PageNum", db_1.sql.Int, pageNum);
+        request.input("PageSize", db_1.sql.Int, pageSize);
         if (searchKeyword && searchKeyword.trim() !== "") {
-            query += ` WHERE nv.HOTEN LIKE @searchKeyword OR nv.MANV LIKE @searchKeyword OR nv.EMAIL LIKE @searchKeyword`;
-            request.input("searchKeyword", db_1.sql.NVarChar, `%${searchKeyword}%`);
+            request.input("SearchKeyword", db_1.sql.NVarChar(100), searchKeyword.trim());
         }
-        query += ` ORDER BY nv.MANV OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`;
-        request.input("offset", db_1.sql.Int, offset);
-        request.input("pageSize", db_1.sql.Int, pageSize);
-        const result = await request.query(query);
-        // Lấy tổng số nhân viên để tính total pages
-        const countRequest = db_1.appPool.request();
-        if (searchKeyword && searchKeyword.trim() !== "") {
-            countRequest.input("searchKeyword", db_1.sql.NVarChar, `%${searchKeyword}%`);
-        }
-        const countQuery = searchKeyword?.trim()
-            ? `SELECT COUNT(*) as total FROM NHAN_VIEN WHERE HOTEN LIKE @searchKeyword OR MANV LIKE @searchKeyword OR EMAIL LIKE @searchKeyword`
-            : `SELECT COUNT(*) as total FROM NHAN_VIEN`;
-        const countResult = await countRequest.query(countQuery);
-        const totalRecords = countResult.recordset[0].total;
+        const result = await request.execute("sp_getAllEmployees");
+        const totalRecords = result.recordsets?.[1]?.[0]?.TotalRecords || 0;
         return {
-            data: result.recordset,
+            data: result.recordsets?.[0] || [],
             pagination: {
                 pageNum,
                 pageSize,
@@ -52,37 +24,16 @@ const employeeRepository = {
     },
     // 2. Lấy chi tiết 1 nhân viên
     getEmployeeById: async (manv) => {
-        const request = db_1.appPool.request();
-        const result = await request.input("MaNV", db_1.sql.NVarChar, manv).query(`
-        SELECT 
-          nv.MANV, 
-          nv.HOTEN, 
-          nv.EMAIL, 
-          nv.CHUCVU, 
-          nv.LUONG,
-          nv.MAPHG,
-          pb.TENPB,
-          nv.NgaySinh AS NGAYSINH,
-          nv.GioiTinh AS GIOITINH,
-          nv.SDT,
-          nv.DiaChi AS DIACHINHAN,
-          nv.DiaChi AS DIACHI,
-          nv.MaChucDanh AS MACHUCDANH,
-          nv.NgayTuyenDung AS NGAYVAOLAM,
-          nv.NgayTuyenDung AS NGAYTUYENDUNG,
-          nv.TrangThaiLamViec AS TRANGTHAILAMVIEC,
-          hs.SO_CCCD
-        FROM NHAN_VIEN nv
-        LEFT JOIN PHONG_BAN pb ON nv.MAPHG = pb.MAPHG
-        LEFT JOIN HO_SO_BM hs ON nv.MANV = hs.MANV
-        WHERE nv.MANV = @MaNV
-      `);
+        const result = await db_1.appPool
+            .request()
+            .input("MaNV", db_1.sql.NVarChar, manv)
+            .execute("sp_getEmployeeById");
         return result.recordset[0] || null;
     },
     // 3. Thêm nhân viên mới (Admin dùng)
     createEmployee: async (data) => {
-        const request = db_1.appPool.request();
-        return await request
+        return await db_1.appPool
+            .request()
             .input("MaNV", db_1.sql.NVarChar, data.manv)
             .input("HoTen", db_1.sql.NVarChar, data.hoten)
             .input("Email", db_1.sql.NVarChar, data.email)
@@ -92,94 +43,52 @@ const employeeRepository = {
             .input("NgaySinh", db_1.sql.Date, data.ngaysinh || null)
             .input("GioiTinh", db_1.sql.NVarChar, data.gioitinh || null)
             .input("DiaChiNhan", db_1.sql.NVarChar, data.diachinhan || null)
-            .input("NgayVaoLam", db_1.sql.Date, data.ngayvaolam || new Date()).query(`
-        INSERT INTO NHAN_VIEN 
-        (MANV, HOTEN, EMAIL, CHUCVU, LUONG, MAPHG, NgaySinh, GioiTinh, DiaChi, NgayTuyenDung)
-        VALUES 
-        (@MaNV, @HoTen, @Email, @ChucVu, @Luong, @MaPhg, @NgaySinh, @GioiTinh, @DiaChiNhan, @NgayVaoLam)
-      `);
+            .input("NgayVaoLam", db_1.sql.Date, data.ngayvaolam || null)
+            .execute("sp_createEmployee");
     },
     // 4. Cập nhật thông tin nhân viên
     updateEmployee: async (manv, data) => {
         const request = db_1.appPool.request();
-        let updateFields = [];
-        let params = { MaNV: manv };
+        request.input("MaNV", db_1.sql.NVarChar, manv);
         if (data.hoten !== undefined) {
-            updateFields.push("HOTEN = @HoTen");
             request.input("HoTen", db_1.sql.NVarChar, data.hoten);
         }
         if (data.email !== undefined) {
-            updateFields.push("EMAIL = @Email");
             request.input("Email", db_1.sql.NVarChar, data.email);
         }
         if (data.chucvu !== undefined) {
-            updateFields.push("CHUCVU = @ChucVu");
             request.input("ChucVu", db_1.sql.NVarChar, data.chucvu);
         }
         if (data.luong !== undefined) {
-            updateFields.push("LUONG = @Luong");
             request.input("Luong", db_1.sql.Decimal(18, 2), data.luong);
         }
         if (data.maphg !== undefined) {
-            updateFields.push("MAPHG = @MaPhg");
             request.input("MaPhg", db_1.sql.Int, data.maphg);
         }
         if (data.ngaysinh !== undefined) {
-            updateFields.push("NgaySinh = @NgaySinh");
             request.input("NgaySinh", db_1.sql.Date, data.ngaysinh);
         }
         if (data.gioitinh !== undefined) {
-            updateFields.push("GioiTinh = @GioiTinh");
             request.input("GioiTinh", db_1.sql.NVarChar, data.gioitinh);
         }
         if (data.diachinhan !== undefined) {
-            updateFields.push("DiaChi = @DiaChiNhan");
             request.input("DiaChiNhan", db_1.sql.NVarChar, data.diachinhan);
         }
-        if (updateFields.length === 0) {
-            throw new Error("Không có trường nào để cập nhật");
-        }
-        request.input("MaNV", db_1.sql.NVarChar, manv);
-        const query = `UPDATE NHAN_VIEN SET ${updateFields.join(", ")} WHERE MANV = @MaNV`;
-        return await request.query(query);
+        return await request.execute("sp_updateEmployee");
     },
     // 5. Xóa/Khóa nhân viên (cập nhật status)
     deleteEmployee: async (manv) => {
-        const transaction = db_1.appPool.transaction();
+        const transaction = new db_1.sql.Transaction(db_1.appPool);
         await transaction.begin();
         try {
-            const employeeResult = await new db_1.sql.Request(transaction)
-                .input("MaNV", db_1.sql.NVarChar, manv)
-                .query(`
-          SELECT TOP 1 MANV, EMAIL
-          FROM NHAN_VIEN
-          WHERE MANV = @MaNV
-        `);
-            const employee = employeeResult.recordset[0];
-            if (!employee) {
-                await transaction.rollback();
-                throw new Error("Nhân viên không tồn tại");
-            }
             await new db_1.sql.Request(transaction).input("MaNV", db_1.sql.NVarChar, manv)
                 .query(`
-          DELETE FROM PHAN_CONG_DU_AN
+          DELETE FROM THANH_VIEN_PHONG
           WHERE MaNV = @MaNV
         `);
-            await new db_1.sql.Request(transaction).input("MaNV", db_1.sql.NVarChar, manv)
-                .query(`
-          DELETE FROM NHAN_VIEN
-          WHERE MANV = @MaNV
-        `);
-            if (employee.EMAIL) {
-                const safeIdentifier = `[${String(employee.EMAIL).replace(/]/g, "]]")}]`;
-                const safeEmailLiteral = String(employee.EMAIL).replace(/'/g, "''");
-                await new db_1.sql.Request(transaction).query(`
-          IF EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'${safeEmailLiteral}')
-          BEGIN
-            DROP USER ${safeIdentifier};
-          END
-        `);
-            }
+            await new db_1.sql.Request(transaction)
+                .input("MaNV", db_1.sql.NVarChar, manv)
+                .execute("sp_deleteEmployeeFull");
             await transaction.commit();
         }
         catch (error) {
@@ -189,39 +98,30 @@ const employeeRepository = {
     },
     // 6. Đổi mật khẩu nhân viên
     changePassword: async (email, newPassword) => {
-        const request = db_1.appPool.request();
-        return await request
+        return await db_1.appPool
+            .request()
             .input("Email", db_1.sql.NVarChar, email)
             .input("NewPassword", db_1.sql.NVarChar, newPassword)
-            .query(`UPDATE NHAN_VIEN SET PASSWORD = @NewPassword WHERE EMAIL = @Email`);
+            .execute("sp_changePassword");
     },
     // 7. Cập nhật profile nhân viên
     updateProfile: async (email, data) => {
         const request = db_1.appPool.request();
-        let updateFields = [];
+        request.input("Email", db_1.sql.NVarChar, email);
         if (data.hoten !== undefined) {
-            updateFields.push("HOTEN = @HoTen");
             request.input("HoTen", db_1.sql.NVarChar, data.hoten);
         }
         if (data.ngaysinh !== undefined) {
-            updateFields.push("NgaySinh = @NgaySinh");
             request.input("NgaySinh", db_1.sql.Date, data.ngaysinh);
         }
         if (data.gioitinh !== undefined) {
-            updateFields.push("GioiTinh = @GioiTinh");
             request.input("GioiTinh", db_1.sql.NVarChar, data.gioitinh);
         }
-        const diaChiValue = data.diachinhan || data.diachi; // Support both naming conventions
+        const diaChiValue = data.diachinhan || data.diachi;
         if (diaChiValue !== undefined) {
-            updateFields.push("DiaChi = @DiaChiNhan");
-            request.input("DiaChiNhan", db_1.sql.NVarChar, diaChiValue);
+            request.input("DiaChi", db_1.sql.NVarChar, diaChiValue);
         }
-        if (updateFields.length === 0) {
-            throw new Error("Không có trường nào để cập nhật");
-        }
-        request.input("Email", db_1.sql.NVarChar, email);
-        const query = `UPDATE NHAN_VIEN SET ${updateFields.join(", ")} WHERE EMAIL = @Email`;
-        return await request.query(query);
+        return await request.execute("sp_updateProfile");
     },
 };
 exports.default = employeeRepository;

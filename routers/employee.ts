@@ -1,7 +1,8 @@
 import express from "express";
 const router = express.Router();
 import sql from "msnodesqlv8";
-import withUserConnection, { requireAdmin } from "../middleware/authMiddleware";
+import withUserConnection from "../middleware/authMiddleware";
+import { requireAdmin } from "../middleware/authorizationMiddleware";
 import employeeController from "../controllers/employeeController";
 import { appPool, sql as globalSql } from "../config/db";
 

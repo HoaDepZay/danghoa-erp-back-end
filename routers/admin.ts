@@ -1,8 +1,10 @@
 import express from "express";
 const router = express.Router();
 import sql from "msnodesqlv8";
+import { appPool, sql as mssql } from "../config/db";
 const connectionString = `Driver={ODBC Driver 17 for SQL Server};Server=${process.env.DB_SERVER};Database=${process.env.DB_NAME};UID=${process.env.DB_USER};PWD=${process.env.DB_PASS};TrustServerCertificate=yes;`;
-import withUserConnection, { requireAdmin } from "../middleware/authMiddleware";
+import withUserConnection from "../middleware/authMiddleware";
+import { requireAdmin } from "../middleware/authorizationMiddleware";
 import authController from "../controllers/authController";
 
 // --- QUẢN LÝ NHÂN VIÊN ---
@@ -123,22 +125,118 @@ router.post(
 );
 
 // 5. Sửa phòng ban (Admin)
-router.put("/phong-ban/edit", withUserConnection, requireAdmin, (req, res) => {
-  const maphg = Number(req.body.maphg);
-  const { tenpb } = req.body;
-  if (!maphg || !tenpb)
-    return res.status(400).json({ error: "Thiếu thông tin!" });
+router.put(
+  "/phong-ban/edit",
+  withUserConnection,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const maphg = Number(req.body.maphg);
+      const tenpb = req.body.tenpb;
+      const matruongphg = req.body.matruongphg;
 
-  sql.query(
-    connectionString,
-    "UPDATE PHONG_BAN SET TENPB = ? WHERE MAPHG = ?",
-    [tenpb, maphg],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true, message: "Cập nhật thành công!" });
-    },
-  );
-});
+      console.log("[ADMIN][UPDATE_DEPARTMENT] Incoming body:", req.body);
+      console.log("[ADMIN][UPDATE_DEPARTMENT] Parsed params:", {
+        maphg,
+        tenpb,
+        matruongphg,
+        maphgType: typeof maphg,
+      });
+
+      if (!maphg) {
+        console.warn(
+          "[ADMIN][UPDATE_DEPARTMENT] Invalid maphg:",
+          req.body.maphg,
+        );
+        return res.status(400).json({ error: "Thiếu mã phòng ban!" });
+      }
+
+      if (tenpb === undefined && matruongphg === undefined) {
+        console.warn(
+          "[ADMIN][UPDATE_DEPARTMENT] Missing update fields tenpb/matruongphg",
+        );
+        return res.status(400).json({
+          error: "Thiếu dữ liệu cập nhật! Cần tenpb hoặc matruongphg.",
+        });
+      }
+
+      const request = appPool.request();
+      request.input("MaPhg", mssql.Int, maphg);
+      request.input("TenPb", mssql.NVarChar(100), tenpb ?? null);
+      request.input("MaTruongPhg", mssql.VarChar(10), matruongphg ?? null);
+      request.output("Status", mssql.Int);
+
+      console.log("[ADMIN][UPDATE_DEPARTMENT] Executing sp_updateDepartment", {
+        MaPhg: maphg,
+        TenPb: tenpb ?? null,
+        MaTruongPhg: matruongphg ?? null,
+      });
+
+      const executionResult = await request.execute("sp_updateDepartment");
+      const status = executionResult.output?.Status;
+      console.log("[ADMIN][UPDATE_DEPARTMENT] SP Status:", status);
+
+      if (status !== 1) {
+        const deptCheck = await appPool
+          .request()
+          .input("MaPhg", mssql.Int, maphg)
+          .query(
+            "SELECT TOP 1 MAPHG, TENPB, MaTruongPhg FROM PHONG_BAN WHERE MAPHG = @MaPhg",
+          );
+
+        const managerCheck = matruongphg
+          ? await appPool
+              .request()
+              .input("MaNv", mssql.VarChar(20), matruongphg)
+              .query(
+                "SELECT TOP 1 MANV, HOTEN, MAPHG FROM NHAN_VIEN WHERE MANV = @MaNv",
+              )
+          : { recordset: [] };
+
+        const currentDepartment = deptCheck.recordset?.[0] || null;
+        const managerExists = managerCheck.recordset?.length > 0;
+
+        console.warn(
+          "[ADMIN][UPDATE_DEPARTMENT] Update failed with status != 1",
+          {
+            status,
+            maphg,
+            tenpb,
+            matruongphg,
+          },
+        );
+        return res.status(400).json({
+          success: false,
+          message:
+            "Cập nhật thất bại. Kiểm tra mã phòng ban hoặc dữ liệu đầu vào.",
+          debug: {
+            spStatus: status,
+            requested: {
+              maphg,
+              tenpb: tenpb ?? null,
+              matruongphg: matruongphg ?? null,
+            },
+            departmentExists: !!currentDepartment,
+            currentDepartment,
+            managerExists,
+          },
+        });
+      }
+
+      console.log("[ADMIN][UPDATE_DEPARTMENT] Update success", {
+        maphg,
+        status,
+      });
+      return res.json({ success: true, message: "Cập nhật thành công!" });
+    } catch (err: any) {
+      console.error("[ADMIN][UPDATE_DEPARTMENT] Exception:", {
+        message: err?.message,
+        stack: err?.stack,
+      });
+      return res.status(500).json({ error: err?.message || "Lỗi hệ thống" });
+    }
+  },
+);
 
 // 6. Xóa phòng ban (Admin)
 router.delete(

@@ -38,17 +38,49 @@ const departmentRepository = {
 
   // 5. Cập nhật phòng ban
   updateDepartment: async (maPhg, data) => {
-    const request = appPool.request();
+    try {
+      const request = appPool.request();
 
-    if (data.tenpb !== undefined) {
-      request.input("TenPb", sql.NVarChar, data.tenpb);
-    }
-    if (data.matruongphg !== undefined) {
-      request.input("MaTruongPhg", sql.VarChar, data.matruongphg);
-    }
+      request.input("MaPhg", sql.Int, maPhg);
+      request.input("TenPb", sql.NVarChar(100), data?.tenpb ?? null);
+      request.input("MaTruongPhg", sql.VarChar(10), data?.matruongphg ?? null);
+      request.output("Status", sql.Int);
 
-    request.input("MaPhg", sql.Int, maPhg);
-    await request.execute("sp_updateDepartment");
+      const result = await request.execute("sp_updateDepartment");
+
+      const status = request.parameters.Status.value;
+
+      console.log(
+        `[updateDepartment] SP returned - Status: ${status}, rowsAffected: ${result.rowsAffected?.[0] || 0}`,
+      );
+
+      // Handle different status values:
+      // 1 = success (rows updated)
+      // 0 = no rows affected (no changes)
+      // -1 = error in SP (exception)
+      // null = output parameter issue
+
+      if (status === -1) {
+        throw new Error("Lỗi trong SQL Server procedure");
+      }
+
+      if (status === 1) {
+        return { success: true, changed: true };
+      }
+
+      if (status === 0 || status === null) {
+        // No rows affected or no changes
+        console.log(
+          "[updateDepartment] No rows affected - possibly no changes",
+        );
+        return { success: true, changed: false };
+      }
+
+      return { success: false, changed: false };
+    } catch (error) {
+      console.error("[updateDepartment] Error:", error);
+      throw error;
+    }
   },
 
   // 6. Xóa phòng ban

@@ -4,15 +4,104 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const payrollRepository_1 = __importDefault(require("../repositories/payrollRepository"));
-const db_1 = require("../config/db");
+const getPreviousMonthYear = () => {
+    const targetDate = new Date();
+    targetDate.setMonth(targetDate.getMonth() - 1);
+    return {
+        month: targetDate.getMonth() + 1,
+        year: targetDate.getFullYear(),
+    };
+};
+const resolveErrorMessage = (error, fallback = "Đã xảy ra lỗi không xác định") => {
+    if (error instanceof Error && error.message?.trim()) {
+        return error.message;
+    }
+    const unknownError = error;
+    const originalMessage = unknownError?.originalError?.info?.message;
+    if (typeof originalMessage === "string" && originalMessage.trim()) {
+        return originalMessage;
+    }
+    const firstPrecedingMessage = unknownError?.precedingErrors?.[0]?.message;
+    if (typeof firstPrecedingMessage === "string" &&
+        firstPrecedingMessage.trim()) {
+        return firstPrecedingMessage;
+    }
+    if (typeof unknownError?.message === "string" &&
+        unknownError.message.trim()) {
+        return unknownError.message;
+    }
+    return fallback;
+};
 const payrollService = {
+    checkIn: async (maNv) => {
+        try {
+            if (!maNv?.trim()) {
+                throw new Error("Mã nhân viên (maNV) là bắt buộc");
+            }
+            const result = await payrollRepository_1.default.checkIn(maNv);
+            if (!result.success) {
+                throw new Error(result.message || "Check-in thất bại");
+            }
+            return {
+                success: true,
+                message: result.message || "Check-in thành công",
+                data: result,
+            };
+        }
+        catch (error) {
+            throw new Error("Lỗi check-in: " + resolveErrorMessage(error));
+        }
+    },
+    checkOut: async (maNv) => {
+        try {
+            if (!maNv?.trim()) {
+                throw new Error("Mã nhân viên (maNV) là bắt buộc");
+            }
+            const result = await payrollRepository_1.default.checkOut(maNv);
+            if (!result.success) {
+                throw new Error(result.message || "Check-out thất bại");
+            }
+            return {
+                success: true,
+                message: result.message || "Check-out thành công",
+                data: result,
+            };
+        }
+        catch (error) {
+            throw new Error("Lỗi check-out: " + resolveErrorMessage(error));
+        }
+    },
+    getAttendanceByDate: async (date) => {
+        try {
+            if (!date) {
+                throw new Error("Ngày (date) là bắt buộc");
+            }
+            const data = await payrollRepository_1.default.getAttendanceByDate(date);
+            return { success: true, data };
+        }
+        catch (error) {
+            throw new Error("Lỗi lấy danh sách chấm công: " + resolveErrorMessage(error));
+        }
+    },
+    getEmployeeAttendance: async (maNv, fromDate, toDate) => {
+        try {
+            if (!maNv?.trim()) {
+                throw new Error("Mã nhân viên (maNV) là bắt buộc");
+            }
+            const data = await payrollRepository_1.default.getEmployeeAttendance(maNv, fromDate, toDate);
+            return { success: true, data };
+        }
+        catch (error) {
+            throw new Error("Lỗi lấy chấm công nhân viên: " + resolveErrorMessage(error));
+        }
+    },
     getPayrollByMonth: async (month, year) => {
         try {
             const data = await payrollRepository_1.default.getPayrollByMonth(month, year);
             return { success: true, data };
         }
         catch (error) {
-            throw new Error("Lỗi truy xuất bảng lương: " + error.message);
+            throw new Error("Lỗi truy xuất bảng lương: " + resolveErrorMessage(error));
         }
     },
     getEmployeePayslip: async (maNv, month, year) => {
@@ -23,71 +112,7 @@ const payrollService = {
             return { success: true, data };
         }
         catch (error) {
-            throw new Error("Lỗi lấy phiếu lương cá nhân: " + error.message);
-        }
-    },
-    generatePayroll: async (month, year) => {
-        try {
-            // 1. Logic chốt lương tự động
-            // Mặc định ngày công chuẩn là 22 ngày (hoặc 26 tùy HR)
-            const NGAY_CONG_CHUAN = 22;
-            // Xóa dữ liệu cũ nếu chốt lại bảng lương tháng này
-            await payrollRepository_1.default.deletePayrollByMonth(month, year);
-            // Lấy data công chuẩn và lương của tất cả NV
-            const rawData = await payrollRepository_1.default.getRawDataForPayroll(month, year);
-            let results = [];
-            const transaction = db_1.appPool.transaction();
-            await transaction.begin();
-            try {
-                for (const r of rawData) {
-                    // Tính lương: Lương cơ bản * (Ngày công thực tế / Ngày công chuẩn) + Phụ cấp + Thưởng - Khấu trừ
-                    let SoNgayCong = r.SoNgayCong;
-                    let LuongCoBan = r.LuongCoBan || 0;
-                    let PhuCap = r.PhuCap || 0;
-                    let Thuong = 0; // Thay bằng API thưởng nhân sự (để trống hiện tại)
-                    let KhauTruBHXH = LuongCoBan * 0.105; // Giả sử đóng BHXH 10.5% lương cơ bản
-                    let LuongTheoCong = (LuongCoBan / NGAY_CONG_CHUAN) * SoNgayCong;
-                    let ThucLanh = LuongTheoCong + PhuCap + Thuong - KhauTruBHXH;
-                    if (ThucLanh < 0)
-                        ThucLanh = 0; // Không nhận lương âm
-                    const recordData = {
-                        manv: r.MANV,
-                        thang: month,
-                        nam: year,
-                        songaycong: SoNgayCong,
-                        luongcoban: LuongCoBan,
-                        phucap: PhuCap,
-                        thuong: Thuong,
-                        khautru: KhauTruBHXH,
-                        thuclanh: ThucLanh,
-                    };
-                    const request = new db_1.sql.Request(transaction);
-                    await payrollRepository_1.default.createPayrollRecord(recordData, request);
-                    results.push(recordData);
-                }
-                await transaction.commit();
-                return {
-                    success: true,
-                    message: "Sinh bảng lương tự động thành công",
-                    counts: results.length,
-                };
-            }
-            catch (err) {
-                await transaction.rollback();
-                throw err;
-            }
-        }
-        catch (error) {
-            throw new Error("Lỗi chốt lương: " + error.message);
-        }
-    },
-    updatePayrollRecord: async (maBl, data) => {
-        try {
-            await payrollRepository_1.default.updatePayrollRecord(maBl, data);
-            return { success: true, message: "Cập nhật dòng lương thành công" };
-        }
-        catch (error) {
-            throw new Error("Lỗi cập nhật dòng lương: " + error.message);
+            throw new Error("Lỗi lấy phiếu lương cá nhân: " + resolveErrorMessage(error));
         }
     },
 };

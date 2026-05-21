@@ -3,22 +3,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.requireAdmin = exports.withUserConnection = void 0;
-// middleware/authMiddleware.js
+exports.withUserConnection = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const crypto_js_1 = __importDefault(require("crypto-js"));
 require("dotenv/config");
+const authHelper_1 = require("../utils/authHelper");
 const SECRET_KEY = process.env.SECRET_KEY;
-const buildAzureSqlAuthUser = (loginName) => {
-    const server = process.env.DB_SERVER || "";
-    const azureServerShortName = server.split(".")[0];
-    // Azure SQL ODBC format: email@gmail.com + server => email@gmail.com@server
-    // Simply concatenate with @server (no brackets needed)
-    if (azureServerShortName) {
-        return `${loginName}@${azureServerShortName}`;
-    }
-    return loginName;
-};
+/**
+ * Middleware xác thực Token JWT
+ * Kiểm tra token hợp lệ và tạo connection string cho SQL Server
+ *
+ * Sử dụng: router.use(withUserConnection)
+ */
 const withUserConnection = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader)
@@ -40,9 +36,8 @@ const withUserConnection = (req, res, next) => {
         // Giải mã pass SQL từ token
         const decryptedBytes = crypto_js_1.default.AES.decrypt(decoded.sqlPassEncrypted, SECRET_KEY);
         const originalPassword = decryptedBytes.toString(crypto_js_1.default.enc.Utf8);
-        const sqlAuthUser = buildAzureSqlAuthUser(decoded.userEmail);
+        const sqlAuthUser = (0, authHelper_1.buildAzureSqlAuthUser)(decoded.userEmail);
         // Tạo chuỗi kết nối động
-        // decoded.userEmail chứa email của user (SQL username)
         console.log("🔐 Creating connection string for user:", sqlAuthUser);
         const userConnStr = `Driver={ODBC Driver 17 for SQL Server};Server=${process.env.DB_SERVER};Database=${process.env.DB_NAME};UID=${sqlAuthUser};PWD=${originalPassword};Encrypt=yes;TrustServerCertificate=yes;Connection Timeout=10;`;
         req.userConnectionString = userConnStr;
@@ -51,32 +46,10 @@ const withUserConnection = (req, res, next) => {
     }
     catch (err) {
         console.error("❌ Auth Error:", err.message);
-        return res
-            .status(403)
-            .json({ error: "Token không hợp lệ hoặc đã hết hạn. " + err.message });
+        return res.status(403).json({
+            error: "Token không hợp lệ hoặc đã hết hạn. " + err.message,
+        });
     }
 };
 exports.withUserConnection = withUserConnection;
-// 🔐 Middleware kiểm tra quyền Admin (gọi sau withUserConnection)
-const requireAdmin = (req, res, next) => {
-    const userRole = req.user?.userInfo?.role;
-    const userEmail = req.user?.userEmail;
-    console.log(`🔒 Admin check for user: ${userEmail}, role: ${userRole}`);
-    const normalizeRole = (role) => String(role || "")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/\s+/g, "")
-        .trim();
-    const normalizedRole = normalizeRole(userRole);
-    // Chỉ cho phép đúng CHUCVU = admin
-    if (normalizedRole !== "admin") {
-        return res.status(403).json({
-            success: false,
-            message: "Bạn không có quyền truy cập tài nguyên này. Chỉ admin mới có thể.",
-        });
-    }
-    next();
-};
-exports.requireAdmin = requireAdmin;
 exports.default = withUserConnection;

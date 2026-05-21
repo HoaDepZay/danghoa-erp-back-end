@@ -31,7 +31,56 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // ĐẢM BẢO Body Parser được setup đúng
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-app.use(cors());
+
+// ✅ CORS Configuration cho Desktop + Mobile
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Danh sách whitelist origins
+      const allowedOrigins = [
+        "http://localhost:3000", // React dev
+        "http://localhost:5173", // Vite dev
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+      ];
+
+      // Nếu không có origin (request từ server/curl), cho phép
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Check exact match
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Cho phép local network (192.168.x.x)
+      if (/^http:\/\/192\.168\.\d+\.\d+:\d+$/.test(origin)) {
+        return callback(null, true);
+      }
+
+      // Cho phép tất cả Vercel domains (*.vercel.app)
+      if (/^https?:\/\/.+\.vercel\.app$/.test(origin)) {
+        return callback(null, true);
+      }
+
+      // Cho phép custom domain từ .env (nếu có)
+      const normalizedFrontendUrl = String(process.env.FRONTEND_URL || "")
+        .trim()
+        .replace(/\/+$/, "");
+      if (normalizedFrontendUrl && origin === normalizedFrontendUrl) {
+        return callback(null, true);
+      }
+
+      console.warn(`⚠️  CORS: Rejected origin: ${origin}`);
+      callback(new Error("Not allowed by CORS policy"));
+    },
+    credentials: true, // Cho phép cookies/auth headers
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200,
+  }),
+);
 
 // Middleware để debug request body
 app.use((req, res, next) => {

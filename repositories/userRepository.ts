@@ -8,6 +8,24 @@ const REGISTRATION_STATUS = {
   EXPIRED: "EXPIRED",
 };
 
+const getMasterDbConfig = (): sql.config => ({
+  user: process.env.DB_MASTER_USER || process.env.DB_USER,
+  password: process.env.DB_MASTER_PASS || process.env.DB_PASS,
+  server: process.env.DB_SERVER || "",
+  port: parseInt(process.env.DB_PORT || "1433"),
+  database: process.env.DB_MASTER || "master",
+  options: {
+    encrypt: true,
+    trustServerCertificate: true,
+    connectTimeout: 30000,
+  },
+  pool: {
+    max: 3,
+    min: 0,
+    idleTimeoutMillis: 30000,
+  },
+});
+
 const userRepository = {
   // 1. Tạo hoặc xóa contained database user ở DB nghiệp vụ
   handleDatabaseUser: async (email, password, action) => {
@@ -92,25 +110,7 @@ const userRepository = {
       }
     }
 
-    const masterConfig: sql.config = {
-      user: process.env.DB_USER,
-      password: process.env.DB_PASS,
-      server: process.env.DB_SERVER || "",
-      port: parseInt(process.env.DB_PORT || "1433"),
-      database: "master",
-      options: {
-        encrypt: true,
-        trustServerCertificate: true,
-        connectTimeout: 30000,
-      },
-      pool: {
-        max: 3,
-        min: 0,
-        idleTimeoutMillis: 30000,
-      },
-    };
-
-    const masterPool = new sql.ConnectionPool(masterConfig);
+    const masterPool = new sql.ConnectionPool(getMasterDbConfig());
 
     try {
       await masterPool.connect();
@@ -121,6 +121,17 @@ const userRepository = {
         END
       `);
     } catch (error: any) {
+      const errMessage = String(error?.message || "");
+      if (
+        errMessage.includes("does not meet policy requirements") ||
+        errMessage.includes("not complex enough") ||
+        errMessage.includes("Password validation failed")
+      ) {
+        throw new Error(
+          "Mật khẩu mới không đạt chính sách SQL Server. Hãy dùng tối thiểu 8 ký tự và kết hợp chữ hoa, chữ thường, số, ký tự đặc biệt.",
+        );
+      }
+
       throw new Error(
         "Không thể đổi mật khẩu SQL Login trên master. Hãy kiểm tra quyền ALTER ANY LOGIN hoặc SECURITYADMIN. Chi tiết: " +
           error.message,

@@ -1,6 +1,7 @@
 import express from "express";
 import projectController from "../controllers/projectController";
-import withUserConnection, { requireAdmin } from "../middleware/authMiddleware";
+import withUserConnection from "../middleware/authMiddleware";
+import { requireAdmin } from "../middleware/authorizationMiddleware";
 
 const router = express.Router();
 

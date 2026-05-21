@@ -4,44 +4,23 @@ const db_1 = require("../config/db");
 const departmentRepository = {
     // 1. Lấy danh sách phòng ban
     getAllDepartments: async () => {
-        const request = db_1.appPool.request();
-        const result = await request.query(`
-      SELECT 
-        pb.MAPHG, 
-        pb.TENPB, 
-        pb.NG_THANHLAP, 
-        pb.MaTruongPhg,
-        nv.HOTEN AS TenTruongPhong
-      FROM PHONG_BAN pb
-      LEFT JOIN NHAN_VIEN nv ON pb.MaTruongPhg = nv.MANV
-      ORDER BY pb.MAPHG ASC
-    `);
+        const result = await db_1.appPool.request().execute("sp_getAllDepartments");
         return result.recordset;
     },
     // 2. Lấy chi tiết 1 phòng ban
     getDepartmentById: async (maPhg) => {
-        const request = db_1.appPool.request();
-        const result = await request.input("MaPhg", db_1.sql.Int, maPhg).query(`
-        SELECT 
-          pb.MAPHG, 
-          pb.TENPB, 
-          pb.NG_THANHLAP, 
-          pb.MaTruongPhg,
-          nv.HOTEN AS TenTruongPhong
-        FROM PHONG_BAN pb
-        LEFT JOIN NHAN_VIEN nv ON pb.MaTruongPhg = nv.MANV
-        WHERE pb.MAPHG = @MaPhg
-      `);
+        const result = await db_1.appPool
+            .request()
+            .input("MaPhg", db_1.sql.Int, maPhg)
+            .execute("sp_getDepartmentById");
         return result.recordset[0] || null;
     },
     // 3. Lấy ds nhân viên trong 1 phòng
     getEmployeesByDepartment: async (maPhg) => {
-        const request = db_1.appPool.request();
-        const result = await request.input("MaPhg", db_1.sql.Int, maPhg).query(`
-        SELECT MANV, HOTEN, EMAIL, CHUCVU 
-        FROM NHAN_VIEN 
-        WHERE MAPHG = @MaPhg
-      `);
+        const result = await db_1.appPool
+            .request()
+            .input("MaPhg", db_1.sql.Int, maPhg)
+            .execute("sp_getEmployeesByDepartment");
         return result.recordset;
     },
     // 4. Tạo phòng ban mới
@@ -51,35 +30,95 @@ const departmentRepository = {
             .input("MaPhg", db_1.sql.Int, data.maphg)
             .input("TenPb", db_1.sql.NVarChar, data.tenpb)
             .input("MaTruongPhg", db_1.sql.VarChar, data.matruongphg || null)
-            .input("NgThanhLap", db_1.sql.DateTime, data.ng_thanhlap || new Date()).query(`
-        INSERT INTO PHONG_BAN (MAPHG, TENPB, MaTruongPhg, NG_THANHLAP)
-        VALUES (@MaPhg, @TenPb, @MaTruongPhg, @NgThanhLap)
-      `);
+            .input("NgThanhLap", db_1.sql.DateTime, data.ng_thanhlap || new Date())
+            .execute("sp_createDepartment");
     },
     // 5. Cập nhật phòng ban
     updateDepartment: async (maPhg, data) => {
-        const request = db_1.appPool.request();
-        let updateFields = [];
-        if (data.tenpb !== undefined) {
-            updateFields.push("TENPB = @TenPb");
-            request.input("TenPb", db_1.sql.NVarChar, data.tenpb);
+        try {
+            const request = db_1.appPool.request();
+            request.input("MaPhg", db_1.sql.Int, maPhg);
+            request.input("TenPb", db_1.sql.NVarChar(100), data?.tenpb ?? null);
+            request.input("MaTruongPhg", db_1.sql.VarChar(10), data?.matruongphg ?? null);
+            request.output("Status", db_1.sql.Int);
+            const result = await request.execute("sp_updateDepartment");
+            const status = request.parameters.Status.value;
+            console.log(`[updateDepartment] SP returned - Status: ${status}, rowsAffected: ${result.rowsAffected?.[0] || 0}`);
+            // Handle different status values:
+            // 1 = success (rows updated)
+            // 0 = no rows affected (no changes)
+            // -1 = error in SP (exception)
+            // null = output parameter issue
+            if (status === -1) {
+                throw new Error("Lỗi trong SQL Server procedure");
+            }
+            if (status === 1) {
+                return { success: true, changed: true };
+            }
+            if (status === 0 || status === null) {
+                // No rows affected or no changes
+                console.log("[updateDepartment] No rows affected - possibly no changes");
+                return { success: true, changed: false };
+            }
+            return { success: false, changed: false };
         }
-        if (data.matruongphg !== undefined) {
-            updateFields.push("MaTruongPhg = @MaTruongPhg");
-            request.input("MaTruongPhg", db_1.sql.VarChar, data.matruongphg);
+        catch (error) {
+            console.error("[updateDepartment] Error:", error);
+            throw error;
         }
-        if (updateFields.length === 0)
-            return;
-        request.input("MaPhg", db_1.sql.Int, maPhg);
-        const query = `UPDATE PHONG_BAN SET ${updateFields.join(", ")} WHERE MAPHG = @MaPhg`;
-        await request.query(query);
     },
     // 6. Xóa phòng ban
     deleteDepartment: async (maPhg) => {
-        const request = db_1.appPool.request();
-        await request
+        await db_1.appPool
+            .request()
             .input("MaPhg", db_1.sql.Int, maPhg)
-            .query(`DELETE FROM PHONG_BAN WHERE MAPHG = @MaPhg`);
+            .execute("sp_deleteDepartment");
+    },
+    // 7. Lấy danh sách phòng ban mà nhân viên đang tham gia
+    getDepartmentsByEmployee: async (maNv) => {
+        const result = await db_1.appPool
+            .request()
+            .input("MaNV", db_1.sql.VarChar(20), maNv)
+            .execute("sp_getDepartmentsByEmployee");
+        return result.recordset;
+    },
+    // 8. Lấy chi tiết phòng ban của nhân viên cùng danh sách nhân viên
+    getDepartmentDetailsByEmployee: async (maNv) => {
+        try {
+            const request = db_1.appPool.request();
+            request.multiple = true;
+            const result = await request
+                .input("MaNV", db_1.sql.VarChar(20), maNv)
+                .execute("sp_getDepartmentDetailsByEmployee");
+            // Recordset 0: Thông tin phòng ban
+            const departmentInfo = result.recordsets?.[0]?.[0];
+            if (!departmentInfo) {
+                throw new Error(`Nhân viên với mã "${maNv}" không tồn tại hoặc không có phòng ban.`);
+            }
+            // Recordset 1: Danh sách nhân viên
+            const employees = result.recordsets?.[1] || [];
+            return {
+                ...departmentInfo,
+                nhanVien: employees,
+            };
+        }
+        catch (error) {
+            throw new Error(`Lỗi lấy thông tin phòng ban: ${error.message}`);
+        }
+    },
+    // 9. Kiểm tra nhân viên có thuộc phòng ban không
+    isEmployeeInDepartment: async (maNv, maPhg) => {
+        try {
+            const result = await db_1.appPool
+                .request()
+                .input("MaNV", db_1.sql.VarChar(20), maNv)
+                .input("MaPhg", db_1.sql.Int, maPhg)
+                .execute("sp_isEmployeeInDepartment");
+            return result.recordset[0].count > 0;
+        }
+        catch (error) {
+            throw new Error(`Lỗi kiểm tra thành viên phòng ban: ${error}`);
+        }
     },
 };
 exports.default = departmentRepository;
