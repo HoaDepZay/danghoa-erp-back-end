@@ -1,7 +1,7 @@
 import { appPool, sql } from "../config/db";
 
 const employeeRepository = {
-  // 1. Lấy danh sách nhâ n viên (có phân trang + tìm kiếm)
+  // 1. Lấy danh sách nhân viên (có phân trang + tìm kiếm)
   getAllEmployees: async (pageNum = 1, pageSize = 10, searchKeyword = "") => {
     const request = appPool.request();
     request.input("PageNum", sql.Int, pageNum);
@@ -86,25 +86,10 @@ const employeeRepository = {
 
   // 5. Xóa/Khóa nhân viên (cập nhật status)
   deleteEmployee: async (manv) => {
-    const transaction = new sql.Transaction(appPool);
-    await transaction.begin();
-
-    try {
-      await new sql.Request(transaction).input("MaNV", sql.NVarChar, manv)
-        .query(`
-          DELETE FROM THANH_VIEN_PHONG
-          WHERE MaNV = @MaNV
-        `);
-
-      await new sql.Request(transaction)
-        .input("MaNV", sql.NVarChar, manv)
-        .execute("sp_deleteEmployeeFull");
-
-      await transaction.commit();
-    } catch (error) {
-      await transaction.rollback().catch(() => undefined);
-      throw error;
-    }
+    await appPool
+      .request()
+      .input("MaNV", sql.NVarChar, manv)
+      .execute("sp_deleteEmployeeFull");
   },
 
   // 6. Đổi mật khẩu nhân viên

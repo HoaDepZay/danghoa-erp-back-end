@@ -255,20 +255,20 @@ const authService = {
 
       const pending =
         await userRepository.getPendingRegistrationStatusByEmail(trimmedEmail);
-      if (pending?.RegistrationStatus === REGISTRATION_STATUS.OTP_VERIFIED) {
+      if (pending?.REGISTRATIONSTATUS === REGISTRATION_STATUS.OTP_VERIFIED) {
         throw new Error("Tài khoản của bạn chưa được admin chấp nhận.");
       }
-      if (pending?.RegistrationStatus === REGISTRATION_STATUS.PENDING_OTP) {
+      if (pending?.REGISTRATIONSTATUS === REGISTRATION_STATUS.PENDING_OTP) {
         throw new Error("Vui lòng xác thực OTP trước khi đăng nhập.");
       }
-      if (pending?.RegistrationStatus === REGISTRATION_STATUS.REJECTED) {
+      if (pending?.REGISTRATIONSTATUS === REGISTRATION_STATUS.REJECTED) {
         throw new Error(
-          pending?.RejectReason
-            ? `Tài khoản đã bị từ chối: ${pending.RejectReason}`
+          pending?.REJECTREASON
+            ? `Tài khoản đã bị từ chối: ${pending.REJECTREASON}`
             : "Tài khoản đã bị từ chối.",
         );
       }
-      if (pending?.RegistrationStatus === REGISTRATION_STATUS.EXPIRED) {
+      if (pending?.REGISTRATIONSTATUS === REGISTRATION_STATUS.EXPIRED) {
         throw new Error("Mã OTP đã hết hạn. Vui lòng đăng ký lại.");
       }
 
@@ -284,7 +284,7 @@ const authService = {
     if (!user) {
       const pending =
         await userRepository.getPendingRegistrationStatusByEmail(trimmedEmail);
-      if (pending?.RegistrationStatus === REGISTRATION_STATUS.OTP_VERIFIED) {
+      if (pending?.REGISTRATIONSTATUS === REGISTRATION_STATUS.OTP_VERIFIED) {
         throw new Error("Tài khoản của bạn chưa được admin chấp nhận.");
       }
       throw new Error("Tài khoản chưa có hồ sơ nhân viên trong hệ thống.");
@@ -371,14 +371,14 @@ const authService = {
       throw new Error("Không tìm thấy hồ sơ chờ duyệt");
     }
 
-    if (staged.RegistrationStatus !== REGISTRATION_STATUS.OTP_VERIFIED) {
+    if (staged.REGISTRATIONSTATUS !== REGISTRATION_STATUS.OTP_VERIFIED) {
       throw new Error(
-        `Hồ sơ không ở trạng thái OTP_VERIFIED (hiện tại: ${staged.RegistrationStatus})`,
+        `Hồ sơ không ở trạng thái OTP_VERIFIED (hiện tại: ${staged.REGISTRATIONSTATUS})`,
       );
     }
 
     // API duyệt chỉ cần email + thông tin nhân sự; MANV/HOTEN được tự suy ra từ hồ sơ chờ.
-    const normalizedStagedName = String(staged.HoTen || "").trim();
+    const normalizedStagedName = String(staged.HOTEN || "").trim();
     const fallbackName = String(email).split("@")[0] || "Nhan vien moi";
     const effectiveHoTen =
       String(payload?.hoten || "").trim() ||
@@ -386,10 +386,10 @@ const authService = {
       fallbackName;
     const effectiveManv =
       String(payload?.manv || "").trim() ||
-      String(staged.MaNV || "").trim() ||
+      String(staged.MANV || "").trim() ||
       generateEmployeeId();
 
-    const originalPassword = decrypt(staged.PasswordMaHoa);
+    const originalPassword = decrypt(staged.PASSWORDMAHOA);
     const result = await userRepository.approvePendingRegistration({
       email,
       password: originalPassword,

@@ -19,7 +19,15 @@ const chatRepository = {
       .input("MaNV", sql.VarChar(20), maNv)
       .execute("sp_getMyRooms");
 
-    return result.recordset;
+    return result.recordset.map((row) => ({
+      MaPhong: row.MAPHONG ?? row.MaPhong,
+      TenPhong: row.TENPHONG ?? row.TenPhong,
+      LoaiPhong: row.LOAIPHONG ?? row.LoaiPhong,
+      MaThamChieu: row.MATHAMCHIEU ?? row.MaThamChieu,
+      NgayTao: row.NGAYTAO ?? row.NgayTao,
+      SoThanhVien: row.SoThanhVien,
+      TinNhanGanNhat: row.TinNhanGanNhat,
+    }));
   },
 
   isRoomMember: async (maPhong, maNv) => {
@@ -38,7 +46,16 @@ const chatRepository = {
       .input("MaPhong", sql.Int, maPhong)
       .execute("sp_getRoomById");
 
-    return result.recordset[0] || null;
+    const row = result.recordset[0];
+    if (!row) return null;
+
+    return {
+      MaPhong: row.MAPHONG ?? row.MaPhong,
+      TenPhong: row.TENPHONG ?? row.TenPhong,
+      LoaiPhong: row.LOAIPHONG ?? row.LoaiPhong,
+      MaThamChieu: row.MATHAMCHIEU ?? row.MaThamChieu,
+      NgayTao: row.NGAYTAO ?? row.NgayTao,
+    };
   },
 
   getRoomMessages: async (maPhong, limit = 50) => {
@@ -49,15 +66,21 @@ const chatRepository = {
       .input("Limit", sql.Int, safeLimit)
       .execute("sp_getRoomMessages");
 
-    return result.recordset.reverse();
+    return result.recordset.reverse().map((row) => ({
+      MaTN: row.MATN ?? row.MaTN,
+      MaPhong: row.MAPHONG ?? row.MaPhong,
+      MaNV_Gui: row.MANV_GUI ?? row.MaNV_Gui,
+      TenNguoiGui: row.TenNguoiGui,
+      NoiDung: row.NOIDUNG ?? row.NoiDung,
+      ThoiGianGui: row.THOIGIANGUI ?? row.ThoiGianGui,
+    }));
   },
 
   getLatestMessageByRoom: async (maPhong) => {
-    const result = await appPool.request().input("MaPhong", sql.Int, maPhong)
-      .query(`
-        SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui
-        FROM dbo.fn_LayTinNhanMoiNhat(@MaPhong)
-      `);
+    const result = await appPool
+      .request()
+      .input("MAPHONG", sql.Int, maPhong)
+      .execute("sp_getLatestMessageByRoom");
 
     return result.recordset[0] || null;
   },
@@ -65,14 +88,17 @@ const chatRepository = {
   searchMessagesByKeyword: async (maPhong, tuKhoa) => {
     const result = await appPool
       .request()
-      .input("MaPhong", sql.Int, maPhong)
-      .input("TuKhoa", sql.NVarChar(sql.MAX), tuKhoa).query(`
-        SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui
-        FROM dbo.fn_TimKiemTinNhan(@MaPhong, @TuKhoa)
-        ORDER BY ThoiGianGui DESC
-      `);
+      .input("MAPHONG", sql.Int, maPhong)
+      .input("TUKHOA", sql.NVarChar(sql.MAX), tuKhoa)
+      .execute("sp_searchMessagesByKeyword");
 
-    return result.recordset;
+    return result.recordset.map((row) => ({
+      MaTN: row.MATN ?? row.MaTN,
+      MaPhong: row.MAPHONG ?? row.MaPhong,
+      MaNV_Gui: row.MANV_GUI ?? row.MaNV_Gui,
+      NoiDung: row.NOIDUNG ?? row.NoiDung,
+      ThoiGianGui: row.THOIGIANGUI ?? row.ThoiGianGui,
+    }));
   },
 
   sendMessage: async (maPhong, maNvGui, noiDung) => {
@@ -83,23 +109,23 @@ const chatRepository = {
       .input("NoiDung", sql.NVarChar(sql.MAX), noiDung)
       .execute("sp_sendMessage");
 
-    return result.recordset[0] || null;
+    const row = result.recordset[0];
+    if (!row) return null;
+
+    return {
+      MaTN: row.MATN ?? row.MaTN,
+      MaPhong: row.MAPHONG ?? row.MaPhong,
+      MaNV_Gui: row.MANV_GUI ?? row.MaNV_Gui,
+      NoiDung: row.NOIDUNG ?? row.NoiDung,
+      ThoiGianGui: row.THOIGIANGUI ?? row.ThoiGianGui,
+    };
   },
 
   getRoomMembers: async (maPhong) => {
-    const result = await appPool.request().input("MaPhong", sql.Int, maPhong)
-      .query(`
-        SELECT
-          tvp.MaNV,
-          nv.HOTEN,
-          nv.EMAIL,
-          tvp.VaiTro,
-          tvp.NgayThamGia
-        FROM THANH_VIEN_PHONG tvp
-        LEFT JOIN NHAN_VIEN nv ON nv.MANV = tvp.MaNV
-        WHERE tvp.MaPhong = @MaPhong
-        ORDER BY tvp.NgayThamGia ASC
-      `);
+    const result = await appPool
+      .request()
+      .input("MAPHONG", sql.Int, maPhong)
+      .execute("sp_getRoomMembers");
 
     return result.recordset;
   },
@@ -107,236 +133,115 @@ const chatRepository = {
   findDirectRoom: async (maNvA, maNvB) => {
     const result = await appPool
       .request()
-      .input("MaNVA", sql.VarChar(20), maNvA)
-      .input("MaNVB", sql.VarChar(20), maNvB)
-      .input("LoaiPhong", sql.TinyInt, ROOM_TYPE.DIRECT).query(`
-        SELECT TOP 1 pc.MaPhong, pc.TenPhong, pc.LoaiPhong, pc.MaThamChieu, pc.NgayTao
-        FROM PHONG_CHAT pc
-        WHERE pc.LoaiPhong = @LoaiPhong
-          AND EXISTS (
-            SELECT 1 FROM THANH_VIEN_PHONG tv1
-            WHERE tv1.MaPhong = pc.MaPhong AND tv1.MaNV = @MaNVA
-          )
-          AND EXISTS (
-            SELECT 1 FROM THANH_VIEN_PHONG tv2
-            WHERE tv2.MaPhong = pc.MaPhong AND tv2.MaNV = @MaNVB
-          )
-          AND (
-            SELECT COUNT(*) FROM THANH_VIEN_PHONG tv3
-            WHERE tv3.MaPhong = pc.MaPhong
-          ) = 2
-      `);
+      .input("MANVA", sql.VarChar(20), maNvA)
+      .input("MANVB", sql.VarChar(20), maNvB)
+      .input("LOAIPHONG", sql.TinyInt, ROOM_TYPE.DIRECT)
+      .execute("sp_findDirectRoom");
 
     return result.recordset[0] || null;
   },
 
   createDirectRoom: async (maNvA, maNvB) => {
-    const transaction = appPool.transaction();
-    await transaction.begin();
+    const maThamChieu = generateRandomRoomId();
+    const result = await appPool
+      .request()
+      .input("MANVA", sql.VarChar(20), maNvA)
+      .input("MANVB", sql.VarChar(20), maNvB)
+      .input("LOAIPHONG", sql.TinyInt, ROOM_TYPE.DIRECT)
+      .input("MATHAMCHIEU", sql.VarChar(50), maThamChieu)
+      .execute("sp_createDirectRoom");
 
-    try {
-      // Get user names from NHAN_VIEN table
-      const userAResult = await appPool
-        .request()
-        .input("MaNV", sql.VarChar(20), maNvA)
-        .query(`SELECT HOTEN FROM NHAN_VIEN WHERE MANV = @MaNV`);
-
-      const userBResult = await appPool
-        .request()
-        .input("MaNV", sql.VarChar(20), maNvB)
-        .query(`SELECT HOTEN FROM NHAN_VIEN WHERE MANV = @MaNV`);
-
-      const tenUserA = userAResult.recordset[0]?.HOTEN || maNvA;
-      const tenUserB = userBResult.recordset[0]?.HOTEN || maNvB;
-      const tenPhong = `${tenUserA} - ${tenUserB}`;
-      const maThamChieu = generateRandomRoomId();
-
-      const roomResult = await new sql.Request(transaction)
-        .input("TenPhong", sql.NVarChar(255), tenPhong)
-        .input("LoaiPhong", sql.TinyInt, ROOM_TYPE.DIRECT)
-        .input("MaThamChieu", sql.VarChar(50), maThamChieu).query(`
-          INSERT INTO PHONG_CHAT (TenPhong, LoaiPhong, MaThamChieu)
-          OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao
-          VALUES (@TenPhong, @LoaiPhong, @MaThamChieu)
-        `);
-
-      const room = roomResult.recordset[0];
-
-      await new sql.Request(transaction)
-        .input("MaPhong", sql.Int, room.MaPhong)
-        .input("MaNV", sql.VarChar(20), maNvA).query(`
-          INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)
-          VALUES (@MaPhong, @MaNV, N'Thành viên')
-        `);
-
-      await new sql.Request(transaction)
-        .input("MaPhong", sql.Int, room.MaPhong)
-        .input("MaNV", sql.VarChar(20), maNvB).query(`
-          INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)
-          VALUES (@MaPhong, @MaNV, N'Thành viên')
-        `);
-
-      await transaction.commit();
-      return room;
-    } catch (error) {
-      await transaction.rollback().catch(() => undefined);
-      throw error;
-    }
+    return result.recordset[0] || null;
   },
 
   getOrCreateReferenceRoom: async (roomType, maThamChieu, tenPhong = null) => {
-    const existed = await appPool
+    const result = await appPool
       .request()
-      .input("LoaiPhong", sql.TinyInt, roomType)
-      .input("MaThamChieu", sql.VarChar(50), String(maThamChieu)).query(`
-        SELECT TOP 1 MaPhong, TenPhong, LoaiPhong, MaThamChieu, NgayTao
-        FROM PHONG_CHAT
-        WHERE LoaiPhong = @LoaiPhong AND MaThamChieu = @MaThamChieu
-      `);
+      .input("LOAIPHONG", sql.TinyInt, roomType)
+      .input("MATHAMCHIEU", sql.VarChar(50), String(maThamChieu))
+      .input("TENPHONG", sql.NVarChar(255), tenPhong)
+      .execute("sp_getOrCreateReferenceRoom");
 
-    if (existed.recordset[0]) {
-      return existed.recordset[0];
-    }
-
-    const created = await appPool
-      .request()
-      .input("TenPhong", sql.NVarChar(255), tenPhong)
-      .input("LoaiPhong", sql.TinyInt, roomType)
-      .input("MaThamChieu", sql.VarChar(50), String(maThamChieu)).query(`
-        INSERT INTO PHONG_CHAT (TenPhong, LoaiPhong, MaThamChieu)
-        OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao
-        VALUES (@TenPhong, @LoaiPhong, @MaThamChieu)
-      `);
-
-    return created.recordset[0] || null;
+    return result.recordset[0] || null;
   },
 
   addMemberIfNotExists: async (maPhong, maNv, vaiTro = "Thành viên") => {
     await appPool
       .request()
-      .input("MaPhong", sql.Int, maPhong)
-      .input("MaNV", sql.VarChar(20), maNv)
-      .input("VaiTro", sql.NVarChar(50), vaiTro).query(`
-        IF NOT EXISTS (
-          SELECT 1 FROM THANH_VIEN_PHONG WHERE MaPhong = @MaPhong AND MaNV = @MaNV
-        )
-        BEGIN
-          INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)
-          VALUES (@MaPhong, @MaNV, @VaiTro)
-        END
-      `);
+      .input("MAPHONG", sql.Int, maPhong)
+      .input("MANV", sql.VarChar(20), maNv)
+      .input("VAITRO", sql.NVarChar(50), vaiTro)
+      .execute("sp_addRoomMember");
   },
 
   removeMember: async (maPhong, maNv) => {
     await appPool
       .request()
-      .input("MaPhong", sql.Int, maPhong)
-      .input("MaNV", sql.VarChar(20), maNv).query(`
-        DELETE FROM THANH_VIEN_PHONG
-        WHERE MaPhong = @MaPhong AND MaNV = @MaNV
-      `);
+      .input("MAPHONG", sql.Int, maPhong)
+      .input("MANV", sql.VarChar(20), maNv)
+      .execute("sp_removeRoomMember");
   },
 
   getDepartmentMembers: async (maPhg) => {
-    const result = await appPool.request().input("MaPhg", sql.Int, maPhg)
-      .query(`
-        SELECT MANV
-        FROM NHAN_VIEN
-        WHERE MAPHG = @MaPhg
-      `);
+    const result = await appPool
+      .request()
+      .input("MAPHG", sql.Int, maPhg)
+      .execute("sp_getDepartmentMembers");
 
     return result.recordset.map((r) => r.MANV);
   },
 
   getProjectMembers: async (maDa) => {
-    const result = await appPool.request().input("MaDA", sql.Int, maDa).query(`
-        SELECT MaNV
-        FROM PHAN_CONG_DU_AN
-        WHERE MaDA = @MaDA
-      `);
+    const result = await appPool
+      .request()
+      .input("MADA", sql.Int, maDa)
+      .execute("sp_getProjectMembersSimple");
 
     return result.recordset.map((r) => r.MaNV);
   },
 
   getProjectInfo: async (maDa) => {
-    const result = await appPool.request().input("MaDA", sql.Int, maDa).query(`
-        SELECT MADA, TENDA, MoTa, NgayBatDau, NgayKetThuc, TrangThai
-        FROM DU_AN
-        WHERE MADA = @MaDA
-      `);
+    const result = await appPool
+      .request()
+      .input("MADA", sql.Int, maDa)
+      .execute("sp_getProjectInfo");
 
     return result.recordset[0] || null;
   },
 
   getDepartmentInfo: async (maPhg) => {
-    const result = await appPool.request().input("MaPhg", sql.Int, maPhg)
-      .query(`
-        SELECT MAPHG, TENPB
-        FROM PHONG_BAN
-        WHERE MAPHG = @MaPhg
-      `);
+    const result = await appPool
+      .request()
+      .input("MAPHG", sql.Int, maPhg)
+      .execute("sp_getDepartmentInfo");
 
     return result.recordset[0] || null;
   },
 
   createCustomGroupRoom: async (creatorMaNv, tenPhong, memberIds = []) => {
-    const transaction = appPool.transaction();
-    await transaction.begin();
+    const maThamChieu = generateRandomRoomId();
+    const uniqueMembers = Array.from(
+      new Set(memberIds.filter(Boolean))
+    );
+    const memberIdsStr = uniqueMembers.join(",");
 
-    try {
-      const maThamChieu = generateRandomRoomId();
+    const result = await appPool
+      .request()
+      .input("CREATORMANV", sql.VarChar(20), creatorMaNv)
+      .input("TENPHONG", sql.NVarChar(255), tenPhong)
+      .input("MATHAMCHIEU", sql.VarChar(50), maThamChieu)
+      .input("MEMBERIDS", sql.NVarChar(sql.MAX), memberIdsStr)
+      .execute("sp_createCustomGroupRoom");
 
-      const roomResult = await new sql.Request(transaction)
-        .input("TenPhong", sql.NVarChar(255), tenPhong)
-        .input("LoaiPhong", sql.TinyInt, ROOM_TYPE.GROUP)
-        .input("MaThamChieu", sql.VarChar(50), maThamChieu).query(`
-          INSERT INTO PHONG_CHAT (TenPhong, LoaiPhong, MaThamChieu)
-          OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao
-          VALUES (@TenPhong, @LoaiPhong, @MaThamChieu)
-        `);
-
-      const room = roomResult.recordset[0];
-
-      const uniqueMembers = Array.from(
-        new Set([creatorMaNv, ...memberIds.filter(Boolean)]),
-      );
-
-      for (const maNv of uniqueMembers) {
-        await new sql.Request(transaction)
-          .input("MaPhong", sql.Int, room.MaPhong)
-          .input("MaNV", sql.VarChar(20), maNv)
-          .input(
-            "VaiTro",
-            sql.NVarChar(50),
-            maNv === creatorMaNv ? "Trưởng nhóm" : "Thành viên",
-          ).query(`
-            IF NOT EXISTS (
-              SELECT 1 FROM THANH_VIEN_PHONG WHERE MaPhong = @MaPhong AND MaNV = @MaNV
-            )
-            BEGIN
-              INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)
-              VALUES (@MaPhong, @MaNV, @VaiTro)
-            END
-          `);
-      }
-
-      await transaction.commit();
-      return room;
-    } catch (error) {
-      await transaction.rollback().catch(() => undefined);
-      throw error;
-    }
+    return result.recordset[0] || null;
   },
 
   getRoomMemberRole: async (maPhong, maNv) => {
     const result = await appPool
       .request()
-      .input("MaPhong", sql.Int, maPhong)
-      .input("MaNV", sql.VarChar(20), maNv).query(`
-        SELECT TOP 1 VaiTro
-        FROM THANH_VIEN_PHONG
-        WHERE MaPhong = @MaPhong AND MaNV = @MaNV
-      `);
+      .input("MAPHONG", sql.Int, maPhong)
+      .input("MANV", sql.VarChar(20), maNv)
+      .execute("sp_getRoomMemberRole");
 
     return result.recordset[0]?.VaiTro || null;
   },
