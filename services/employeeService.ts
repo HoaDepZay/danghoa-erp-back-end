@@ -1,16 +1,28 @@
 import employeeRepository from "../repositories/employeeRepository";
 import { encrypt, decrypt } from "../utils/encryptionHelper";
 import crypto from "crypto";
+import { normalizeRole } from "../utils/authHelper";
 
 const employeeService = {
   // 1. Lấy danh sách nhân viên
-  getAllEmployees: async (pageNum = 1, pageSize = 10, searchKeyword = "") => {
+  getAllEmployees: async (pageNum = 1, pageSize = 10, searchKeyword = "", userRole?: string) => {
     try {
       const result = await employeeRepository.getAllEmployees(
         pageNum,
         pageSize,
         searchKeyword,
       );
+
+      const normalizedRole = userRole ? normalizeRole(userRole) : "";
+      const hasSalaryAccess = (normalizedRole === "admin" || normalizedRole === "quanly");
+
+      if (!hasSalaryAccess && result.data) {
+        result.data = result.data.map((emp: any) => {
+          const { LUONG, luong, ...rest } = emp;
+          return rest;
+        });
+      }
+
       return {
         success: true,
         message: "Lấy danh sách nhân viên thành công",

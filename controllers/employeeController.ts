@@ -8,10 +8,13 @@ const employeeController = {
       const pageNum = parseInt(page) || 1;
       const size = parseInt(pageSize) || 10;
 
+      const userRole = req.user?.userInfo?.role;
+
       const result = await employeeService.getAllEmployees(
         pageNum,
         size,
         search,
+        userRole,
       );
 
       return res.status(200).json(result);
