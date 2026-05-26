@@ -107,7 +107,7 @@ const chatService = {
     };
   },
 
-  sendMessageToRoom: async (roomId, requesterMaNv, noiDung) => {
+  sendMessageToRoom: async (roomId, requesterMaNv, noiDung, fileUrl = null, fileType = null) => {
     const maPhong = Number(roomId);
     const content = String(noiDung || "").trim();
 
@@ -115,7 +115,7 @@ const chatService = {
       throw new Error("Mã phòng không hợp lệ.");
     }
 
-    if (!content) {
+    if (!content && !fileUrl) {
       throw new Error("Nội dung tin nhắn không được để trống.");
     }
 
@@ -128,6 +128,8 @@ const chatService = {
       maPhong,
       requesterMaNv,
       content,
+      fileUrl,
+      fileType
     );
     return {
       success: true,

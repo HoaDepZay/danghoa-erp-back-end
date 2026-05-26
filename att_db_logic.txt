@@ -1,0 +1,551 @@
+=== DATABASE ATTENDANCE & PAYROLL LOGIC REPORT ===
+
+--- TRIGGERS IN DATABASE ---
+Trigger: trg_BAN_CHAM_CONG_UpdateStatus on Table: BAN_CHAM_CONG
+Definition:
+
+
+CREATE TRIGGER trg_BAN_CHAM_CONG_UpdateStatus
+ON BAN_CHAM_CONG
+AFTER UPDATE
+AS
+BEGIN
+    -- Ngăn chặn các thông báo phụ để tối ưu hiệu năng
+    SET NOCOUNT ON;
+
+    -- Trigger chỉ kích hoạt xử lý khi cột GIORA được cập nhật dữ liệu mới và khác NULL
+    IF UPDATE(GIORA)
+    BEGIN
+        UPDATE b
+        SET 
+            -- 1. XỬ LÝ TÍNH TOÁN CỘT ĐI TRỄ (DITRE)
+            b.DITRE = CASE 
+                -- Không đi trễ (Đúng giờ hoặc đi sớm)
+                WHEN q.SoPhutTre = 0 THEN 'khong'
+                
+                -- Trường hợp đi trễ TRÊN 30 phút -> Luôn bị đánh dấu đi trễ (Dù có làm bù đủ hay không)
+                WHEN q.SoPhutTre > 30 THEN N'Đi trễ ' + CAST(q.SoPhutTre AS VARCHAR(10)) + N' phút'
+                
+                -- Trường hợp đi trễ DƯỚI HOẶC BẰNG 30 phút
+                ELSE 
+                    CASE 
+                        -- Nếu làm bù ĐỦ thời gian (Giờ ra thực tế >= Giờ ra yêu cầu) -> Không bị đánh dấu trễ
+                        WHEN i.GIORA >= q.GioRaYeuCau THEN 'khong'
+                        -- Nếu không ở lại làm bù đủ thời gian -> Bị đánh dấu đi trễ kèm cảnh báo
+                        ELSE N'Đi trễ ' + CAST(q.SoPhutTre AS VARCHAR(10)) + N' phút (Không bù đủ)'
+                    END
+            END,
+
+            -- 2. XỬ LÝ TÍNH TOÁN CỘT BUỔI LÀM VIỆC (BUOILAMVIEC)
+            b.BUOILAMVIEC = CASE 
+                -- TRƯỜNG HỢP LÀM CẢ NGÀY: Vào ca sáng (<= 12:00) và Ra ca chiều (>= 13:30)
+                WHEN i.GIOVAO <= '12:00:00' AND i.GIORA >= '13:30:00' THEN
+                    CASE 
+                        -- Phải check-out đạt hoặc vượt mức Giờ Ra Yêu Cầu mới được tính đủ 1 ngày công
+                        WHEN i.GIORA >= q.GioRaYeuCau THEN 'CaNgay'
+                        -- Nếu vào ca sáng nhưng về sớm hơn giờ ra yêu cầu làm bù, xét xem có đạt công Ca Sáng không
+                        WHEN i.GIORA >= DATEADD(MINUTE, q.SoPhutTre * 2, CAST('12:00:00' AS TIME)) THEN 'Sang'
+                        ELSE 'KhongDuCong'
+                    END
+
+                -- TRƯỜNG HỢP CHỈ LÀM CA SÁNG: Vào ca sáng (<= 12:00) và Ra trước ca chiều (< 13:30)
+                WHEN i.GIOVAO <= '12:00:00' AND i.GIORA < '13:30:00' THEN
+                    CASE 
+                        -- Giờ ra phải bù đủ so với mốc kết thúc ca sáng (12:00 + Số phút trễ * 2)
+                        WHEN i.GIORA >= DATEADD(MINUTE, q.SoPhutTre * 2, CAST('12:00:00' AS TIME)) THEN 'Sang'
+                        ELSE 'KhongDuCong'
+                    END
+
+                -- TRƯỜNG HỢP CHỈ LÀM CA CHIỀU: Vào sau giờ nghỉ trưa (> 12:00)
+                WHEN i.GIOVAO > '12:00:00' THEN
+                    CASE 
+                        -- Giờ ra phải bù đủ so với mốc kết thúc ca chiều (18:00 + Số phút trễ * 2)
+                        WHEN i.GIORA >= q.GioRaYeuCau THEN 'Chieu'
+                        ELSE 'KhongDuCong'
+                    END
+                
+                ELSE 'KhongDuCong'
+            END
+        FROM BAN_CHAM_CONG b
+        JOIN inserted i ON b.MACC = i.MACC
+        -- Tách logic tính Số phút đi trễ động theo từng ca (Sáng/Chiều) bằng CROSS APPLY nhằm tối ưu code
+        CROSS APPLY (
+            SELECT 
+                CASE 
+                    -- Thuộc Ca Sáng: Vào từ sau 08:30 đến trước giờ nghỉ trưa 12:00
+                    WHEN i.GIOVAO > '08:30:00' AND i.GIOVAO <= '12:00:00' THEN DATEDIFF(MINUTE, '08:30:00', i.GIOVAO)
+                    -- Thuộc Ca Chiều: Vào từ sau 13:30 đến trước giờ về tiêu chuẩn 18:00
+                    WHEN i.GIOVAO > '13:30:00' AND i.GIOVAO <= '18:00:00' THEN DATEDIFF(MINUTE, '13:30:00', i.GIOVAO)
+                    -- Check-in đúng giờ hoặc sớm hơn quy định
+                    ELSE 0
+                END AS SoPhutTre
+        ) p
+        -- Tính toán Giờ Ra Yêu Cầu tối thiểu để hoàn thành ca làm việc sau khi nhân nhân đôi thời gian bù
+        CROSS APPLY (
+            SELECT 
+                p.SoPhutTre,
+                CASE 
+                    -- Nếu làm cả ngày hoặc làm riêng ca chiều -> Mốc tính bù lũy tiến từ 18:00:00
+                    WHEN (i.GIOVAO <= '12:00:00' AND i.GIORA >= '13:30:00') OR (i.GIOVAO > '12:00:00') 
+                        THEN DATEADD(MINUTE, p.SoPhutTre * 2, CAST('18:00:00' AS TIME))
+                    -- Nếu chỉ làm nửa ngày ca sáng rồi về luôn -> Mốc tính bù lũy tiến từ 12:00:00
+                    ELSE DATEADD(MINUTE, p.SoPhutTre * 2, CAST('12:00:00' AS TIME))
+                END AS GioRaYeuCau
+        ) q
+        WHERE i.GIORA IS NOT NULL AND i.GIOVAO IS NOT NULL;
+    END
+END;
+--------------------------------------------------
+
+Trigger: trg_BAN_CHAM_CONG_PayrollProcessor on Table: BAN_CHAM_CONG
+Definition:
+
+    CREATE TRIGGER trg_BAN_CHAM_CONG_PayrollProcessor
+ON BAN_CHAM_CONG
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Trigger chỉ kích hoạt xử lý khi cột GIORA được cập nhật dữ liệu mới
+    IF UPDATE(GIORA)
+    BEGIN
+        
+        -- BƯỚC 1: Thu thập dữ liệu và tính toán số phút trễ thực tế theo ca
+        WITH RawData AS (
+            SELECT 
+                i.MACC, i.MANV, i.NGAY, i.GIOVAO, i.GIORA,
+                -- Tính số giờ làm thực tế của bản ghi mới và cũ (để cộng dồn/bù trừ lũy tiến)
+                CAST(DATEDIFF(MINUTE, i.GIOVAO, i.GIORA) AS FLOAT) / 60.0 AS NewHours,
+                CASE WHEN d.GIORA IS NOT NULL THEN CAST(DATEDIFF(MINUTE, d.GIOVAO, d.GIORA) AS FLOAT) / 60.0 ELSE 0.0 END AS OldHours,
+                -- Tính số phút đi trễ
+                CASE 
+                    WHEN i.GIOVAO > '08:30:00' AND i.GIOVAO <= '12:00:00' THEN DATEDIFF(MINUTE, '08:30:00', i.GIOVAO)
+                    WHEN i.GIOVAO > '13:30:00' AND i.GIOVAO <= '18:00:00' THEN DATEDIFF(MINUTE, '13:30:00', i.GIOVAO)
+                    ELSE 0
+                END AS SoPhutTre,
+                nv.LUONG, ISNULL(nv.PHIBHXH, 0) AS PHIBHXH, ISNULL(nv.PHUCAP, 0) AS PHUCAP,
+                d.GIORA AS OldGioRa, d.DITRE AS OldDiTreStr, d.BUOILAMVIEC AS OldBuoiLamViecStr
+            FROM inserted i
+            JOIN deleted d ON i.MACC = d.MACC
+            JOIN NHAN_VIEN nv ON i.MANV = nv.MANV
+            WHERE i.GIORA IS NOT NULL AND i.GIOVAO IS NOT NULL
+              AND (d.GIORA IS NULL OR i.GIORA <> d.GIORA)
+        ),
+        -- BƯỚC 2: Tính toán mốc Giờ Ra Yêu Cầu tối thiểu để làm bù xóa trễ
+        WithRequiredCheckout AS (
+            SELECT *,
+                CASE 
+                    WHEN (GIOVAO <= '12:00:00' AND GIORA >= '13:30:00') OR (GIOVAO > '12:00:00') 
+                        THEN DATEADD(MINUTE, SoPhutTre * 2, CAST('18:00:00' AS TIME))
+                    ELSE DATEADD(MINUTE, SoPhutTre * 2, CAST('12:00:00' AS TIME))
+                END AS GioRaYeuCau
+            FROM RawData
+        ),
+        -- BƯỚC 3: Phân loại trạng thái Đi Trễ và Buổi Làm Việc (Đã sửa lỗi phân loại)
+        WithStatus AS (
+            SELECT *,
+                CASE 
+                    WHEN SoPhutTre = 0 THEN 'khong'
+                    WHEN SoPhutTre > 30 THEN N'Đi trễ ' + CAST(SoPhutTre AS VARCHAR(10)) + N' phút'
+                    ELSE 
+                        CASE WHEN GIORA >= GioRaYeuCau THEN 'khong' 
+                        ELSE N'Đi trễ ' + CAST(SoPhutTre AS VARCHAR(10)) + N' phút (Không bù đủ)' END
+                END AS NewDiTre,
+                
+                -- SỬA LỖI TẠI ĐÂY: Quét mốc kết thúc ngày 18:00 trước để định hình CaNgay và Chieu
+                CASE 
+                    -- Vào ca sáng và làm đến hết giờ hành chính chiều trở đi -> Cả ngày
+                    WHEN GIOVAO <= '12:00:00' AND GIORA >= '18:00:00' THEN 'CaNgay'
+                    -- Vào ca sáng nhưng về sớm trước khi hết chiều -> Chỉ tính buổi Sáng (nếu qua 12:00)
+                    WHEN GIOVAO <= '12:00:00' AND GIORA < '18:00:00' THEN
+                        CASE WHEN GIORA >= '12:00:00' THEN 'Sang' ELSE 'KhongDuCong' END
+                    -- Vào ca chiều và làm đến hết ca chiều -> Buổi Chiều
+                    WHEN GIOVAO > '12:00:00' AND GIORA >= '18:00:00' THEN 'Chieu'
+                    
+                    ELSE 'KhongDuCong'
+                END AS NewBuoiLamViec
+            FROM WithRequiredCheckout
+        ),
+        -- BƯỚC 4: Tính toán hệ số % lương theo từng loại buổi và gán mức phạt trễ 100k
+        WithFactors AS (
+            SELECT *,
+                -- Tính toán hệ số & phạt cho bản ghi mới cập nhật
+                CASE WHEN NewBuoiLamViec = 'Sang' THEN 0.4   -- Sáng hưởng 40%
+                     WHEN NewBuoiLamViec = 'Chieu' THEN 0.6  -- Chiều hưởng 60%
+                     WHEN NewBuoiLamViec = 'CaNgay' THEN 1.0 -- Cả ngày hưởng 100% 
+                     ELSE 0.0 END AS NewFactor,
+                CASE WHEN NewDiTre <> 'khong' THEN 100000.0 ELSE 0.0 END AS NewPenalty,
+                
+                -- Tính toán hệ số & phạt của dữ liệu cũ trước đó (để làm hiệu số bù trừ)
+                CASE WHEN OldGioRa IS NOT NULL THEN
+                        CASE WHEN OldBuoiLamViecStr = 'Sang' THEN 0.4
+                             WHEN OldBuoiLamViecStr = 'Chieu' THEN 0.6
+                             WHEN OldBuoiLamViecStr = 'CaNgay' THEN 1.0 ELSE 0.0 END
+                     ELSE 0.0 END AS OldFactor,
+                CASE WHEN OldGioRa IS NOT NULL AND OldDiTreStr <> 'khong' AND OldDiTreStr IS NOT NULL THEN 100000.0 ELSE 0.0 END AS OldPenalty
+            FROM WithStatus
+        ),
+        -- BƯỚC 5: Quy đổi thành số tiền lương ngày thực tế (Chặn dưới bằng 0 tránh âm tiền lương ngày)
+        WithWages AS (
+            SELECT *,
+                CASE WHEN NewFactor > 0 THEN 
+                    CASE WHEN ((LUONG / 30.0) * NewFactor) - NewPenalty < 0 THEN 0 
+                         ELSE ((LUONG / 30.0) * NewFactor) - NewPenalty END
+                ELSE 0.0 END AS NewDayWage,
+                
+                CASE WHEN OldGioRa IS NOT NULL AND OldFactor > 0 THEN 
+                    CASE WHEN ((LUONG / 30.0) * OldFactor) - OldPenalty < 0 THEN 0 
+                         ELSE ((LUONG / 30.0) * OldFactor) - OldPenalty END
+                ELSE 0.0 END AS OldDayWage
+            FROM WithFactors
+        )
+        -- Đổ toàn bộ cấu trúc phân tích vào bảng tạm
+        SELECT * INTO #FinalProcessedData FROM WithWages;
+
+        --- ========================================================== ---
+        --- TIẾN HÀNH ĐỒNG BỘ CẬP NHẬT TRÊN CÁC BẢNG DỮ LIỆU
+        --- ========================================================== ---
+
+        -- 1. Cập nhật kết quả phân loại chuẩn vào lại bảng BAN_CHAM_CONG
+        UPDATE b
+        SET b.DITRE = f.NewDiTre,
+            b.BUOILAMVIEC = f.NewBuoiLamViec
+        FROM BAN_CHAM_CONG b
+        JOIN #FinalProcessedData f ON b.MACC = f.MACC;
+
+        -- 2. Gom nhóm dữ liệu theo Tháng/Năm để đồng bộ sang bảng lương nhân viên
+        SELECT 
+            MANV,
+            MONTH(NGAY) AS THANG,
+            YEAR(NGAY) AS NAM,
+            SUM(NewHours - OldHours) AS DeltaHours,
+            SUM(NewDayWage - OldDayWage) AS DeltaWage,
+            MAX(PHIBHXH) AS PHIBHXH,
+            MAX(PHUCAP) AS PHUCAP
+        INTO #PayrollSummary
+        FROM #FinalProcessedData
+        GROUP BY MANV, MONTH(NGAY), YEAR(NGAY);
+
+        -- 3. Sử dụng MERGE để cộng dồn Real-time vào dòng lương duy nhất của tháng
+        MERGE BANG_LUONG AS target
+        USING #PayrollSummary AS source
+        ON (target.MANV = source.MANV AND target.THANG = source.THANG AND target.NAM = source.NAM)
+        
+        -- Nếu đã có dòng lương tháng này: Tiến hành cộng dồn/bù trừ chênh lệch DeltaWage
+        WHEN MATCHED THEN
+            UPDATE SET 
+                target.GIOLAMVIEC = target.GIOLAMVIEC + source.DeltaHours,
+                target.THUCLANH = CAST(target.THUCLANH + source.DeltaWage AS DECIMAL(18,2)),
+                target.BHXH = source.PHIBHXH,
+                target.PHUCAP = source.PHUCAP
+        
+        -- Nếu là ngày công đầu tiên xuất hiện trong tháng: Tạo mới row lương
+        WHEN NOT MATCHED THEN
+            INSERT (MANV, THANG, NAM, GIOLAMVIEC, THUONG, BHXH, PHUCAP, THUETNCN, THUCLANH)
+            VALUES (
+                source.MANV,
+                source.THANG,
+                source.NAM,
+                source.DeltaHours,
+                0, -- THUONG mặc định = 0
+                source.PHIBHXH,
+                source.PHUCAP,
+                0, -- THUETNCN mặc định = 0
+                CAST(source.DeltaWage + source.PHUCAP - source.PHIBHXH AS DECIMAL(18,2))
+            );
+
+        -- Giải phóng bộ nhớ bảng tạm
+        DROP TABLE #FinalProcessedData;
+        DROP TABLE #PayrollSummary;
+    END
+END;
+--------------------------------------------------
+
+--- STORED PROCEDURES & FUNCTIONS DEFINITIONS ---
+Object: sp_CheckIn
+Definition:
+CREATE PROCEDURE sp_CheckIn
+    @MANV varchar(20),
+    @Result int OUTPUT,          -- 1: Thành công, 0: Thất bại
+    @ErrorDetail nvarchar(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        -- Khởi tạo giá trị mặc định
+        SET @Result = 0;
+        SET @ErrorDetail = '';
+
+        -- Khai báo biến để lấy ngày giờ VN đồng nhất trong 1 lần chạy
+        DECLARE @CurrentDateTimeOffset datetimeoffset = SYSDATETIMEOFFSET();
+        DECLARE @NgayHienTai DATE = CAST(@CurrentDateTimeOffset AT TIME ZONE 'SE Asia Standard Time' AS DATE);
+        DECLARE @GioHienTai TIME = CAST(@CurrentDateTimeOffset AT TIME ZONE 'SE Asia Standard Time' AS TIME);
+
+        -- 1. Kiểm tra xem nhân viên đã check-in ngày hôm nay chưa
+        IF EXISTS (SELECT 1 FROM BAN_CHAM_CONG WHERE MANV = @MANV AND NGAY = @NgayHienTai)
+        BEGIN
+            SET @ErrorDetail = N'Lỗi: Nhân viên này đã check-in hôm nay rồi.';
+            RETURN;
+        END
+
+        -- 2. Thực hiện thêm mới vào bảng chấm công
+        INSERT INTO BAN_CHAM_CONG (MANV, NGAY, GIOVAO, TRANGTHAI)
+        VALUES (@MANV, @NgayHienTai, @GioHienTai, N'Đã Check-in');
+
+        -- 3. CẬP NHẬT TRẠNG THÁI LÀM VIỆC CỦA NHÂN VIÊN
+        UPDATE NHAN_VIEN
+        SET TRANGTHAILAMVIEC = N'Đang làm việc'
+        WHERE MANV = @MANV;
+
+        -- Trả về thành công
+        SET @Result = 1;
+        SET @ErrorDetail = N'Check-in thành công!';
+    END TRY
+    BEGIN CATCH
+        -- Nếu có lỗi hệ thống (ví dụ: sai kiểu dữ liệu, lỗi kết nối...)
+        SET @Result = 0;
+        SET @ErrorDetail = ERROR_MESSAGE();
+    END CATCH
+END
+==================================================
+
+Object: sp_CheckOut
+Definition:
+CREATE PROCEDURE sp_CheckOut
+    @MANV varchar(20),
+    @Result int OUTPUT,
+    @ErrorDetail nvarchar(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SET @Result = 0;
+        SET @ErrorDetail = '';
+
+        -- Khai báo biến lưu ngày giờ hiện tại theo múi giờ Việt NAM (UTC+7)
+        DECLARE @CurrentDateTimeVN DATETIME2;
+        SET @CurrentDateTimeVN = CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'SE Asia Standard Time' AS DATETIME2);
+
+        -- Tách riêng Ngày và Giờ Việt NAM để sử dụng bên dưới
+        DECLARE @TodayVN DATE = CAST(@CurrentDateTimeVN AS DATE);
+        DECLARE @TimeVN TIME = CAST(@CurrentDateTimeVN AS TIME);
+
+        -- 1. Kiểm tra xem có bản ghi check-in nào hợp lệ để out không
+        IF NOT EXISTS (SELECT 1 FROM BAN_CHAM_CONG WHERE MANV = @MANV AND NGAY = @TodayVN AND GIORA IS NULL)
+        BEGIN
+            SET @ErrorDetail = N'Lỗi: Không tìm thấy lượt Check-in chưa hoàn thành trong hôm nay.';
+            RETURN;
+        END
+
+        -- 2. Cập nhật giờ ra vào bảng chấm công
+        UPDATE BAN_CHAM_CONG
+        SET GIORA = @TimeVN,
+            TRANGTHAI = N'Hoàn thành'
+        WHERE MANV = @MANV 
+          AND NGAY = @TodayVN 
+          AND GIORA IS NULL;
+
+        -- 3. CẬP NHẬT TRẠNG THÁI NHÂN VIÊN THÀNH ĐANG NGHỈ
+        UPDATE NHAN_VIEN
+        SET TRANGTHAILAMVIEC = N'Đang nghỉ'
+        WHERE MANV = @MANV;
+
+        -- Trả về thành công
+        SET @Result = 1;
+        SET @ErrorDetail = N'Check-out thành công!';
+    END TRY
+    BEGIN CATCH
+        -- Bẫy lỗi hệ thống
+        SET @Result = 0;
+        SET @ErrorDetail = ERROR_MESSAGE();
+    END CATCH
+END
+==================================================
+
+Object: sp_ThucThiTinhLuong
+Definition:
+CREATE PROCEDURE sp_ThucThiTinhLuong
+    @THANG INT,
+    @NAM INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. Lấy tham số cấu hình
+    DECLARE @GiamTruBT DECIMAL(18,2) = ISNULL((SELECT GIATRI FROM CAU_HINH_HE_SO WHERE MATHAMSO = 'GIAM_TRU_BAN_THAN'), 11000000);
+    DECLARE @GiamTruPT DECIMAL(18,2) = ISNULL((SELECT GIATRI FROM CAU_HINH_HE_SO WHERE MATHAMSO = 'GIAM_TRU_PHU_THUOC'), 4400000);
+
+    -- 2. Xóa dữ liệu cũ của tháng đó
+    DELETE FROM BANG_LUONG WHERE THANG = @THANG AND NAM = @NAM;
+
+    -- 3. Thực hiện INSERT
+    INSERT INTO BANG_LUONG (MANV, THANG, NAM, GIOLAMVIEC, PHUCAP, BHXH, THUONG, THUETNCN, THUCLANH)
+    SELECT 
+        nv.MANV,
+        @THANG,
+        @NAM,
+        ISNULL(T1.GioLam, 0),
+        ISNULL(cd.PHUCAPCHUCVU, 0),
+        ISNULL(T2.TienBH, 0),
+        0 AS THUONG, 
+        ISNULL(T3.TienThue, 0),
+        -- THUCLANH = Lương theo giờ + Phụ cấp - Bảo hiểm - Thuế
+        ISNULL((T2.LuongTheoGio + ISNULL(cd.PHUCAPCHUCVU, 0) - T2.TienBH - T3.TienThue), 0)
+    FROM NHAN_VIEN nv
+    -- Dùng LEFT JOIN để không bị mất nhân viên nếu thiếu thông tin lương/chức danh
+    LEFT JOIN THONG_TIN_LUONG ttl ON nv.MANV = ttl.MANV
+    LEFT JOIN CHUC_DANH cd ON nv.MACHUCDANH = cd.MACHUCDANH
+    
+    CROSS APPLY (
+        SELECT dbo.fn_TinhTongGioLamThang(nv.MANV, @THANG, @NAM) AS GioLam
+    ) AS T1
+    
+    CROSS APPLY (
+        SELECT 
+            ((ISNULL(ttl.LUONGTHOATHUAN, 0) / 208.0) * ISNULL(T1.GioLam, 0)) AS LuongTheoGio,
+            dbo.fn_TinhBaoHiem(ISNULL(ttl.LUONGCOBAN_DONGBH, 0)) AS TienBH
+    ) AS T2
+    
+    CROSS APPLY (
+        SELECT 
+            dbo.fn_TinhThueTNCN(
+                T2.LuongTheoGio - T2.TienBH - @GiamTruBT - (ISNULL(ttl.SONGUOIPHUTHUOC, 0) * @GiamTruPT)
+            ) AS TienThue
+    ) AS T3;
+
+    -- Thông báo số lượng dòng đã chèn để bạn dễ theo dõi
+    DECLARE @Count INT = @@ROWCOUNT;
+    PRINT N'Đã tính lương xong cho ' + CAST(@Count AS VARCHAR) + N' nhân viên.';
+END;
+
+==================================================
+
+Object: sp_ChotLuongNhanVienChiDinh
+Definition:
+CREATE   PROCEDURE sp_ChotLuongNhanVienChiDinh
+    @MANV VARCHAR(20),
+    @THUONG DECIMAL(18, 2) = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @THANG INT, @NAM INT;
+    DECLARE @TargetDate DATE = DATEADD(MONTH, -1, GETDATE());
+    SET @THANG = MONTH(@TargetDate);
+    SET @NAM = YEAR(@TargetDate);
+
+    DECLARE @GioTieuChuan FLOAT = 208.0;
+
+    IF NOT EXISTS (SELECT 1 FROM NHAN_VIEN WHERE MANV = @MANV)
+    BEGIN
+        RAISERROR(N'Nhân viên %s không tồn tại!', 16, 1, @MANV);
+        RETURN;
+    END
+
+    DELETE FROM BANG_LUONG WHERE MANV = @MANV AND THANG = @THANG AND NAM = @NAM;
+
+    INSERT INTO BANG_LUONG (
+        MANV, THANG, NAM, GIOLAMVIEC, THUONG, BHXH, PHUCAP, THUCLANH
+    )
+    SELECT 
+        nv.MANV,
+        @THANG,
+        @NAM,
+        T.TongGio,
+        @THUONG AS THUONG,
+        ISNULL(nv.PHIBHXH, 0) AS BHXH,
+        (ISNULL(nv.PHUCAP, 0) + ISNULL(cd.PHUCAPCHUCVU, 0)) AS PHUCAP,
+        
+        -- CÔNG THỨC THỰC LÃNH (Đã sửa lỗi):
+        ROUND(
+            ((nv.LUONG / @GioTieuChuan) * T.TongGio)        -- Lương theo giờ thực tế
+            + (ISNULL(nv.PHUCAP, 0) + ISNULL(cd.PHUCAPCHUCVU, 0)) -- Phụ cấp
+            + @THUONG                                      -- Thưởng nhập tay
+            + (ISNULL(AutoAdj.SoLanTangCa, 0) * (nv.LUONG / @GioTieuChuan * 0.5)) -- Thưởng tăng ca (Hệ số 0.5)
+            - (ISNULL(AutoAdj.SoLanTre, 0) * 50000)        -- Phạt trễ (50k/lần)
+            - ISNULL(nv.PHIBHXH, 0)                        -- Trừ bảo hiểm
+        , 0) AS THUCLANH
+
+    FROM NHAN_VIEN nv
+    LEFT JOIN CHUC_DANH cd ON nv.MACHUCDANH = cd.MACHUCDANH
+    CROSS APPLY (SELECT dbo.fn_TinhSoGioLamViec(nv.MANV, @THANG, @NAM) AS TongGio) AS T
+    -- Ở đây chỉ ĐẾM số lần, không tính tiền trực tiếp để tránh lỗi 8124
+    OUTER APPLY (
+        SELECT 
+            SUM(CASE WHEN TRANGTHAI = N'Trễ' THEN 1 ELSE 0 END) AS SoLanTre,
+            SUM(CASE WHEN TRANGTHAI = N'Tăng ca' THEN 1 ELSE 0 END) AS SoLanTangCa
+        FROM BAN_CHAM_CONG 
+        WHERE MANV = nv.MANV AND MONTH(NGAY) = @THANG AND YEAR(NGAY) = @NAM
+    ) AS AutoAdj
+    WHERE nv.MANV = @MANV AND T.TongGio > 0;
+
+    PRINT N'Thành công: Đã chốt lương cho ' + @MANV;
+END;
+
+==================================================
+
+Object: fn_TinhSoGioLamViec
+Definition:
+CREATE   FUNCTION fn_TinhSoGioLamViec (@MANV VARCHAR(20), @THANG INT, @NAM INT)
+RETURNS FLOAT
+AS
+BEGIN
+    DECLARE @TongGio FLOAT;
+    SELECT @TongGio = SUM(CAST(DATEDIFF(MINUTE, GIOVAO, GIORA) AS FLOAT) / 60.0)
+    FROM BAN_CHAM_CONG
+    WHERE MANV = @MANV 
+      AND MONTH(NGAY) = @THANG 
+      AND YEAR(NGAY) = @NAM
+      AND GIOVAO IS NOT NULL 
+      AND GIORA IS NOT NULL;
+    RETURN ISNULL(@TongGio, 0);
+END;
+
+==================================================
+
+Object: fn_TinhTongGioLamThang
+Definition:
+CREATE FUNCTION fn_TinhTongGioLamThang (
+    @MANV VARCHAR(20),
+    @THANG INT,
+    @NAM INT
+)
+RETURNS FLOAT
+AS
+BEGIN
+    DECLARE @TongGio FLOAT;
+    
+    SELECT @TongGio = SUM(
+        CASE 
+            WHEN DATEDIFF(MINUTE, GIOVAO, GIORA) > 300 -- Nếu làm trên 5 tiếng
+            THEN (DATEDIFF(MINUTE, GIOVAO, GIORA) - 60) / 60.0 -- Trừ 60 phút nghỉ trưa
+            ELSE DATEDIFF(MINUTE, GIOVAO, GIORA) / 60.0
+        END
+    )
+    FROM BAN_CHAM_CONG
+    WHERE MANV = @MANV AND MONTH(NGAY) = @THANG AND YEAR(NGAY) = @NAM;
+
+    RETURN ISNULL(@TongGio, 0);
+END;
+
+==================================================
+
+Object: fn_GetWorkDays
+Definition:
+CREATE FUNCTION fn_GetWorkDays (@MANV VARCHAR(20), @THANG INT, @NAM INT)
+RETURNS FLOAT
+AS
+BEGIN
+    DECLARE @SoNgayCong FLOAT;
+    SELECT @SoNgayCong = COUNT(*) 
+    FROM BAN_CHAM_CONG 
+    WHERE MANV = @MANV 
+      AND MONTH(NGAY) = @THANG 
+      AND YEAR(NGAY) = @NAM
+      AND (TRANGTHAI = N'Đủ công' OR TRANGTHAI = N'Làm nửa ngày'); -- Tùy vào quy định của bạn
+    
+    RETURN ISNULL(@SoNgayCong, 0);
+END
+==================================================
+

@@ -50,4 +50,18 @@ router.get(
   payrollController.getPayrollByMonth,
 );
 
+// Chốt lương tháng
+router.post(
+  "/close/:year/:month",
+  withUserConnection,
+  payrollController.closePayrollForMonth,
+);
+
+// Kiểm tra trạng thái chốt lương
+router.get(
+  "/status/:year/:month",
+  withUserConnection,
+  payrollController.checkIfPayrollClosed,
+);
+
 export default router;

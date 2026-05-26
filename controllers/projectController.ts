@@ -1,4 +1,6 @@
 import projectService from "../services/projectService";
+import { createNotification } from "./notificationController";
+import { emitNotification } from "../server";
 
 const normalizeRole = (role) =>
   String(role || "")
@@ -32,6 +34,20 @@ const projectController = {
         requesterMaNv,
         req.body,
       );
+      
+      try {
+        const notif = await createNotification(
+          req.body.manv || requesterMaNv, // Nếu payload có manv thì giao cho manv đó, nếu không thì tự nhận
+          "Nhiệm vụ mới",
+          `Bạn vừa được giao một nhiệm vụ mới: ${req.body.tennhiemvu}`,
+          "task_assign",
+          `/projects/${maDa}`
+        );
+        if (notif) emitNotification(req.body.manv || requesterMaNv, notif);
+      } catch (e) {
+        console.error("Notif task error", e);
+      }
+      
       return res.status(201).json(result);
     } catch (error) {
       return res.status(400).json({ success: false, message: error.message });
@@ -149,6 +165,20 @@ const projectController = {
         manv,
         vaitroduan,
       );
+      
+      try {
+        const notif = await createNotification(
+          manv,
+          "Dự án mới",
+          `Bạn đã được thêm vào dự án với vai trò: ${vaitroduan}`,
+          "project_assign",
+          `/projects/${maDa}`
+        );
+        if (notif) emitNotification(manv, notif);
+      } catch (e) {
+        console.error("Notif project error", e);
+      }
+
       return res.status(201).json(result);
     } catch (error) {
       return res.status(400).json({ success: false, message: error.message });

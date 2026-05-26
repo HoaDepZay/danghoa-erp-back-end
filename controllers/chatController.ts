@@ -5,8 +5,11 @@ const chatController = {
     try {
       const requesterMaNv = req.user?.userInfo?.manv;
       const result = await chatService.listMyRooms(requesterMaNv);
+      console.log("DEBUG getMyRooms returned:", result.data?.length, "rooms for", requesterMaNv);
+      if (result.data?.length > 0) console.log("DEBUG first room:", result.data[0]);
       return res.status(200).json(result);
     } catch (error) {
+      console.error("DEBUG getMyRooms error:", error.message);
       return res.status(400).json({ success: false, message: error.message });
     }
   },

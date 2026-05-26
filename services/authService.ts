@@ -3,6 +3,7 @@ import crypto from "crypto";
 import sql from "mssql"; // Cần mssql để thử kết nối lúc Login
 import { appPool } from "../config/db";
 import userRepository from "../repositories/userRepository";
+import employeeRepository from "../repositories/employeeRepository";
 import { sendForgotPasswordOTPMail, sendOTPMail } from "../utils/mailHelper";
 import {
   createAccessPayload,
@@ -613,14 +614,8 @@ const authService = {
       let manv = "";
       for (let i = 0; i < 10; i++) {
         const candidate = generateEmployeeId();
-        const existed = await appPool
-          .request()
-          .input("MaNV", sql.NVarChar(10), candidate)
-          .query(
-            "SELECT TOP 1 1 AS ExistsFlag FROM NHAN_VIEN WHERE MANV = @MaNV",
-          );
-
-        if (existed.recordset.length === 0) {
+        const existed = await employeeRepository.getEmployeeById(candidate);
+        if (!existed) {
           manv = candidate;
           break;
         }
@@ -630,25 +625,24 @@ const authService = {
         throw new Error("Không thể tạo mã nhân viên mới, vui lòng thử lại!");
       }
 
-      const request = appPool.request();
-      const gioiTinhValue = normalizeGenderToTinyInt(data.gioitinh);
+      const employeeData = {
+        manv,
+        hoten: data.hoten,
+        email: email,
+        chucvu: data.chucvu || "Nhân viên",
+        luong: data.luong ? parseFloat(data.luong) : 0,
+        maphg: data.maphg || null,
+        ngaysinh: data.ngaysinh || null,
+        gioitinh: data.gioitinh || null,
+        diachinhan: data.diachinhan || null,
+        ngayvaolam: new Date(),
+      };
 
-      await request
-        .input("MaNV", sql.NVarChar(10), manv)
-        .input("HoTen", sql.NVarChar(200), data.hoten)
-        .input("Email", sql.NVarChar(100), email)
-        .input("ChucVu", sql.NVarChar(100), data.chucvu || "Nhân viên")
-        .input("Luong", sql.Decimal(18, 2), data.luong ?? 0)
-        .input("MaPhg", sql.Int, data.maphg ?? null)
-        .input("NgaySinh", sql.Date, data.ngaysinh || null)
-        .input("GioiTinh", sql.TinyInt, gioiTinhValue)
-        .input("DiaChiNhan", sql.NVarChar(255), data.diachinhan || null)
-        .input("SDT", sql.NVarChar(15), data.sdt || null).query(`
-          INSERT INTO NHAN_VIEN
-            (MANV, HOTEN, EMAIL, CHUCVU, LUONG, MAPHG, NgaySinh, GioiTinh, DiaChi, SDT, NgayTuyenDung, IsVerified)
-          VALUES
-            (@MaNV, @HoTen, @Email, @ChucVu, @Luong, @MaPhg, @NgaySinh, @GioiTinh, @DiaChiNhan, @SDT, GETDATE(), 1)
-        `);
+      await employeeRepository.createEmployee(employeeData);
+
+      if (data.sdt) {
+        await employeeRepository.updateProfile(email, { sdt: data.sdt });
+      }
 
       console.log("✅ Created profile for manual SQL user:", email, "=>", manv);
       return {
@@ -664,45 +658,8 @@ const authService = {
 
     // 3. Cập nhật vào DB
     try {
-      const request = appPool.request();
-      let updateFields = [];
-
-      for (let key in updateData) {
-        if (updateData[key] !== undefined) {
-          if (key === "hoten") updateFields.push("HOTEN = @HoTen");
-          if (key === "ngaysinh") updateFields.push("NgaySinh = @NgaySinh");
-          if (key === "gioitinh") updateFields.push("GioiTinh = @GioiTinh");
-          if (key === "diachinhan") updateFields.push("DiaChi = @DiaChiNhan");
-          if (key === "sdt") updateFields.push("SDT = @SDT");
-
-          if (key === "hoten") {
-            request.input("HoTen", sql.NVarChar, updateData[key]);
-          }
-
-          if (key === "ngaysinh") {
-            request.input("NgaySinh", sql.Date, updateData[key]);
-          }
-
-          if (key === "gioitinh") {
-            const gioiTinhValue = normalizeGenderToTinyInt(updateData[key]);
-            request.input("GioiTinh", sql.TinyInt, gioiTinhValue);
-          }
-
-          if (key === "diachinhan") {
-            request.input("DiaChiNhan", sql.NVarChar, updateData[key]);
-          }
-
-          if (key === "sdt") {
-            request.input("SDT", sql.NVarChar, updateData[key]);
-          }
-        }
-      }
-
-      request.input("Email", sql.NVarChar, email);
-      const query = `UPDATE NHAN_VIEN SET ${updateFields.join(", ")} WHERE EMAIL = @Email`;
-
-      await request.query(query);
-    } catch (err) {
+      await employeeRepository.updateProfile(email, updateData);
+    } catch (err: any) {
       throw new Error("Lỗi cập nhật profile: " + err.message);
     }
 

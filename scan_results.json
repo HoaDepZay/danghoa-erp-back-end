@@ -1,0 +1,1862 @@
+[
+  {
+    "file": "check_sp_outputs.ts",
+    "line": 9,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", \"NV001\") // dummy or existing"
+  },
+  {
+    "file": "check_sp_outputs.ts",
+    "line": 15,
+    "prop": "MaPhong",
+    "content": ".input(\"MaPhong\", 1) // dummy or existing"
+  },
+  {
+    "file": "controllers\\payrollController.ts",
+    "line": 6,
+    "prop": "MaNV",
+    "content": "const maNv = req.body?.maNV || req.body?.MaNV || req.body?.manv;"
+  },
+  {
+    "file": "controllers\\payrollController.ts",
+    "line": 33,
+    "prop": "MaNV",
+    "content": "const maNv = req.body?.maNV || req.body?.MaNV || req.body?.manv;"
+  },
+  {
+    "file": "middleware\\authorizationMiddleware.ts",
+    "line": 41,
+    "prop": "MaNV",
+    "content": "* Middleware kiểm tra MaNV trong request body có trùng với token hay không"
+  },
+  {
+    "file": "middleware\\authorizationMiddleware.ts",
+    "line": 57,
+    "prop": "MaNV",
+    "content": "`🔐 MaNV Ownership Check - Token MaNV: ${tokenMaNV}, Request MaNV: ${bodyMaNV}, isAdmin: ${isAdmin}`,"
+  },
+  {
+    "file": "middleware\\authorizationMiddleware.ts",
+    "line": 109,
+    "prop": "MaNV",
+    "content": "* Middleware kiểm tra MaNV trong params có trùng với token hay không"
+  },
+  {
+    "file": "middleware\\authorizationMiddleware.ts",
+    "line": 141,
+    "prop": "MaNV",
+    "content": "* Middleware kiểm tra quyền truy cập theo MaNV trên params"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 19,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNv)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 28,
+    "prop": "MaPhong",
+    "content": ".input(\"MaPhong\", sql.Int, maPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 29,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNv)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 38,
+    "prop": "MaPhong",
+    "content": ".input(\"MaPhong\", sql.Int, maPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 48,
+    "prop": "MaPhong",
+    "content": ".input(\"MaPhong\", sql.Int, maPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 56,
+    "prop": "MaPhong",
+    "content": "const result = await appPool.request().input(\"MaPhong\", sql.Int, maPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 58,
+    "prop": "MaPhong",
+    "content": "SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 58,
+    "prop": "MaTN",
+    "content": "SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 58,
+    "prop": "NoiDung",
+    "content": "SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 58,
+    "prop": "ThoiGianGui",
+    "content": "SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 58,
+    "prop": "MaNV_Gui",
+    "content": "SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 59,
+    "prop": "MaPhong",
+    "content": "FROM dbo.fn_LayTinNhanMoiNhat(@MaPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 68,
+    "prop": "MaPhong",
+    "content": ".input(\"MaPhong\", sql.Int, maPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 70,
+    "prop": "MaPhong",
+    "content": "SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 70,
+    "prop": "MaTN",
+    "content": "SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 70,
+    "prop": "NoiDung",
+    "content": "SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 70,
+    "prop": "ThoiGianGui",
+    "content": "SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 70,
+    "prop": "MaNV_Gui",
+    "content": "SELECT MaTN, MaPhong, MaNV_Gui, NoiDung, ThoiGianGui"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 71,
+    "prop": "MaPhong",
+    "content": "FROM dbo.fn_TimKiemTinNhan(@MaPhong, @TuKhoa)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 72,
+    "prop": "ThoiGianGui",
+    "content": "ORDER BY ThoiGianGui DESC"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 81,
+    "prop": "MaPhong",
+    "content": ".input(\"MaPhong\", sql.Int, maPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 82,
+    "prop": "MaNV_Gui",
+    "content": ".input(\"MaNV_Gui\", sql.VarChar(20), maNvGui)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 83,
+    "prop": "NoiDung",
+    "content": ".input(\"NoiDung\", sql.NVarChar(sql.MAX), noiDung)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 90,
+    "prop": "MaPhong",
+    "content": "const result = await appPool.request().input(\"MaPhong\", sql.Int, maPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 93,
+    "prop": "MaNV",
+    "content": "tvp.MaNV,"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 96,
+    "prop": "VaiTro",
+    "content": "tvp.VaiTro,"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 97,
+    "prop": "NgayThamGia",
+    "content": "tvp.NgayThamGia"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 99,
+    "prop": "MaNV",
+    "content": "LEFT JOIN NHAN_VIEN nv ON nv.MANV = tvp.MaNV"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 100,
+    "prop": "MaPhong",
+    "content": "WHERE tvp.MaPhong = @MaPhong"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 101,
+    "prop": "NgayThamGia",
+    "content": "ORDER BY tvp.NgayThamGia ASC"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 112,
+    "prop": "LoaiPhong",
+    "content": ".input(\"LoaiPhong\", sql.TinyInt, ROOM_TYPE.DIRECT).query(`"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 113,
+    "prop": "MaPhong",
+    "content": "SELECT TOP 1 pc.MaPhong, pc.TenPhong, pc.LoaiPhong, pc.MaThamChieu, pc.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 113,
+    "prop": "LoaiPhong",
+    "content": "SELECT TOP 1 pc.MaPhong, pc.TenPhong, pc.LoaiPhong, pc.MaThamChieu, pc.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 113,
+    "prop": "TenPhong",
+    "content": "SELECT TOP 1 pc.MaPhong, pc.TenPhong, pc.LoaiPhong, pc.MaThamChieu, pc.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 113,
+    "prop": "MaThamChieu",
+    "content": "SELECT TOP 1 pc.MaPhong, pc.TenPhong, pc.LoaiPhong, pc.MaThamChieu, pc.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 113,
+    "prop": "NgayTao",
+    "content": "SELECT TOP 1 pc.MaPhong, pc.TenPhong, pc.LoaiPhong, pc.MaThamChieu, pc.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 115,
+    "prop": "LoaiPhong",
+    "content": "WHERE pc.LoaiPhong = @LoaiPhong"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 118,
+    "prop": "MaNV",
+    "content": "WHERE tv1.MaPhong = pc.MaPhong AND tv1.MaNV = @MaNVA"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 118,
+    "prop": "MaPhong",
+    "content": "WHERE tv1.MaPhong = pc.MaPhong AND tv1.MaNV = @MaNVA"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 122,
+    "prop": "MaNV",
+    "content": "WHERE tv2.MaPhong = pc.MaPhong AND tv2.MaNV = @MaNVB"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 122,
+    "prop": "MaPhong",
+    "content": "WHERE tv2.MaPhong = pc.MaPhong AND tv2.MaNV = @MaNVB"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 126,
+    "prop": "MaPhong",
+    "content": "WHERE tv3.MaPhong = pc.MaPhong"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 141,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNvA)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 142,
+    "prop": "MaNV",
+    "content": ".query(`SELECT HOTEN FROM NHAN_VIEN WHERE MANV = @MaNV`);"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 146,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNvB)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 147,
+    "prop": "MaNV",
+    "content": ".query(`SELECT HOTEN FROM NHAN_VIEN WHERE MANV = @MaNV`);"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 155,
+    "prop": "TenPhong",
+    "content": ".input(\"TenPhong\", sql.NVarChar(255), tenPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 156,
+    "prop": "LoaiPhong",
+    "content": ".input(\"LoaiPhong\", sql.TinyInt, ROOM_TYPE.DIRECT)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 157,
+    "prop": "MaThamChieu",
+    "content": ".input(\"MaThamChieu\", sql.VarChar(50), maThamChieu).query(`"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 158,
+    "prop": "LoaiPhong",
+    "content": "INSERT INTO PHONG_CHAT (TenPhong, LoaiPhong, MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 158,
+    "prop": "TenPhong",
+    "content": "INSERT INTO PHONG_CHAT (TenPhong, LoaiPhong, MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 158,
+    "prop": "MaThamChieu",
+    "content": "INSERT INTO PHONG_CHAT (TenPhong, LoaiPhong, MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 159,
+    "prop": "MaPhong",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 159,
+    "prop": "LoaiPhong",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 159,
+    "prop": "TenPhong",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 159,
+    "prop": "MaThamChieu",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 159,
+    "prop": "NgayTao",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 160,
+    "prop": "LoaiPhong",
+    "content": "VALUES (@TenPhong, @LoaiPhong, @MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 160,
+    "prop": "TenPhong",
+    "content": "VALUES (@TenPhong, @LoaiPhong, @MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 160,
+    "prop": "MaThamChieu",
+    "content": "VALUES (@TenPhong, @LoaiPhong, @MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 166,
+    "prop": "MaPhong",
+    "content": ".input(\"MaPhong\", sql.Int, room.MaPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 167,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNvA).query(`"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 168,
+    "prop": "MaNV",
+    "content": "INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 168,
+    "prop": "MaPhong",
+    "content": "INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 168,
+    "prop": "VaiTro",
+    "content": "INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 169,
+    "prop": "MaNV",
+    "content": "VALUES (@MaPhong, @MaNV, N'Thành viên')"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 169,
+    "prop": "MaPhong",
+    "content": "VALUES (@MaPhong, @MaNV, N'Thành viên')"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 173,
+    "prop": "MaPhong",
+    "content": ".input(\"MaPhong\", sql.Int, room.MaPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 174,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNvB).query(`"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 175,
+    "prop": "MaNV",
+    "content": "INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 175,
+    "prop": "MaPhong",
+    "content": "INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 175,
+    "prop": "VaiTro",
+    "content": "INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 176,
+    "prop": "MaNV",
+    "content": "VALUES (@MaPhong, @MaNV, N'Thành viên')"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 176,
+    "prop": "MaPhong",
+    "content": "VALUES (@MaPhong, @MaNV, N'Thành viên')"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 190,
+    "prop": "LoaiPhong",
+    "content": ".input(\"LoaiPhong\", sql.TinyInt, roomType)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 191,
+    "prop": "MaThamChieu",
+    "content": ".input(\"MaThamChieu\", sql.VarChar(50), String(maThamChieu)).query(`"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 192,
+    "prop": "MaPhong",
+    "content": "SELECT TOP 1 MaPhong, TenPhong, LoaiPhong, MaThamChieu, NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 192,
+    "prop": "LoaiPhong",
+    "content": "SELECT TOP 1 MaPhong, TenPhong, LoaiPhong, MaThamChieu, NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 192,
+    "prop": "TenPhong",
+    "content": "SELECT TOP 1 MaPhong, TenPhong, LoaiPhong, MaThamChieu, NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 192,
+    "prop": "MaThamChieu",
+    "content": "SELECT TOP 1 MaPhong, TenPhong, LoaiPhong, MaThamChieu, NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 192,
+    "prop": "NgayTao",
+    "content": "SELECT TOP 1 MaPhong, TenPhong, LoaiPhong, MaThamChieu, NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 194,
+    "prop": "LoaiPhong",
+    "content": "WHERE LoaiPhong = @LoaiPhong AND MaThamChieu = @MaThamChieu"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 194,
+    "prop": "MaThamChieu",
+    "content": "WHERE LoaiPhong = @LoaiPhong AND MaThamChieu = @MaThamChieu"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 203,
+    "prop": "TenPhong",
+    "content": ".input(\"TenPhong\", sql.NVarChar(255), tenPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 204,
+    "prop": "LoaiPhong",
+    "content": ".input(\"LoaiPhong\", sql.TinyInt, roomType)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 205,
+    "prop": "MaThamChieu",
+    "content": ".input(\"MaThamChieu\", sql.VarChar(50), String(maThamChieu)).query(`"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 206,
+    "prop": "LoaiPhong",
+    "content": "INSERT INTO PHONG_CHAT (TenPhong, LoaiPhong, MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 206,
+    "prop": "TenPhong",
+    "content": "INSERT INTO PHONG_CHAT (TenPhong, LoaiPhong, MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 206,
+    "prop": "MaThamChieu",
+    "content": "INSERT INTO PHONG_CHAT (TenPhong, LoaiPhong, MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 207,
+    "prop": "MaPhong",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 207,
+    "prop": "LoaiPhong",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 207,
+    "prop": "TenPhong",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 207,
+    "prop": "MaThamChieu",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 207,
+    "prop": "NgayTao",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 208,
+    "prop": "LoaiPhong",
+    "content": "VALUES (@TenPhong, @LoaiPhong, @MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 208,
+    "prop": "TenPhong",
+    "content": "VALUES (@TenPhong, @LoaiPhong, @MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 208,
+    "prop": "MaThamChieu",
+    "content": "VALUES (@TenPhong, @LoaiPhong, @MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 217,
+    "prop": "MaPhong",
+    "content": ".input(\"MaPhong\", sql.Int, maPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 218,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNv)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 219,
+    "prop": "VaiTro",
+    "content": ".input(\"VaiTro\", sql.NVarChar(50), vaiTro).query(`"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 221,
+    "prop": "MaNV",
+    "content": "SELECT 1 FROM THANH_VIEN_PHONG WHERE MaPhong = @MaPhong AND MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 221,
+    "prop": "MaPhong",
+    "content": "SELECT 1 FROM THANH_VIEN_PHONG WHERE MaPhong = @MaPhong AND MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 224,
+    "prop": "MaNV",
+    "content": "INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 224,
+    "prop": "MaPhong",
+    "content": "INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 224,
+    "prop": "VaiTro",
+    "content": "INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 225,
+    "prop": "MaNV",
+    "content": "VALUES (@MaPhong, @MaNV, @VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 225,
+    "prop": "MaPhong",
+    "content": "VALUES (@MaPhong, @MaNV, @VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 225,
+    "prop": "VaiTro",
+    "content": "VALUES (@MaPhong, @MaNV, @VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 233,
+    "prop": "MaPhong",
+    "content": ".input(\"MaPhong\", sql.Int, maPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 234,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNv).query(`"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 236,
+    "prop": "MaNV",
+    "content": "WHERE MaPhong = @MaPhong AND MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 236,
+    "prop": "MaPhong",
+    "content": "WHERE MaPhong = @MaPhong AND MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 253,
+    "prop": "MaNV",
+    "content": "SELECT MaNV"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 258,
+    "prop": "MaNV",
+    "content": "return result.recordset.map((r) => r.MaNV);"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 290,
+    "prop": "TenPhong",
+    "content": ".input(\"TenPhong\", sql.NVarChar(255), tenPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 291,
+    "prop": "LoaiPhong",
+    "content": ".input(\"LoaiPhong\", sql.TinyInt, ROOM_TYPE.GROUP)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 292,
+    "prop": "MaThamChieu",
+    "content": ".input(\"MaThamChieu\", sql.VarChar(50), maThamChieu).query(`"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 293,
+    "prop": "LoaiPhong",
+    "content": "INSERT INTO PHONG_CHAT (TenPhong, LoaiPhong, MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 293,
+    "prop": "TenPhong",
+    "content": "INSERT INTO PHONG_CHAT (TenPhong, LoaiPhong, MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 293,
+    "prop": "MaThamChieu",
+    "content": "INSERT INTO PHONG_CHAT (TenPhong, LoaiPhong, MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 294,
+    "prop": "MaPhong",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 294,
+    "prop": "LoaiPhong",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 294,
+    "prop": "TenPhong",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 294,
+    "prop": "MaThamChieu",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 294,
+    "prop": "NgayTao",
+    "content": "OUTPUT INSERTED.MaPhong, INSERTED.TenPhong, INSERTED.LoaiPhong, INSERTED.MaThamChieu, INSERTED.NgayTao"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 295,
+    "prop": "LoaiPhong",
+    "content": "VALUES (@TenPhong, @LoaiPhong, @MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 295,
+    "prop": "TenPhong",
+    "content": "VALUES (@TenPhong, @LoaiPhong, @MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 295,
+    "prop": "MaThamChieu",
+    "content": "VALUES (@TenPhong, @LoaiPhong, @MaThamChieu)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 306,
+    "prop": "MaPhong",
+    "content": ".input(\"MaPhong\", sql.Int, room.MaPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 307,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNv)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 309,
+    "prop": "VaiTro",
+    "content": "\"VaiTro\","
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 314,
+    "prop": "MaNV",
+    "content": "SELECT 1 FROM THANH_VIEN_PHONG WHERE MaPhong = @MaPhong AND MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 314,
+    "prop": "MaPhong",
+    "content": "SELECT 1 FROM THANH_VIEN_PHONG WHERE MaPhong = @MaPhong AND MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 317,
+    "prop": "MaNV",
+    "content": "INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 317,
+    "prop": "MaPhong",
+    "content": "INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 317,
+    "prop": "VaiTro",
+    "content": "INSERT INTO THANH_VIEN_PHONG (MaPhong, MaNV, VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 318,
+    "prop": "MaNV",
+    "content": "VALUES (@MaPhong, @MaNV, @VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 318,
+    "prop": "MaPhong",
+    "content": "VALUES (@MaPhong, @MaNV, @VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 318,
+    "prop": "VaiTro",
+    "content": "VALUES (@MaPhong, @MaNV, @VaiTro)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 334,
+    "prop": "MaPhong",
+    "content": ".input(\"MaPhong\", sql.Int, maPhong)"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 335,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNv).query(`"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 336,
+    "prop": "VaiTro",
+    "content": "SELECT TOP 1 VaiTro"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 338,
+    "prop": "MaNV",
+    "content": "WHERE MaPhong = @MaPhong AND MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 338,
+    "prop": "MaPhong",
+    "content": "WHERE MaPhong = @MaPhong AND MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\chatRepository.ts",
+    "line": 341,
+    "prop": "VaiTro",
+    "content": "return result.recordset[0]?.VaiTro || null;"
+  },
+  {
+    "file": "repositories\\departmentRepository.ts",
+    "line": 98,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNv)"
+  },
+  {
+    "file": "repositories\\departmentRepository.ts",
+    "line": 109,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNv)"
+  },
+  {
+    "file": "repositories\\departmentRepository.ts",
+    "line": 137,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), maNv)"
+  },
+  {
+    "file": "repositories\\employeeRepository.ts",
+    "line": 32,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.NVarChar, manv)"
+  },
+  {
+    "file": "repositories\\employeeRepository.ts",
+    "line": 41,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.NVarChar, data.manv)"
+  },
+  {
+    "file": "repositories\\employeeRepository.ts",
+    "line": 57,
+    "prop": "MaNV",
+    "content": "request.input(\"MaNV\", sql.NVarChar, manv);"
+  },
+  {
+    "file": "repositories\\employeeRepository.ts",
+    "line": 93,
+    "prop": "MaNV",
+    "content": "await new sql.Request(transaction).input(\"MaNV\", sql.NVarChar, manv)"
+  },
+  {
+    "file": "repositories\\employeeRepository.ts",
+    "line": 96,
+    "prop": "MaNV",
+    "content": "WHERE MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\employeeRepository.ts",
+    "line": 100,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.NVarChar, manv)"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 7,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar, maNv)"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 22,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar, maNv)"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 39,
+    "prop": "MaNV",
+    "content": "bc.MaNV,"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 48,
+    "prop": "MaNV",
+    "content": "LEFT JOIN NHAN_VIEN nv ON nv.MANV = bc.MaNV"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 50,
+    "prop": "MaNV",
+    "content": "ORDER BY bc.MaNV"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 60,
+    "prop": "MaNV",
+    "content": "bc.MaNV,"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 69,
+    "prop": "MaNV",
+    "content": "LEFT JOIN NHAN_VIEN nv ON nv.MANV = bc.MaNV"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 70,
+    "prop": "MaNV",
+    "content": "WHERE bc.MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 74,
+    "prop": "MaNV",
+    "content": "request.input(\"MaNV\", sql.VarChar, maNv);"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 99,
+    "prop": "MaNV",
+    "content": "bl.MaNV,"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 104,
+    "prop": "PhuCap",
+    "content": "bl.PhuCap,"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 110,
+    "prop": "MaNV",
+    "content": "LEFT JOIN NHAN_VIEN nv ON nv.MANV = bl.MaNV"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 113,
+    "prop": "MaNV",
+    "content": "ORDER BY bl.MaNV"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 122,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar, maNv)"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 126,
+    "prop": "MaNV",
+    "content": "bl.MaNV,"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 131,
+    "prop": "PhuCap",
+    "content": "bl.PhuCap,"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 137,
+    "prop": "MaNV",
+    "content": "LEFT JOIN NHAN_VIEN nv ON nv.MANV = bl.MaNV"
+  },
+  {
+    "file": "repositories\\payrollRepository.ts",
+    "line": 138,
+    "prop": "MaNV",
+    "content": "WHERE bl.MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 8,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar, maNv).query(`"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 11,
+    "prop": "MaNV",
+    "content": "WHERE MaDA = @MaDA AND MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 21,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar, maNv).query(`"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 22,
+    "prop": "VaiTroDuAn",
+    "content": "SELECT TOP 1 VaiTroDuAn"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 24,
+    "prop": "MaNV",
+    "content": "WHERE MaDA = @MaDA AND MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 27,
+    "prop": "VaiTroDuAn",
+    "content": "return result.recordset[0]?.VaiTroDuAn || null;"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 34,
+    "prop": "MaNVDA",
+    "content": "nvda.MaNVDA,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 36,
+    "prop": "MaNV",
+    "content": "nvda.MaNV,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 38,
+    "prop": "TenNhiemVu",
+    "content": "nvda.TenNhiemVu,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 42,
+    "prop": "DoUuTien",
+    "content": "nvda.DoUuTien,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 44,
+    "prop": "PhanTramHoanThanh",
+    "content": "nvda.PhanTramHoanThanh,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 45,
+    "prop": "GhiChuSauHoanThanh",
+    "content": "nvda.GhiChuSauHoanThanh,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 48,
+    "prop": "MaNV",
+    "content": "LEFT JOIN NHAN_VIEN nv ON nv.MANV = nvda.MaNV"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 50,
+    "prop": "MaNVDA",
+    "content": "ORDER BY nvda.CreatedAt DESC, nvda.MaNVDA DESC"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 60,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar(20), data.manv)"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 61,
+    "prop": "TenNhiemVu",
+    "content": ".input(\"TenNhiemVu\", sql.NVarChar(255), data.tennhiemvu)"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 65,
+    "prop": "DoUuTien",
+    "content": ".input(\"DoUuTien\", sql.NVarChar(20), data.douutien ?? null)"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 67,
+    "prop": "PhanTramHoanThanh",
+    "content": ".input(\"PhanTramHoanThanh\", sql.Int, data.phantramhoanthanh ?? 0)"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 69,
+    "prop": "GhiChuSauHoanThanh",
+    "content": "\"GhiChuSauHoanThanh\","
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 76,
+    "prop": "MaNV",
+    "content": "MaNV,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 77,
+    "prop": "TenNhiemVu",
+    "content": "TenNhiemVu,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 81,
+    "prop": "DoUuTien",
+    "content": "DoUuTien,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 83,
+    "prop": "PhanTramHoanThanh",
+    "content": "PhanTramHoanThanh,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 84,
+    "prop": "GhiChuSauHoanThanh",
+    "content": "GhiChuSauHoanThanh"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 90,
+    "prop": "MaNV",
+    "content": "@MaNV,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 91,
+    "prop": "TenNhiemVu",
+    "content": "@TenNhiemVu,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 95,
+    "prop": "DoUuTien",
+    "content": "@DoUuTien,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 97,
+    "prop": "PhanTramHoanThanh",
+    "content": "@PhanTramHoanThanh,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 98,
+    "prop": "GhiChuSauHoanThanh",
+    "content": "@GhiChuSauHoanThanh"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 109,
+    "prop": "MaNVDA",
+    "content": ".input(\"MaNVDA\", sql.Int, maNvDa).query(`"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 112,
+    "prop": "MaNVDA",
+    "content": "WHERE MaDA = @MaDA AND MaNVDA = @MaNVDA"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 123,
+    "prop": "MaNV",
+    "content": "updateFields.push(\"MaNV = @MaNV\");"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 124,
+    "prop": "MaNV",
+    "content": "request.input(\"MaNV\", sql.VarChar(20), data.manv);"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 127,
+    "prop": "TenNhiemVu",
+    "content": "updateFields.push(\"TenNhiemVu = @TenNhiemVu\");"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 128,
+    "prop": "TenNhiemVu",
+    "content": "request.input(\"TenNhiemVu\", sql.NVarChar(255), data.tennhiemvu);"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 143,
+    "prop": "DoUuTien",
+    "content": "updateFields.push(\"DoUuTien = @DoUuTien\");"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 144,
+    "prop": "DoUuTien",
+    "content": "request.input(\"DoUuTien\", sql.NVarChar(20), data.douutien);"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 151,
+    "prop": "PhanTramHoanThanh",
+    "content": "updateFields.push(\"PhanTramHoanThanh = @PhanTramHoanThanh\");"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 152,
+    "prop": "PhanTramHoanThanh",
+    "content": "request.input(\"PhanTramHoanThanh\", sql.Int, data.phantramhoanthanh);"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 155,
+    "prop": "GhiChuSauHoanThanh",
+    "content": "updateFields.push(\"GhiChuSauHoanThanh = @GhiChuSauHoanThanh\");"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 157,
+    "prop": "GhiChuSauHoanThanh",
+    "content": "\"GhiChuSauHoanThanh\","
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 168,
+    "prop": "MaNVDA",
+    "content": "request.input(\"MaNVDA\", sql.Int, maNvDa);"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 174,
+    "prop": "MaNVDA",
+    "content": "WHERE MaDA = @MaDA AND MaNVDA = @MaNVDA"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 206,
+    "prop": "MaNV",
+    "content": "SELECT pc.MaNV, nv.HOTEN, nv.EMAIL, nv.CHUCVU, pc.VaiTroDuAn, pc.NgayThamGia"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 206,
+    "prop": "NgayThamGia",
+    "content": "SELECT pc.MaNV, nv.HOTEN, nv.EMAIL, nv.CHUCVU, pc.VaiTroDuAn, pc.NgayThamGia"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 206,
+    "prop": "VaiTroDuAn",
+    "content": "SELECT pc.MaNV, nv.HOTEN, nv.EMAIL, nv.CHUCVU, pc.VaiTroDuAn, pc.NgayThamGia"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 208,
+    "prop": "MaNV",
+    "content": "JOIN NHAN_VIEN nv ON pc.MaNV = nv.MANV"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 217,
+    "prop": "MaNV",
+    "content": "const result = await request.input(\"MaNV\", sql.VarChar, maNv).query(`"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 218,
+    "prop": "NgayThamGia",
+    "content": "SELECT da.MADA, da.TENDA, da.TrangThai, pc.VaiTroDuAn, pc.NgayThamGia"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 218,
+    "prop": "VaiTroDuAn",
+    "content": "SELECT da.MADA, da.TENDA, da.TrangThai, pc.VaiTroDuAn, pc.NgayThamGia"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 221,
+    "prop": "MaNV",
+    "content": "WHERE pc.MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 229,
+    "prop": "MaNV",
+    "content": "const result = await request.input(\"MaNV\", sql.VarChar, maNv).query(`"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 237,
+    "prop": "MaNV",
+    "content": "mem.MaNV AS MemberMaNV,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 241,
+    "prop": "VaiTroDuAn",
+    "content": "mem.VaiTroDuAn AS MemberVaiTroDuAn,"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 242,
+    "prop": "NgayThamGia",
+    "content": "mem.NgayThamGia AS MemberNgayThamGia"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 246,
+    "prop": "MaNV",
+    "content": "AND selfPc.MaNV = @MaNV"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 250,
+    "prop": "MaNV",
+    "content": "ON nv.MANV = mem.MaNV"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 251,
+    "prop": "NgayThamGia",
+    "content": "ORDER BY da.MADA DESC, mem.NgayThamGia ASC"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 337,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar, maNv)"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 338,
+    "prop": "VaiTroDuAn",
+    "content": ".input(\"VaiTroDuAn\", sql.NVarChar, vaiTroDuAn).query(`"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 339,
+    "prop": "MaNV",
+    "content": "INSERT INTO PHAN_CONG_DU_AN (MaDA, MaNV, VaiTroDuAn, NgayThamGia)"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 339,
+    "prop": "NgayThamGia",
+    "content": "INSERT INTO PHAN_CONG_DU_AN (MaDA, MaNV, VaiTroDuAn, NgayThamGia)"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 339,
+    "prop": "VaiTroDuAn",
+    "content": "INSERT INTO PHAN_CONG_DU_AN (MaDA, MaNV, VaiTroDuAn, NgayThamGia)"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 340,
+    "prop": "MaNV",
+    "content": "VALUES (@MaDA, @MaNV, @VaiTroDuAn, GETDATE())"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 340,
+    "prop": "VaiTroDuAn",
+    "content": "VALUES (@MaDA, @MaNV, @VaiTroDuAn, GETDATE())"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 353,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.VarChar, maNv).query(`"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 357,
+    "prop": "MaNV",
+    "content": "WHERE MaDA = @MaDA AND MaNV = @MaNV;"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 363,
+    "prop": "MaNV",
+    "content": "WHERE MaDA = @MaDA AND MaNV = @MaNV;"
+  },
+  {
+    "file": "repositories\\projectRepository.ts",
+    "line": 367,
+    "prop": "MaNV",
+    "content": "WHERE MaDA = @MaDA AND MaNV = @MaNV;"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 49,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.NVarChar(10), data.manv)"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 72,
+    "prop": "RegistrationStatus",
+    "content": "SET RegistrationStatus = '${REGISTRATION_STATUS.OTP_VERIFIED}',"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 79,
+    "prop": "RegistrationStatus",
+    "content": "AND RegistrationStatus = '${REGISTRATION_STATUS.PENDING_OTP}';"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 251,
+    "prop": "PasswordMaHoa",
+    "content": "`SELECT TOP 1 MaNV, Email, PasswordMaHoa, HoTen, MaPhg, Luong, ChucVu, OtpCode, ExpiredAt"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 251,
+    "prop": "MaNV",
+    "content": "`SELECT TOP 1 MaNV, Email, PasswordMaHoa, HoTen, MaPhg, Luong, ChucVu, OtpCode, ExpiredAt"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 256,
+    "prop": "RegistrationStatus",
+    "content": "AND RegistrationStatus = '${REGISTRATION_STATUS.PENDING_OTP}'`,"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 265,
+    "prop": "RegistrationStatus",
+    "content": "SET RegistrationStatus = '${REGISTRATION_STATUS.EXPIRED}'"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 267,
+    "prop": "RegistrationStatus",
+    "content": "AND RegistrationStatus = '${REGISTRATION_STATUS.PENDING_OTP}'"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 275,
+    "prop": "RegistrationStatus",
+    "content": "SELECT TOP 1 Email, RegistrationStatus, ExpiredAt, RejectReason"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 275,
+    "prop": "RejectReason",
+    "content": "SELECT TOP 1 Email, RegistrationStatus, ExpiredAt, RejectReason"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 285,
+    "prop": "RegistrationStatus",
+    "content": "SELECT Email, MaNV, HoTen, MaPhg, Luong, ChucVu, CreatedAt, OtpVerifiedAt, RegistrationStatus"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 285,
+    "prop": "MaNV",
+    "content": "SELECT Email, MaNV, HoTen, MaPhg, Luong, ChucVu, CreatedAt, OtpVerifiedAt, RegistrationStatus"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 287,
+    "prop": "RegistrationStatus",
+    "content": "WHERE RegistrationStatus = '${REGISTRATION_STATUS.OTP_VERIFIED}'"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 298,
+    "prop": "RegistrationStatus",
+    "content": "SELECT TOP 1 Email, MaNV, PasswordMaHoa, HoTen, MaPhg, Luong, ChucVu, RegistrationStatus"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 298,
+    "prop": "PasswordMaHoa",
+    "content": "SELECT TOP 1 Email, MaNV, PasswordMaHoa, HoTen, MaPhg, Luong, ChucVu, RegistrationStatus"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 298,
+    "prop": "MaNV",
+    "content": "SELECT TOP 1 Email, MaNV, PasswordMaHoa, HoTen, MaPhg, Luong, ChucVu, RegistrationStatus"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 320,
+    "prop": "RegistrationStatus",
+    "content": "SELECT TOP 1 Email, MaNV, HoTen, MaPhg, Luong, ChucVu, RegistrationStatus"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 320,
+    "prop": "MaNV",
+    "content": "SELECT TOP 1 Email, MaNV, HoTen, MaPhg, Luong, ChucVu, RegistrationStatus"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 331,
+    "prop": "RegistrationStatus",
+    "content": "if (staged.RegistrationStatus !== REGISTRATION_STATUS.OTP_VERIFIED) {"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 335,
+    "prop": "RegistrationStatus",
+    "content": "Message: `Không thể duyệt hồ sơ ở trạng thái ${staged.RegistrationStatus}`,"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 339,
+    "prop": "MaNV",
+    "content": "const effectiveMaNV = payload.manv || staged.MaNV;"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 394,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.NVarChar(10), effectiveMaNV)"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 401,
+    "prop": "MaNV",
+    "content": "VALUES (@MaNV, @Email, @HoTen, @MaPhg, @Luong, @ChucVu, 1)"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 445,
+    "prop": "RejectReason",
+    "content": ".input(\"RejectReason\", sql.NVarChar(sql.MAX), reason || null)"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 448,
+    "prop": "RegistrationStatus",
+    "content": "SET RegistrationStatus = '${REGISTRATION_STATUS.REJECTED}',"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 449,
+    "prop": "RejectReason",
+    "content": "RejectReason = @RejectReason,"
+  },
+  {
+    "file": "repositories\\userRepository.ts",
+    "line": 454,
+    "prop": "RegistrationStatus",
+    "content": "AND RegistrationStatus IN ('${REGISTRATION_STATUS.PENDING_OTP}', '${REGISTRATION_STATUS.OTP_VERIFIED}');"
+  },
+  {
+    "file": "routers\\employee.ts",
+    "line": 44,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", globalSql.NVarChar, manv)"
+  },
+  {
+    "file": "routers\\employee.ts",
+    "line": 46,
+    "prop": "MaNV",
+    "content": ".query(\"UPDATE NHAN_VIEN SET EMAIL = @Email WHERE MANV = @MaNV\");"
+  },
+  {
+    "file": "routers\\payrollRoutes.ts",
+    "line": 39,
+    "prop": "MaNV",
+    "content": "// Lấy phiếu lương của cá nhân (id: MaNV). Có thể truyền thêm query ?year=...&month=..."
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 258,
+    "prop": "RegistrationStatus",
+    "content": "if (pending?.RegistrationStatus === REGISTRATION_STATUS.OTP_VERIFIED) {"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 261,
+    "prop": "RegistrationStatus",
+    "content": "if (pending?.RegistrationStatus === REGISTRATION_STATUS.PENDING_OTP) {"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 264,
+    "prop": "RegistrationStatus",
+    "content": "if (pending?.RegistrationStatus === REGISTRATION_STATUS.REJECTED) {"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 266,
+    "prop": "RejectReason",
+    "content": "pending?.RejectReason"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 267,
+    "prop": "RejectReason",
+    "content": "? `Tài khoản đã bị từ chối: ${pending.RejectReason}`"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 271,
+    "prop": "RegistrationStatus",
+    "content": "if (pending?.RegistrationStatus === REGISTRATION_STATUS.EXPIRED) {"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 287,
+    "prop": "RegistrationStatus",
+    "content": "if (pending?.RegistrationStatus === REGISTRATION_STATUS.OTP_VERIFIED) {"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 374,
+    "prop": "RegistrationStatus",
+    "content": "if (staged.RegistrationStatus !== REGISTRATION_STATUS.OTP_VERIFIED) {"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 376,
+    "prop": "RegistrationStatus",
+    "content": "`Hồ sơ không ở trạng thái OTP_VERIFIED (hiện tại: ${staged.RegistrationStatus})`,"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 389,
+    "prop": "MaNV",
+    "content": "String(staged.MaNV || \"\").trim() ||"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 392,
+    "prop": "PasswordMaHoa",
+    "content": "const originalPassword = decrypt(staged.PasswordMaHoa);"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 618,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.NVarChar(10), candidate)"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 620,
+    "prop": "MaNV",
+    "content": "\"SELECT TOP 1 1 AS ExistsFlag FROM NHAN_VIEN WHERE MANV = @MaNV\","
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 637,
+    "prop": "MaNV",
+    "content": ".input(\"MaNV\", sql.NVarChar(10), manv)"
+  },
+  {
+    "file": "services\\authService.ts",
+    "line": 650,
+    "prop": "MaNV",
+    "content": "(@MaNV, @HoTen, @Email, @ChucVu, @Luong, @MaPhg, @NgaySinh, @GioiTinh, @DiaChiNhan, @SDT, GETDATE(), 1)"
+  },
+  {
+    "file": "services\\chatService.ts",
+    "line": 38,
+    "prop": "MaPhong",
+    "content": "const members = await chatRepository.getRoomMembers(room.MaPhong);"
+  },
+  {
+    "file": "services\\chatService.ts",
+    "line": 155,
+    "prop": "MaPhong",
+    "content": "const members = await chatRepository.getRoomMembers(room.MaPhong);"
+  },
+  {
+    "file": "services\\chatService.ts",
+    "line": 172,
+    "prop": "LoaiPhong",
+    "content": "if (!room || room.LoaiPhong !== chatRepository.ROOM_TYPE.GROUP) {"
+  },
+  {
+    "file": "services\\chatService.ts",
+    "line": 194,
+    "prop": "LoaiPhong",
+    "content": "if (!room || room.LoaiPhong !== chatRepository.ROOM_TYPE.GROUP) {"
+  },
+  {
+    "file": "services\\chatService.ts",
+    "line": 229,
+    "prop": "MaPhong",
+    "content": "await chatRepository.addMemberIfNotExists(room.MaPhong, maNv);"
+  },
+  {
+    "file": "services\\chatService.ts",
+    "line": 232,
+    "prop": "MaPhong",
+    "content": "const members = await chatRepository.getRoomMembers(room.MaPhong);"
+  },
+  {
+    "file": "services\\chatService.ts",
+    "line": 263,
+    "prop": "MaPhong",
+    "content": "await chatRepository.addMemberIfNotExists(room.MaPhong, maNv);"
+  },
+  {
+    "file": "services\\chatService.ts",
+    "line": 266,
+    "prop": "MaPhong",
+    "content": "const members = await chatRepository.getRoomMembers(room.MaPhong);"
+  },
+  {
+    "file": "services\\chatService.ts",
+    "line": 279,
+    "prop": "MaPhong",
+    "content": "await chatRepository.addMemberIfNotExists(room.MaPhong, maNv);"
+  },
+  {
+    "file": "services\\chatService.ts",
+    "line": 294,
+    "prop": "MaPhong",
+    "content": "await chatRepository.addMemberIfNotExists(room.MaPhong, maNv);"
+  },
+  {
+    "file": "services\\chatService.ts",
+    "line": 306,
+    "prop": "MaPhong",
+    "content": "await chatRepository.addMemberIfNotExists(room.MaPhong, maNv);"
+  },
+  {
+    "file": "services\\chatService.ts",
+    "line": 315,
+    "prop": "MaPhong",
+    "content": "await chatRepository.removeMember(room.MaPhong, maNv);"
+  },
+  {
+    "file": "services\\projectService.ts",
+    "line": 117,
+    "prop": "MaNV",
+    "content": "const taskOwnerMaNv = String(existing.MaNV || \"\").trim();"
+  },
+  {
+    "file": "services\\projectService.ts",
+    "line": 175,
+    "prop": "MaNV",
+    "content": "MaNV: row.MemberMaNV,"
+  },
+  {
+    "file": "services\\projectService.ts",
+    "line": 179,
+    "prop": "VaiTroDuAn",
+    "content": "VaiTroDuAn: row.MemberVaiTroDuAn,"
+  },
+  {
+    "file": "services\\projectService.ts",
+    "line": 180,
+    "prop": "NgayThamGia",
+    "content": "NgayThamGia: row.MemberNgayThamGia,"
+  }
+]

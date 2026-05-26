@@ -147,6 +147,31 @@ const payrollService = {
       );
     }
   },
+
+  closePayrollForMonth: async (month, year) => {
+    try {
+      const count = await payrollRepository.closePayrollForMonth(month, year);
+      return {
+        success: true,
+        message: `Đã chốt lương tháng ${month}/${year} thành công cho ${count} nhân viên.`,
+      };
+    } catch (error) {
+      throw new Error(
+        "Lỗi chốt lương tháng: " + resolveErrorMessage(error),
+      );
+    }
+  },
+
+  checkIfPayrollClosed: async (month, year) => {
+    try {
+      const isClosed = await payrollRepository.checkIfPayrollClosed(month, year);
+      return { success: true, isClosed };
+    } catch (error) {
+      throw new Error(
+        "Lỗi kiểm tra trạng thái chốt lương: " + resolveErrorMessage(error),
+      );
+    }
+  },
 };
 
 export default payrollService;

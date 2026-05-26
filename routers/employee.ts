@@ -1,6 +1,5 @@
 import express from "express";
 const router = express.Router();
-import sql from "msnodesqlv8";
 import withUserConnection from "../middleware/authMiddleware";
 import { requireAdmin } from "../middleware/authorizationMiddleware";
 import employeeController from "../controllers/employeeController";
@@ -12,40 +11,42 @@ import { appPool, sql as globalSql } from "../config/db";
 // GET /api/employees/:id - Xem profile/chi tiết nhân viên (thay thế cho /profile/:manv cũ)
 // (Defined below in generic routes section)
 
-// GET /api/employees/my-projects/:manv - Xem dự án của tôi (dùng dynamic connection)
-router.get("/my-projects/:manv", withUserConnection, (req, res) => {
-  const query = `SELECT da.TENDA, pc.THOIGIAN FROM PHANCONG pc JOIN DUAN da ON pc.MADA = da.MADA WHERE pc.MANV = ?`;
-  sql.query(req.userConnectionString, query, [req.params.manv], (err, rows) => {
-    if (err)
-      return res.status(500).json({ error: "Lỗi truy vấn hoặc quyền hạn!" });
-    res.json(rows);
-  });
+// GET /api/employees/my-projects/:manv - Xem dự án của tôi (dùng Stored Procedure)
+router.get("/my-projects/:manv", withUserConnection, async (req: any, res: any) => {
+  const { manv } = req.params;
+  try {
+    const result = await appPool.request()
+      .input("MANV", globalSql.VarChar(20), manv)
+      .execute("sp_getEmployeeProjects");
+    res.json(result.recordset);
+  } catch (err: any) {
+    return res.status(500).json({ error: "Lỗi truy vấn hoặc quyền hạn!" });
+  }
 });
 
-// GET /api/employees/coworkers/:maphg - Xem đồng nghiệp cùng phòng (dùng dynamic connection)
-router.get("/coworkers/:maphg", withUserConnection, (req, res) => {
-  sql.query(
-    req.userConnectionString,
-    "SELECT MANV, HOTEN, CHUCVU FROM NHAN_VIEN WHERE MAPHG = ?",
-    [req.params.maphg],
-    (err, rows) => {
-      if (err) return res.status(403).json({ error: "Access Denied" });
-      res.json(rows);
-    },
-  );
+// GET /api/employees/coworkers/:maphg - Xem đồng nghiệp cùng phòng (dùng Stored Procedure)
+router.get("/coworkers/:maphg", withUserConnection, async (req: any, res: any) => {
+  const maphg = Number(req.params.maphg);
+  try {
+    const result = await appPool.request()
+      .input("MAPHG", globalSql.Int, maphg)
+      .execute("sp_getEmployeesByDepartment");
+    res.json(result.recordset);
+  } catch (err: any) {
+    return res.status(403).json({ error: "Access Denied" });
+  }
 });
 
-// PUT /api/employees/update-info - Cập nhật thông tin cá nhân (dùng SA connection từ global pool)
-router.put("/update-info", async (req, res) => {
+// PUT /api/employees/update-info - Cập nhật thông tin cá nhân (dùng Stored Procedure)
+router.put("/update-info", async (req: any, res: any) => {
   try {
     const { manv, email } = req.body;
-    const request = appPool.request();
-    await request
-      .input("MaNV", globalSql.NVarChar, manv)
-      .input("Email", globalSql.NVarChar, email)
-      .query("UPDATE NHAN_VIEN SET EMAIL = @Email WHERE MANV = @MaNV");
+    await appPool.request()
+      .input("MANV", globalSql.VarChar(20), manv)
+      .input("EMAIL", globalSql.NVarChar(100), email)
+      .execute("sp_updateEmployee");
     res.json({ message: "Cập nhật thành công" });
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });

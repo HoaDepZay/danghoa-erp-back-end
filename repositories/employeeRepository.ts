@@ -119,6 +119,9 @@ const employeeRepository = {
     if (diaChiValue !== undefined) {
       request.input("DiaChi", sql.NVarChar, diaChiValue);
     }
+    if (data.sdt !== undefined) {
+      request.input("SDT", sql.NVarChar, data.sdt);
+    }
 
     return await request.execute("sp_updateProfile");
   },

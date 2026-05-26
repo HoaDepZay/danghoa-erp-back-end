@@ -157,6 +157,46 @@ const dashboardController = {
       });
     }
   },
+
+  // 13. GET /api/dashboard/analytics/turnover - Bien dong nhan su 12 thang
+  getAnalyticsTurnover: async (req, res) => {
+    try {
+      const result = await dashboardService.getAnalyticsTurnover();
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
+  // 14. GET /api/dashboard/analytics/salary-cost - Chi phi luong theo phong ban
+  getAnalyticsSalaryCost: async (req, res) => {
+    try {
+      const result = await dashboardService.getAnalyticsSalaryCost();
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
+  // 15. GET /api/dashboard/analytics/attendance - Ty le cham cong 6 thang
+  getAnalyticsAttendance: async (req, res) => {
+    try {
+      const result = await dashboardService.getAnalyticsAttendance();
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
+  // 16. GET /api/dashboard/analytics/summary - Tong hop analytics
+  getAnalyticsSummary: async (req, res) => {
+    try {
+      const result = await dashboardService.getAnalyticsSummary();
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
 };
 
 export default dashboardController;

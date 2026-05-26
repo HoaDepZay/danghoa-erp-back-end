@@ -75,6 +75,27 @@ const payrollRepository = {
 
     return result.recordset[0] || null;
   },
+
+  // Chốt lương tháng
+  closePayrollForMonth: async (month, year) => {
+    const result = await appPool
+      .request()
+      .input("THANG", sql.Int, month)
+      .input("NAM", sql.Int, year)
+      .execute("sp_ThucThiTinhLuong");
+
+    return result.rowsAffected[0] || 0;
+  },
+
+  // Kiểm tra tháng đã chốt lương chưa
+  checkIfPayrollClosed: async (month, year) => {
+    const result = await appPool
+      .request()
+      .input("THANG", sql.Int, month)
+      .input("NAM", sql.Int, year)
+      .query("SELECT COUNT(1) as cnt FROM BANG_LUONG WHERE THANG = @THANG AND NAM = @NAM");
+    return (result.recordset[0]?.cnt || 0) > 0;
+  },
 };
 
 export default payrollRepository;

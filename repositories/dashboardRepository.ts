@@ -89,6 +89,34 @@ const dashboardRepository = {
       attendanceToday: result.recordsets?.[3]?.[0] || {},
     };
   },
+
+  // Analytics: Bien dong nhan su 12 thang
+  getAnalyticsTurnover: async () => {
+    const result = await appPool.request().execute("sp_analytics_turnover");
+    return result.recordset;
+  },
+
+  // Analytics: Chi phi luong theo phong ban
+  getAnalyticsSalaryCost: async () => {
+    const result = await appPool.request().execute("sp_analytics_salary_cost");
+    return result.recordset;
+  },
+
+  // Analytics: Ty le cham cong 6 thang
+  getAnalyticsAttendance: async () => {
+    const result = await appPool.request().execute("sp_analytics_attendance");
+    return result.recordset;
+  },
+
+  // Analytics: Tong hop HR summary (multi recordset)
+  getAnalyticsSummary: async () => {
+    const result = await appPool.request().execute("sp_analytics_summary");
+    return {
+      employeeStats:   result.recordsets?.[0]?.[0] || {},
+      byRole:          result.recordsets?.[1] || [],
+      topDepartments:  result.recordsets?.[2] || [],
+    };
+  },
 };
 
 export default dashboardRepository;

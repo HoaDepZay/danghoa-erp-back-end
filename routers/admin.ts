@@ -1,11 +1,10 @@
 import express from "express";
 const router = express.Router();
-import sql from "msnodesqlv8";
 import { appPool, sql as mssql } from "../config/db";
-const connectionString = `Driver={ODBC Driver 17 for SQL Server};Server=${process.env.DB_SERVER};Database=${process.env.DB_NAME};UID=${process.env.DB_USER};PWD=${process.env.DB_PASS};TrustServerCertificate=yes;`;
 import withUserConnection from "../middleware/authMiddleware";
 import { requireAdmin } from "../middleware/authorizationMiddleware";
 import authController from "../controllers/authController";
+import { keysToCamelCase } from "../utils/camelCaseHelper";
 
 // --- QUẢN LÝ NHÂN VIÊN ---
 
@@ -33,103 +32,96 @@ router.post(
   authController.rejectPendingRegistration,
 );
 
-// 1. Sửa nhân viên (Admin)
-router.put("/nhan-vien/edit", withUserConnection, requireAdmin, (req, res) => {
-  const { manv, hoten } = req.body;
+// 1. Sửa nhân viên (Admin) - Đã chuyển sang gọi Stored Procedure: sp_updateEmployee
+router.put("/nhan-vien/edit", withUserConnection, requireAdmin, async (req: any, res: any) => {
+  const { manv, hoten, chucvu } = req.body;
   const maphg = req.body.maphg === null ? null : Number(req.body.maphg);
   const luong = Number(req.body.luong || 0);
-  const chucvu = req.body.chucvu || "Nhân viên";
 
   if (!manv) return res.status(400).json({ error: "Thiếu mã nhân viên!" });
 
-  const query =
-    "UPDATE NHAN_VIEN SET HOTEN = ?, MAPHG = ?, LUONG = ?, CHUCVU = ? WHERE MANV = ?";
-  sql.query(
-    connectionString,
-    query,
-    [hoten, maphg, luong, chucvu, manv],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true, message: "Cập nhật nhân sự thành công!" });
-    },
-  );
+  try {
+    await appPool.request()
+      .input("MANV", mssql.VarChar(20), manv)
+      .input("HOTEN", mssql.NVarChar(200), hoten || null)
+      .input("CHUCVU", mssql.NVarChar(100), chucvu || null)
+      .input("LUONG", mssql.Decimal(18, 2), luong)
+      .input("MAPHG", mssql.Int, maphg)
+      .execute("sp_updateEmployee");
+    
+    return res.json({ success: true, message: "Cập nhật nhân sự thành công!" });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
-// 2. Xóa nhân viên (Admin)
+// 2. Xóa nhân viên (Admin) - Đã chuyển sang gọi Stored Procedure: sp_deleteEmployeeFull
 router.delete(
   "/nhan-vien/:manv",
   withUserConnection,
   requireAdmin,
-  (req, res) => {
-    sql.query(
-      connectionString,
-      "DELETE FROM TAIKHOAN WHERE MANV = ?",
-      [req.params.manv],
-      () => {
-        sql.query(
-          connectionString,
-          "DELETE FROM NHAN_VIEN WHERE MANV = ?",
-          [req.params.manv],
-          (err) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: "Deleted" });
-          },
-        );
-      },
-    );
+  async (req: any, res: any) => {
+    const { manv } = req.params;
+    try {
+      await appPool.request()
+        .input("MANV", mssql.VarChar(20), manv)
+        .execute("sp_deleteEmployeeFull");
+
+      return res.json({ success: true, message: "Xóa nhân viên thành công!" });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
   },
 );
 
 // --- QUẢN LÝ PHÒNG BAN ---
 
-// 3. Lấy danh sách phòng ban (Admin)
-router.get("/phong-ban", withUserConnection, requireAdmin, (req, res) => {
-  sql.query(
-    req.userConnectionString,
-    "SELECT MAPHG, TENPB, NG_THANHLAP FROM PHONG_BAN",
-    (err, rows) => {
-      if (err)
-        return res.status(403).json({ error: "Bạn không có quyền Admin" });
-      res.json(rows);
-    },
-  );
+// 3. Lấy danh sách phòng ban (Admin) - Đã chuyển sang gọi Stored Procedure: sp_getAllDepartments
+router.get("/phong-ban", withUserConnection, requireAdmin, async (req: any, res: any) => {
+  try {
+    const result = await appPool.request().execute("sp_getAllDepartments");
+    return res.json(keysToCamelCase(result.recordset));
+  } catch (err: any) {
+    return res.status(403).json({ error: "Lỗi truy xuất hoặc bạn không có quyền Admin" });
+  }
 });
 
-// 4. Tạo phòng ban (Admin)
+// 4. Tạo phòng ban (Admin) - Đã chuyển sang gọi Stored Procedure: sp_createDepartment
 router.post(
   "/phong-ban/create",
   withUserConnection,
   requireAdmin,
-  (req, res) => {
+  async (req: any, res: any) => {
     const { tenpb } = req.body;
     if (!tenpb)
       return res.status(400).json({ error: "Vui lòng nhập tên phòng ban!" });
 
-    const maPhongBan = Math.floor(1000 + Math.random() * 9000); // generateNumericCode inline
-    const query =
-      "INSERT INTO PHONG_BAN (MAPHG, TENPB, NG_THANHLAP) VALUES (?, ?, GETDATE())";
+    const maPhongBan = Math.floor(1000 + Math.random() * 9000);
+    try {
+      await appPool.request()
+        .input("MAPHG", mssql.Int, maPhongBan)
+        .input("TENPB", mssql.NVarChar(100), tenpb)
+        .execute("sp_createDepartment");
 
-    sql.query(connectionString, query, [maPhongBan, tenpb], (err) => {
-      if (err) {
-        if (err.message.includes("PRIMARY KEY"))
-          return res.status(500).json({ error: "Trùng ID, thử lại!" });
-        return res.status(500).json({ error: err.message });
-      }
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         message: `Tạo phòng ${tenpb} thành công!`,
         id: maPhongBan,
       });
-    });
+    } catch (err: any) {
+      if (err.message.includes("PRIMARY KEY"))
+        return res.status(500).json({ error: "Trùng ID, thử lại!" });
+      return res.status(500).json({ error: err.message });
+    }
   },
 );
 
-// 5. Sửa phòng ban (Admin)
+// 5. Sửa phòng ban (Admin) - Đã có sẵn gọi Stored Procedure: sp_updateDepartment
 router.put(
   "/phong-ban/edit",
   withUserConnection,
   requireAdmin,
-  async (req, res) => {
+  async (req: any, res: any) => {
     try {
       const maphg = Number(req.body.maphg);
       const tenpb = req.body.tenpb;
@@ -179,18 +171,14 @@ router.put(
       if (status !== 1) {
         const deptCheck = await appPool
           .request()
-          .input("MaPhg", mssql.Int, maphg)
-          .query(
-            "SELECT TOP 1 MAPHG, TENPB, MaTruongPhg FROM PHONG_BAN WHERE MAPHG = @MaPhg",
-          );
+          .input("MAPHG", mssql.Int, maphg)
+          .execute("sp_getDepartmentById");
 
         const managerCheck = matruongphg
           ? await appPool
               .request()
-              .input("MaNv", mssql.VarChar(20), matruongphg)
-              .query(
-                "SELECT TOP 1 MANV, HOTEN, MAPHG FROM NHAN_VIEN WHERE MANV = @MaNv",
-              )
+              .input("MANV", mssql.VarChar(20), matruongphg)
+              .execute("sp_getEmployeeById")
           : { recordset: [] };
 
         const currentDepartment = deptCheck.recordset?.[0] || null;
@@ -238,35 +226,30 @@ router.put(
   },
 );
 
-// 6. Xóa phòng ban (Admin)
+// 6. Xóa phòng ban (Admin) - Đã chuyển sang gọi Stored Procedure: sp_deleteDepartment
 router.delete(
   "/phong-ban/:maphg",
   withUserConnection,
   requireAdmin,
-  (req, res) => {
+  async (req: any, res: any) => {
     const { maphg } = req.params;
-    sql.query(
-      connectionString,
-      "SELECT COUNT(*) as count FROM NHAN_VIEN WHERE MAPHG = ?",
-      [maphg],
-      (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (rows[0].count > 0)
-          return res
-            .status(400)
-            .json({ error: "Không thể xóa phòng có nhân viên!" });
+    try {
+      const checkRows = await appPool.request()
+        .input("MAPHG", mssql.Int, maphg)
+        .execute("sp_getEmployeesByDepartment");
 
-        sql.query(
-          connectionString,
-          "DELETE FROM PHONG_BAN WHERE MAPHG = ?",
-          [maphg],
-          (err) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true, message: "Xóa thành công!" });
-          },
-        );
-      },
-    );
+      if (checkRows.recordset.length > 0) {
+        return res.status(400).json({ error: "Không thể xóa phòng có nhân viên!" });
+      }
+
+      await appPool.request()
+        .input("MAPHG", mssql.Int, maphg)
+        .execute("sp_deleteDepartment");
+
+      return res.json({ success: true, message: "Xóa phòng ban thành công!" });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
   },
 );
 

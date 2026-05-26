@@ -3,8 +3,10 @@ import express from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
-// THAY ĐỔI Ở ĐÂY: Import connectDB thay vì msnodesqlv8
 import { connectDB } from "./config/db";
+import setupChatSocket from "./sockets/chatSocket";
+import setupNotificationSocket from "./sockets/notificationSocket";
+import { keysToCamelCase } from "./utils/camelCaseHelper";
 
 import authRoutes from "./routers/authRoutes";
 import employeeRoutes from "./routers/employee";
@@ -14,11 +16,15 @@ import projectRoutes from "./routers/projectRoutes";
 import payrollRoutes from "./routers/payrollRoutes";
 import dashboardRoutes from "./routers/dashboardRoutes";
 import chatRoutes from "./routers/chatRoutes";
+import shiftRoutes from "./routers/shiftRoutes";
+import leaveRoutes from "./routers/leaveRoutes";
+import contractRoutes from "./routers/contractRoutes";
+import timesheetRoutes from "./routers/timesheetRoutes";
+import notificationRoutes from "./routers/notificationRoutes";
 
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import path from "path";
-import setupChatSocket from "./sockets/chatSocket";
 
 const app = express();
 const httpServer = createServer(app);
@@ -32,6 +38,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
+// Serve static uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // ✅ CORS Configuration cho Desktop + Mobile
 app.use(
   cors({
@@ -39,9 +48,12 @@ app.use(
       // Danh sách whitelist origins
       const allowedOrigins = [
         "http://localhost:3000", // React dev
-        "http://localhost:5173", // Vite dev
+        "http://localhost:5173", // Vite dev (primary)
+        "http://localhost:5174", // Vite dev (fallback)
+        "http://localhost:5175", // Vite dev (fallback)
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
       ];
 
       // Nếu không có origin (request từ server/curl), cho phép
@@ -89,8 +101,21 @@ app.use((req, res, next) => {
   next();
 });
 
+// Tự động chuyển đổi toàn bộ response JSON sang camelCase
+app.use((req, res, next) => {
+  const originalJson = res.json;
+  res.json = function (body) {
+    if (body) {
+      body = keysToCamelCase(body);
+    }
+    return originalJson.call(this, body);
+  };
+  next();
+});
+
 // PHÂN LOẠI Endpoint
 app.use("/api/auth", authRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/departments", departmentRoutes);
@@ -98,15 +123,27 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/payroll", payrollRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/shifts", shiftRoutes);
+app.use("/api/leaves", leaveRoutes);
+app.use("/api/contracts", contractRoutes);
+app.use("/api/timesheet", timesheetRoutes);
 
 const io = new SocketIOServer(httpServer, {
   cors: {
     origin: "*",
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
   },
 });
 
+export const emitNotification = (maNv: string, payload: any) => {
+  io.to(`user_${maNv}`).emit("new_notification", payload);
+};
+
 setupChatSocket(io);
+setupNotificationSocket(io);
+
+import { initCronJobs } from "./cron/notificationCron";
+initCronJobs();
 
 console.log("🔍 Đang kết nối Database...");
 

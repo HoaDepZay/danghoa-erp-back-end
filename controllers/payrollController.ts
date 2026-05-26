@@ -151,6 +151,48 @@ const payrollController = {
       return res.status(404).json({ success: false, message: error.message });
     }
   },
+
+  // Chốt lương tháng
+  closePayrollForMonth: async (req, res) => {
+    try {
+      const { year, month } = req.params;
+      const monthNum = parseInt(month);
+      const yearNum = parseInt(year);
+
+      if (!Number.isInteger(monthNum) || !Number.isInteger(yearNum)) {
+        return res.status(400).json({
+          success: false,
+          message: "Tham số year/month không hợp lệ",
+        });
+      }
+
+      const result = await payrollService.closePayrollForMonth(monthNum, yearNum);
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
+  // Kiểm tra trạng thái chốt lương
+  checkIfPayrollClosed: async (req, res) => {
+    try {
+      const { year, month } = req.params;
+      const monthNum = parseInt(month);
+      const yearNum = parseInt(year);
+
+      if (!Number.isInteger(monthNum) || !Number.isInteger(yearNum)) {
+        return res.status(400).json({
+          success: false,
+          message: "Tham số year/month không hợp lệ",
+        });
+      }
+
+      const result = await payrollService.checkIfPayrollClosed(monthNum, yearNum);
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
 };
 
 export default payrollController;
