@@ -55,6 +55,6 @@ jobs:
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'QuanTriNhanSu'
+          app-name: 'QuanTriNhanSu-BackEnd'
           slot-name: 'Production'
           images: '${{ secrets.DOCKER_USERNAME }}/quantrinhansu-backend:latest'
