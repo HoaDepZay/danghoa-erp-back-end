@@ -101,12 +101,14 @@ const chatRepository = {
     }));
   },
 
-  sendMessage: async (maPhong, maNvGui, noiDung) => {
+  sendMessage: async (maPhong, maNvGui, noiDung, fileUrl: string | null = null, fileType: string | null = null) => {
     const result = await appPool
       .request()
       .input("MaPhong", sql.Int, maPhong)
       .input("MaNV_Gui", sql.VarChar(20), maNvGui)
       .input("NoiDung", sql.NVarChar(sql.MAX), noiDung)
+      .input("FileUrl", sql.NVarChar(sql.MAX), fileUrl)
+      .input("FileType", sql.VarChar(50), fileType)
       .execute("sp_sendMessage");
 
     const row = result.recordset[0];
@@ -118,6 +120,8 @@ const chatRepository = {
       MaNV_Gui: row.MANV_GUI ?? row.MaNV_Gui,
       NoiDung: row.NOIDUNG ?? row.NoiDung,
       ThoiGianGui: row.THOIGIANGUI ?? row.ThoiGianGui,
+      FileUrl: row.FILEURL ?? row.FileUrl ?? null,
+      FileType: row.FILETYPE ?? row.FileType ?? null,
     };
   },
 
