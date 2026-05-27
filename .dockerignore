@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.gitignore
+.env
+*.rar
+scratch
+*.log
+.vscode
+.dockerignore
+DEPLOY_DOCKER_AZURE.md
+*.http
+*.sql
