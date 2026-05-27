@@ -1,5 +1,5 @@
-# Sử dụng Debian-based Node.js bản nhẹ để hỗ trợ ODBC Driver
-FROM node:18-slim
+# Sử dụng Debian-based Node.js bản nhẹ (Node 20) để hỗ trợ ODBC Driver
+FROM node:20-slim
 
 # Cài đặt các công cụ build và dependency cần thiết cho Native Addons (msnodesqlv8)
 RUN apt-get update && apt-get install -y \
