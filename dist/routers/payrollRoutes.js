@@ -21,4 +21,8 @@ router.get("/attendance/employee/:id", authMiddleware_1.withUserConnection, payr
 router.get("/employee/:id", authMiddleware_1.withUserConnection, payrollController_1.default.getEmployeePayslip);
 // Lấy danh sách NV nhận lương theo tháng/năm
 router.get("/:year/:month", authMiddleware_1.withUserConnection, payrollController_1.default.getPayrollByMonth);
+// Chốt lương tháng
+router.post("/close/:year/:month", authMiddleware_1.withUserConnection, payrollController_1.default.closePayrollForMonth);
+// Kiểm tra trạng thái chốt lương
+router.get("/status/:year/:month", authMiddleware_1.withUserConnection, payrollController_1.default.checkIfPayrollClosed);
 exports.default = router;

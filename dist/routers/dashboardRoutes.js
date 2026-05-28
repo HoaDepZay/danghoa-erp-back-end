@@ -108,4 +108,9 @@ router.get("/project-trendline", dashboardController_1.default.getProjectTrendli
  */
 router.get("/report", dashboardController_1.default.getDashboardReport);
 router.get("/realtime", dashboardController_1.default.getRealtimeDashboard);
+// ── HR Analytics Routes (Phase 3) ─────────────────────────────────────────
+router.get("/analytics/turnover", dashboardController_1.default.getAnalyticsTurnover);
+router.get("/analytics/salary-cost", dashboardController_1.default.getAnalyticsSalaryCost);
+router.get("/analytics/attendance", dashboardController_1.default.getAnalyticsAttendance);
+router.get("/analytics/summary", dashboardController_1.default.getAnalyticsSummary);
 exports.default = router;

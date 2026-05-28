@@ -87,20 +87,20 @@ const chatService = {
             data: messages,
         };
     },
-    sendMessageToRoom: async (roomId, requesterMaNv, noiDung) => {
+    sendMessageToRoom: async (roomId, requesterMaNv, noiDung, fileUrl = null, fileType = null) => {
         const maPhong = Number(roomId);
         const content = String(noiDung || "").trim();
         if (!maPhong) {
             throw new Error("Mã phòng không hợp lệ.");
         }
-        if (!content) {
+        if (!content && !fileUrl) {
             throw new Error("Nội dung tin nhắn không được để trống.");
         }
         const isMember = await chatRepository_1.default.isRoomMember(maPhong, requesterMaNv);
         if (!isMember) {
             throw new Error("Bạn không phải thành viên của phòng chat.");
         }
-        const message = await chatRepository_1.default.sendMessage(maPhong, requesterMaNv, content);
+        const message = await chatRepository_1.default.sendMessage(maPhong, requesterMaNv, content, fileUrl, fileType);
         return {
             success: true,
             message: "Gửi tin nhắn thành công",

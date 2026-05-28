@@ -4,6 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const projectService_1 = __importDefault(require("../services/projectService"));
+const notificationController_1 = require("./notificationController");
+const server_1 = require("../server");
 const normalizeRole = (role) => String(role || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -27,6 +29,15 @@ const projectController = {
             const { id: maDa } = req.params;
             const requesterMaNv = req.user?.userInfo?.manv;
             const result = await projectService_1.default.createTaskForMember(maDa, requesterMaNv, req.body);
+            try {
+                const notif = await (0, notificationController_1.createNotification)(req.body.manv || requesterMaNv, // Nếu payload có manv thì giao cho manv đó, nếu không thì tự nhận
+                "Nhiệm vụ mới", `Bạn vừa được giao một nhiệm vụ mới: ${req.body.tennhiemvu}`, "task_assign", `/projects/${maDa}`);
+                if (notif)
+                    (0, server_1.emitNotification)(req.body.manv || requesterMaNv, notif);
+            }
+            catch (e) {
+                console.error("Notif task error", e);
+            }
             return res.status(201).json(result);
         }
         catch (error) {
@@ -128,6 +139,14 @@ const projectController = {
             const { id: maDa } = req.params;
             const { manv, vaitroduan } = req.body;
             const result = await projectService_1.default.addProjectMember(maDa, manv, vaitroduan);
+            try {
+                const notif = await (0, notificationController_1.createNotification)(manv, "Dự án mới", `Bạn đã được thêm vào dự án với vai trò: ${vaitroduan}`, "project_assign", `/projects/${maDa}`);
+                if (notif)
+                    (0, server_1.emitNotification)(manv, notif);
+            }
+            catch (e) {
+                console.error("Notif project error", e);
+            }
             return res.status(201).json(result);
         }
         catch (error) {

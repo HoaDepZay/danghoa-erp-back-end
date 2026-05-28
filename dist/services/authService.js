@@ -6,8 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // HÀM LOGIN XỬ LÝ API
 const crypto_1 = __importDefault(require("crypto"));
 const mssql_1 = __importDefault(require("mssql")); // Cần mssql để thử kết nối lúc Login
-const db_1 = require("../config/db");
 const userRepository_1 = __importDefault(require("../repositories/userRepository"));
+const employeeRepository_1 = __importDefault(require("../repositories/employeeRepository"));
 const mailHelper_1 = require("../utils/mailHelper");
 const jwtHelper_1 = require("../utils/jwtHelper");
 const encryptionHelper_1 = require("../utils/encryptionHelper");
@@ -206,18 +206,18 @@ const authService = {
         catch (err) {
             console.error("❌ SQL Server login failed:", err.message);
             const pending = await userRepository_1.default.getPendingRegistrationStatusByEmail(trimmedEmail);
-            if (pending?.RegistrationStatus === REGISTRATION_STATUS.OTP_VERIFIED) {
+            if (pending?.REGISTRATIONSTATUS === REGISTRATION_STATUS.OTP_VERIFIED) {
                 throw new Error("Tài khoản của bạn chưa được admin chấp nhận.");
             }
-            if (pending?.RegistrationStatus === REGISTRATION_STATUS.PENDING_OTP) {
+            if (pending?.REGISTRATIONSTATUS === REGISTRATION_STATUS.PENDING_OTP) {
                 throw new Error("Vui lòng xác thực OTP trước khi đăng nhập.");
             }
-            if (pending?.RegistrationStatus === REGISTRATION_STATUS.REJECTED) {
-                throw new Error(pending?.RejectReason
-                    ? `Tài khoản đã bị từ chối: ${pending.RejectReason}`
+            if (pending?.REGISTRATIONSTATUS === REGISTRATION_STATUS.REJECTED) {
+                throw new Error(pending?.REJECTREASON
+                    ? `Tài khoản đã bị từ chối: ${pending.REJECTREASON}`
                     : "Tài khoản đã bị từ chối.");
             }
-            if (pending?.RegistrationStatus === REGISTRATION_STATUS.EXPIRED) {
+            if (pending?.REGISTRATIONSTATUS === REGISTRATION_STATUS.EXPIRED) {
                 throw new Error("Mã OTP đã hết hạn. Vui lòng đăng ký lại.");
             }
             throw new Error("Mật khẩu không chính xác! Nếu đang dùng điện thoại, hãy tắt tự động viết hoa/sửa chính tả và thử nhập lại.");
@@ -227,7 +227,7 @@ const authService = {
         const user = userResult.recordset[0];
         if (!user) {
             const pending = await userRepository_1.default.getPendingRegistrationStatusByEmail(trimmedEmail);
-            if (pending?.RegistrationStatus === REGISTRATION_STATUS.OTP_VERIFIED) {
+            if (pending?.REGISTRATIONSTATUS === REGISTRATION_STATUS.OTP_VERIFIED) {
                 throw new Error("Tài khoản của bạn chưa được admin chấp nhận.");
             }
             throw new Error("Tài khoản chưa có hồ sơ nhân viên trong hệ thống.");
@@ -297,19 +297,19 @@ const authService = {
         if (!staged) {
             throw new Error("Không tìm thấy hồ sơ chờ duyệt");
         }
-        if (staged.RegistrationStatus !== REGISTRATION_STATUS.OTP_VERIFIED) {
-            throw new Error(`Hồ sơ không ở trạng thái OTP_VERIFIED (hiện tại: ${staged.RegistrationStatus})`);
+        if (staged.REGISTRATIONSTATUS !== REGISTRATION_STATUS.OTP_VERIFIED) {
+            throw new Error(`Hồ sơ không ở trạng thái OTP_VERIFIED (hiện tại: ${staged.REGISTRATIONSTATUS})`);
         }
         // API duyệt chỉ cần email + thông tin nhân sự; MANV/HOTEN được tự suy ra từ hồ sơ chờ.
-        const normalizedStagedName = String(staged.HoTen || "").trim();
+        const normalizedStagedName = String(staged.HOTEN || "").trim();
         const fallbackName = String(email).split("@")[0] || "Nhan vien moi";
         const effectiveHoTen = String(payload?.hoten || "").trim() ||
             normalizedStagedName ||
             fallbackName;
         const effectiveManv = String(payload?.manv || "").trim() ||
-            String(staged.MaNV || "").trim() ||
+            String(staged.MANV || "").trim() ||
             generateEmployeeId();
-        const originalPassword = (0, encryptionHelper_1.decrypt)(staged.PasswordMaHoa);
+        const originalPassword = (0, encryptionHelper_1.decrypt)(staged.PASSWORDMAHOA);
         const result = await userRepository_1.default.approvePendingRegistration({
             email,
             password: originalPassword,
@@ -471,11 +471,8 @@ const authService = {
             let manv = "";
             for (let i = 0; i < 10; i++) {
                 const candidate = generateEmployeeId();
-                const existed = await db_1.appPool
-                    .request()
-                    .input("MaNV", mssql_1.default.NVarChar(10), candidate)
-                    .query("SELECT TOP 1 1 AS ExistsFlag FROM NHAN_VIEN WHERE MANV = @MaNV");
-                if (existed.recordset.length === 0) {
+                const existed = await employeeRepository_1.default.getEmployeeById(candidate);
+                if (!existed) {
                     manv = candidate;
                     break;
                 }
@@ -483,24 +480,22 @@ const authService = {
             if (!manv) {
                 throw new Error("Không thể tạo mã nhân viên mới, vui lòng thử lại!");
             }
-            const request = db_1.appPool.request();
-            const gioiTinhValue = normalizeGenderToTinyInt(data.gioitinh);
-            await request
-                .input("MaNV", mssql_1.default.NVarChar(10), manv)
-                .input("HoTen", mssql_1.default.NVarChar(200), data.hoten)
-                .input("Email", mssql_1.default.NVarChar(100), email)
-                .input("ChucVu", mssql_1.default.NVarChar(100), data.chucvu || "Nhân viên")
-                .input("Luong", mssql_1.default.Decimal(18, 2), data.luong ?? 0)
-                .input("MaPhg", mssql_1.default.Int, data.maphg ?? null)
-                .input("NgaySinh", mssql_1.default.Date, data.ngaysinh || null)
-                .input("GioiTinh", mssql_1.default.TinyInt, gioiTinhValue)
-                .input("DiaChiNhan", mssql_1.default.NVarChar(255), data.diachinhan || null)
-                .input("SDT", mssql_1.default.NVarChar(15), data.sdt || null).query(`
-          INSERT INTO NHAN_VIEN
-            (MANV, HOTEN, EMAIL, CHUCVU, LUONG, MAPHG, NgaySinh, GioiTinh, DiaChi, SDT, NgayTuyenDung, IsVerified)
-          VALUES
-            (@MaNV, @HoTen, @Email, @ChucVu, @Luong, @MaPhg, @NgaySinh, @GioiTinh, @DiaChiNhan, @SDT, GETDATE(), 1)
-        `);
+            const employeeData = {
+                manv,
+                hoten: data.hoten,
+                email: email,
+                chucvu: data.chucvu || "Nhân viên",
+                luong: data.luong ? parseFloat(data.luong) : 0,
+                maphg: data.maphg || null,
+                ngaysinh: data.ngaysinh || null,
+                gioitinh: data.gioitinh || null,
+                diachinhan: data.diachinhan || null,
+                ngayvaolam: new Date(),
+            };
+            await employeeRepository_1.default.createEmployee(employeeData);
+            if (data.sdt) {
+                await employeeRepository_1.default.updateProfile(email, { sdt: data.sdt });
+            }
             console.log("✅ Created profile for manual SQL user:", email, "=>", manv);
             return {
                 success: true,
@@ -513,41 +508,7 @@ const authService = {
         }
         // 3. Cập nhật vào DB
         try {
-            const request = db_1.appPool.request();
-            let updateFields = [];
-            for (let key in updateData) {
-                if (updateData[key] !== undefined) {
-                    if (key === "hoten")
-                        updateFields.push("HOTEN = @HoTen");
-                    if (key === "ngaysinh")
-                        updateFields.push("NgaySinh = @NgaySinh");
-                    if (key === "gioitinh")
-                        updateFields.push("GioiTinh = @GioiTinh");
-                    if (key === "diachinhan")
-                        updateFields.push("DiaChi = @DiaChiNhan");
-                    if (key === "sdt")
-                        updateFields.push("SDT = @SDT");
-                    if (key === "hoten") {
-                        request.input("HoTen", mssql_1.default.NVarChar, updateData[key]);
-                    }
-                    if (key === "ngaysinh") {
-                        request.input("NgaySinh", mssql_1.default.Date, updateData[key]);
-                    }
-                    if (key === "gioitinh") {
-                        const gioiTinhValue = normalizeGenderToTinyInt(updateData[key]);
-                        request.input("GioiTinh", mssql_1.default.TinyInt, gioiTinhValue);
-                    }
-                    if (key === "diachinhan") {
-                        request.input("DiaChiNhan", mssql_1.default.NVarChar, updateData[key]);
-                    }
-                    if (key === "sdt") {
-                        request.input("SDT", mssql_1.default.NVarChar, updateData[key]);
-                    }
-                }
-            }
-            request.input("Email", mssql_1.default.NVarChar, email);
-            const query = `UPDATE NHAN_VIEN SET ${updateFields.join(", ")} WHERE EMAIL = @Email`;
-            await request.query(query);
+            await employeeRepository_1.default.updateProfile(email, updateData);
         }
         catch (err) {
             throw new Error("Lỗi cập nhật profile: " + err.message);

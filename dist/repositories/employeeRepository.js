@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const db_1 = require("../config/db");
 const employeeRepository = {
-    // 1. Lấy danh sách nhâ n viên (có phân trang + tìm kiếm)
+    // 1. Lấy danh sách nhân viên (có phân trang + tìm kiếm)
     getAllEmployees: async (pageNum = 1, pageSize = 10, searchKeyword = "") => {
         const request = db_1.appPool.request();
         request.input("PageNum", db_1.sql.Int, pageNum);
@@ -78,23 +78,10 @@ const employeeRepository = {
     },
     // 5. Xóa/Khóa nhân viên (cập nhật status)
     deleteEmployee: async (manv) => {
-        const transaction = new db_1.sql.Transaction(db_1.appPool);
-        await transaction.begin();
-        try {
-            await new db_1.sql.Request(transaction).input("MaNV", db_1.sql.NVarChar, manv)
-                .query(`
-          DELETE FROM THANH_VIEN_PHONG
-          WHERE MaNV = @MaNV
-        `);
-            await new db_1.sql.Request(transaction)
-                .input("MaNV", db_1.sql.NVarChar, manv)
-                .execute("sp_deleteEmployeeFull");
-            await transaction.commit();
-        }
-        catch (error) {
-            await transaction.rollback().catch(() => undefined);
-            throw error;
-        }
+        await db_1.appPool
+            .request()
+            .input("MaNV", db_1.sql.NVarChar, manv)
+            .execute("sp_deleteEmployeeFull");
     },
     // 6. Đổi mật khẩu nhân viên
     changePassword: async (email, newPassword) => {
@@ -120,6 +107,9 @@ const employeeRepository = {
         const diaChiValue = data.diachinhan || data.diachi;
         if (diaChiValue !== undefined) {
             request.input("DiaChi", db_1.sql.NVarChar, diaChiValue);
+        }
+        if (data.sdt !== undefined) {
+            request.input("SDT", db_1.sql.NVarChar, data.sdt);
         }
         return await request.execute("sp_updateProfile");
     },

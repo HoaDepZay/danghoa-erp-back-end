@@ -6,11 +6,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const employeeRepository_1 = __importDefault(require("../repositories/employeeRepository"));
 const encryptionHelper_1 = require("../utils/encryptionHelper");
 const crypto_1 = __importDefault(require("crypto"));
+const authHelper_1 = require("../utils/authHelper");
 const employeeService = {
     // 1. Lấy danh sách nhân viên
-    getAllEmployees: async (pageNum = 1, pageSize = 10, searchKeyword = "") => {
+    getAllEmployees: async (pageNum = 1, pageSize = 10, searchKeyword = "", userRole) => {
         try {
             const result = await employeeRepository_1.default.getAllEmployees(pageNum, pageSize, searchKeyword);
+            const normalizedRole = userRole ? (0, authHelper_1.normalizeRole)(userRole) : "";
+            const hasSalaryAccess = (normalizedRole === "admin" || normalizedRole === "quanly");
+            if (!hasSalaryAccess && result.data) {
+                result.data = result.data.map((emp) => {
+                    const { LUONG, luong, ...rest } = emp;
+                    return rest;
+                });
+            }
             return {
                 success: true,
                 message: "Lấy danh sách nhân viên thành công",

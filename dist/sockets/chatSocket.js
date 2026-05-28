@@ -87,7 +87,9 @@ const setupChatSocket = (io) => {
             try {
                 const maPhong = Number(payload?.maPhong);
                 const noiDung = String(payload?.noiDung || "");
-                const result = await chatService_1.default.sendMessageToRoom(maPhong, requesterMaNv, noiDung);
+                const fileUrl = payload?.fileUrl || null;
+                const fileType = payload?.fileType || null;
+                const result = await chatService_1.default.sendMessageToRoom(maPhong, requesterMaNv, noiDung, fileUrl, fileType);
                 const message = result?.data;
                 if (!message) {
                     throw new Error("Không thể gửi tin nhắn");
@@ -98,6 +100,23 @@ const setupChatSocket = (io) => {
                     maNvGui: requesterMaNv,
                 };
                 io.to(toRoomChannel(maPhong)).emit("chat:new_message", outgoing);
+                // Notify other room members
+                try {
+                    const { appPool } = require("../config/db");
+                    const { createNotification } = require("../controllers/notificationController");
+                    const { emitNotification } = require("../server");
+                    const members = await appPool.request().input("MaPhong", maPhong).query(`
+            SELECT MaNV FROM THANH_VIEN_PHONG WHERE MaPhong = @MaPhong AND MaNV != '${requesterMaNv}'
+          `);
+                    for (const member of members.recordset) {
+                        const notif = await createNotification(member.MaNV, "Tin nhắn mới", `Bạn có tin nhắn mới từ ${requesterMaNv}`, "chat_message", "/messages");
+                        if (notif)
+                            emitNotification(member.MaNV, notif);
+                    }
+                }
+                catch (e) {
+                    console.error("Failed to push chat notification:", e);
+                }
                 if (typeof ack === "function") {
                     ack({ success: true, data: outgoing });
                 }

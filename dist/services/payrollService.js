@@ -115,5 +115,26 @@ const payrollService = {
             throw new Error("Lỗi lấy phiếu lương cá nhân: " + resolveErrorMessage(error));
         }
     },
+    closePayrollForMonth: async (month, year) => {
+        try {
+            const count = await payrollRepository_1.default.closePayrollForMonth(month, year);
+            return {
+                success: true,
+                message: `Đã chốt lương tháng ${month}/${year} thành công cho ${count} nhân viên.`,
+            };
+        }
+        catch (error) {
+            throw new Error("Lỗi chốt lương tháng: " + resolveErrorMessage(error));
+        }
+    },
+    checkIfPayrollClosed: async (month, year) => {
+        try {
+            const isClosed = await payrollRepository_1.default.checkIfPayrollClosed(month, year);
+            return { success: true, isClosed };
+        }
+        catch (error) {
+            throw new Error("Lỗi kiểm tra trạng thái chốt lương: " + resolveErrorMessage(error));
+        }
+    },
 };
 exports.default = payrollService;

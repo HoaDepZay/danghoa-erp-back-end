@@ -25,13 +25,17 @@ import notificationRoutes from "./routers/notificationRoutes";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import path from "path";
+import fs from "fs";
 
 const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
 
 // Set up Swagger
-const swaggerDocument = YAML.load(path.join(__dirname, "docs/swagger.yaml"));
+const swaggerPath = fs.existsSync(path.join(__dirname, "docs/swagger.yaml"))
+  ? path.join(__dirname, "docs/swagger.yaml")
+  : path.join(__dirname, "../docs/swagger.yaml");
+const swaggerDocument = YAML.load(swaggerPath);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // ĐẢM BẢO Body Parser được setup đúng
@@ -39,7 +43,10 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Serve static uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const uploadsPath = fs.existsSync(path.join(__dirname, "uploads"))
+  ? path.join(__dirname, "uploads")
+  : path.join(__dirname, "../uploads");
+app.use('/uploads', express.static(uploadsPath));
 
 // ✅ CORS Configuration cho Desktop + Mobile
 app.use(

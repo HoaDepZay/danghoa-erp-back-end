@@ -198,5 +198,45 @@ const dashboardService = {
             throw new Error("Lỗi lấy dashboard realtime: " + error.message);
         }
     },
+    // 13. HR Analytics: Biến động nhân sự 12 tháng
+    getAnalyticsTurnover: async () => {
+        try {
+            const data = await dashboardRepository_1.default.getAnalyticsTurnover();
+            return { success: true, message: "Lấy biến động nhân sự thành công", data };
+        }
+        catch (error) {
+            throw new Error("Lỗi analytics turnover: " + error.message);
+        }
+    },
+    // 14. HR Analytics: Chi phí lương theo phòng ban
+    getAnalyticsSalaryCost: async () => {
+        try {
+            const data = await dashboardRepository_1.default.getAnalyticsSalaryCost();
+            return { success: true, message: "Lấy chi phí lương thành công", data };
+        }
+        catch (error) {
+            throw new Error("Lỗi analytics salary cost: " + error.message);
+        }
+    },
+    // 15. HR Analytics: Tỷ lệ chấm công 6 tháng
+    getAnalyticsAttendance: async () => {
+        try {
+            const data = await dashboardRepository_1.default.getAnalyticsAttendance();
+            return { success: true, message: "Lấy thống kê chấm công thành công", data };
+        }
+        catch (error) {
+            throw new Error("Lỗi analytics attendance: " + error.message);
+        }
+    },
+    // 16. HR Analytics: Tổng hợp summary
+    getAnalyticsSummary: async () => {
+        try {
+            const data = await dashboardRepository_1.default.getAnalyticsSummary();
+            return { success: true, message: "Lấy analytics summary thành công", data };
+        }
+        catch (error) {
+            throw new Error("Lỗi analytics summary: " + error.message);
+        }
+    },
 };
 exports.default = dashboardService;

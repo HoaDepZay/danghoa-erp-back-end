@@ -5,12 +5,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const router = express_1.default.Router();
-const msnodesqlv8_1 = __importDefault(require("msnodesqlv8"));
 const db_1 = require("../config/db");
-const connectionString = `Driver={ODBC Driver 17 for SQL Server};Server=${process.env.DB_SERVER};Database=${process.env.DB_NAME};UID=${process.env.DB_USER};PWD=${process.env.DB_PASS};TrustServerCertificate=yes;`;
 const authMiddleware_1 = __importDefault(require("../middleware/authMiddleware"));
 const authorizationMiddleware_1 = require("../middleware/authorizationMiddleware");
 const authController_1 = __importDefault(require("../controllers/authController"));
+const camelCaseHelper_1 = require("../utils/camelCaseHelper");
 // --- QUẢN LÝ NHÂN VIÊN ---
 // Danh sách hồ sơ đã xác thực OTP, chờ admin duyệt
 router.get("/onboarding/pending", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, authController_1.default.getPendingApprovals);
@@ -18,61 +17,75 @@ router.get("/onboarding/pending", authMiddleware_1.default, authorizationMiddlew
 router.post("/onboarding/accept", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, authController_1.default.acceptPendingRegistration);
 // Admin từ chối hồ sơ đăng ký
 router.post("/onboarding/reject", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, authController_1.default.rejectPendingRegistration);
-// 1. Sửa nhân viên (Admin)
-router.put("/nhan-vien/edit", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, (req, res) => {
-    const { manv, hoten } = req.body;
+// 1. Sửa nhân viên (Admin) - Đã chuyển sang gọi Stored Procedure: sp_updateEmployee
+router.put("/nhan-vien/edit", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, async (req, res) => {
+    const { manv, hoten, chucvu } = req.body;
     const maphg = req.body.maphg === null ? null : Number(req.body.maphg);
     const luong = Number(req.body.luong || 0);
-    const chucvu = req.body.chucvu || "Nhân viên";
     if (!manv)
         return res.status(400).json({ error: "Thiếu mã nhân viên!" });
-    const query = "UPDATE NHAN_VIEN SET HOTEN = ?, MAPHG = ?, LUONG = ?, CHUCVU = ? WHERE MANV = ?";
-    msnodesqlv8_1.default.query(connectionString, query, [hoten, maphg, luong, chucvu, manv], (err) => {
-        if (err)
-            return res.status(500).json({ error: err.message });
-        res.json({ success: true, message: "Cập nhật nhân sự thành công!" });
-    });
+    try {
+        await db_1.appPool.request()
+            .input("MANV", db_1.sql.VarChar(20), manv)
+            .input("HOTEN", db_1.sql.NVarChar(200), hoten || null)
+            .input("CHUCVU", db_1.sql.NVarChar(100), chucvu || null)
+            .input("LUONG", db_1.sql.Decimal(18, 2), luong)
+            .input("MAPHG", db_1.sql.Int, maphg)
+            .execute("sp_updateEmployee");
+        return res.json({ success: true, message: "Cập nhật nhân sự thành công!" });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
 });
-// 2. Xóa nhân viên (Admin)
-router.delete("/nhan-vien/:manv", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, (req, res) => {
-    msnodesqlv8_1.default.query(connectionString, "DELETE FROM TAIKHOAN WHERE MANV = ?", [req.params.manv], () => {
-        msnodesqlv8_1.default.query(connectionString, "DELETE FROM NHAN_VIEN WHERE MANV = ?", [req.params.manv], (err) => {
-            if (err)
-                return res.status(500).json({ error: err.message });
-            res.json({ message: "Deleted" });
-        });
-    });
+// 2. Xóa nhân viên (Admin) - Đã chuyển sang gọi Stored Procedure: sp_deleteEmployeeFull
+router.delete("/nhan-vien/:manv", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, async (req, res) => {
+    const { manv } = req.params;
+    try {
+        await db_1.appPool.request()
+            .input("MANV", db_1.sql.VarChar(20), manv)
+            .execute("sp_deleteEmployeeFull");
+        return res.json({ success: true, message: "Xóa nhân viên thành công!" });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
 });
 // --- QUẢN LÝ PHÒNG BAN ---
-// 3. Lấy danh sách phòng ban (Admin)
-router.get("/phong-ban", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, (req, res) => {
-    msnodesqlv8_1.default.query(req.userConnectionString, "SELECT MAPHG, TENPB, NG_THANHLAP FROM PHONG_BAN", (err, rows) => {
-        if (err)
-            return res.status(403).json({ error: "Bạn không có quyền Admin" });
-        res.json(rows);
-    });
+// 3. Lấy danh sách phòng ban (Admin) - Đã chuyển sang gọi Stored Procedure: sp_getAllDepartments
+router.get("/phong-ban", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, async (req, res) => {
+    try {
+        const result = await db_1.appPool.request().execute("sp_getAllDepartments");
+        return res.json((0, camelCaseHelper_1.keysToCamelCase)(result.recordset));
+    }
+    catch (err) {
+        return res.status(403).json({ error: "Lỗi truy xuất hoặc bạn không có quyền Admin" });
+    }
 });
-// 4. Tạo phòng ban (Admin)
-router.post("/phong-ban/create", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, (req, res) => {
+// 4. Tạo phòng ban (Admin) - Đã chuyển sang gọi Stored Procedure: sp_createDepartment
+router.post("/phong-ban/create", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, async (req, res) => {
     const { tenpb } = req.body;
     if (!tenpb)
         return res.status(400).json({ error: "Vui lòng nhập tên phòng ban!" });
-    const maPhongBan = Math.floor(1000 + Math.random() * 9000); // generateNumericCode inline
-    const query = "INSERT INTO PHONG_BAN (MAPHG, TENPB, NG_THANHLAP) VALUES (?, ?, GETDATE())";
-    msnodesqlv8_1.default.query(connectionString, query, [maPhongBan, tenpb], (err) => {
-        if (err) {
-            if (err.message.includes("PRIMARY KEY"))
-                return res.status(500).json({ error: "Trùng ID, thử lại!" });
-            return res.status(500).json({ error: err.message });
-        }
-        res.status(201).json({
+    const maPhongBan = Math.floor(1000 + Math.random() * 9000);
+    try {
+        await db_1.appPool.request()
+            .input("MAPHG", db_1.sql.Int, maPhongBan)
+            .input("TENPB", db_1.sql.NVarChar(100), tenpb)
+            .execute("sp_createDepartment");
+        return res.status(201).json({
             success: true,
             message: `Tạo phòng ${tenpb} thành công!`,
             id: maPhongBan,
         });
-    });
+    }
+    catch (err) {
+        if (err.message.includes("PRIMARY KEY"))
+            return res.status(500).json({ error: "Trùng ID, thử lại!" });
+        return res.status(500).json({ error: err.message });
+    }
 });
-// 5. Sửa phòng ban (Admin)
+// 5. Sửa phòng ban (Admin) - Đã có sẵn gọi Stored Procedure: sp_updateDepartment
 router.put("/phong-ban/edit", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, async (req, res) => {
     try {
         const maphg = Number(req.body.maphg);
@@ -111,13 +124,13 @@ router.put("/phong-ban/edit", authMiddleware_1.default, authorizationMiddleware_
         if (status !== 1) {
             const deptCheck = await db_1.appPool
                 .request()
-                .input("MaPhg", db_1.sql.Int, maphg)
-                .query("SELECT TOP 1 MAPHG, TENPB, MaTruongPhg FROM PHONG_BAN WHERE MAPHG = @MaPhg");
+                .input("MAPHG", db_1.sql.Int, maphg)
+                .execute("sp_getDepartmentById");
             const managerCheck = matruongphg
                 ? await db_1.appPool
                     .request()
-                    .input("MaNv", db_1.sql.VarChar(20), matruongphg)
-                    .query("SELECT TOP 1 MANV, HOTEN, MAPHG FROM NHAN_VIEN WHERE MANV = @MaNv")
+                    .input("MANV", db_1.sql.VarChar(20), matruongphg)
+                    .execute("sp_getEmployeeById")
                 : { recordset: [] };
             const currentDepartment = deptCheck.recordset?.[0] || null;
             const managerExists = managerCheck.recordset?.length > 0;
@@ -157,21 +170,23 @@ router.put("/phong-ban/edit", authMiddleware_1.default, authorizationMiddleware_
         return res.status(500).json({ error: err?.message || "Lỗi hệ thống" });
     }
 });
-// 6. Xóa phòng ban (Admin)
-router.delete("/phong-ban/:maphg", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, (req, res) => {
+// 6. Xóa phòng ban (Admin) - Đã chuyển sang gọi Stored Procedure: sp_deleteDepartment
+router.delete("/phong-ban/:maphg", authMiddleware_1.default, authorizationMiddleware_1.requireAdmin, async (req, res) => {
     const { maphg } = req.params;
-    msnodesqlv8_1.default.query(connectionString, "SELECT COUNT(*) as count FROM NHAN_VIEN WHERE MAPHG = ?", [maphg], (err, rows) => {
-        if (err)
-            return res.status(500).json({ error: err.message });
-        if (rows[0].count > 0)
-            return res
-                .status(400)
-                .json({ error: "Không thể xóa phòng có nhân viên!" });
-        msnodesqlv8_1.default.query(connectionString, "DELETE FROM PHONG_BAN WHERE MAPHG = ?", [maphg], (err) => {
-            if (err)
-                return res.status(500).json({ error: err.message });
-            res.json({ success: true, message: "Xóa thành công!" });
-        });
-    });
+    try {
+        const checkRows = await db_1.appPool.request()
+            .input("MAPHG", db_1.sql.Int, maphg)
+            .execute("sp_getEmployeesByDepartment");
+        if (checkRows.recordset.length > 0) {
+            return res.status(400).json({ error: "Không thể xóa phòng có nhân viên!" });
+        }
+        await db_1.appPool.request()
+            .input("MAPHG", db_1.sql.Int, maphg)
+            .execute("sp_deleteDepartment");
+        return res.json({ success: true, message: "Xóa phòng ban thành công!" });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
 });
 exports.default = router;

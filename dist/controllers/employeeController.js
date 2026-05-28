@@ -11,7 +11,8 @@ const employeeController = {
             const { page = 1, pageSize = 10, search = "" } = req.query;
             const pageNum = parseInt(page) || 1;
             const size = parseInt(pageSize) || 10;
-            const result = await employeeService_1.default.getAllEmployees(pageNum, size, search);
+            const userRole = req.user?.userInfo?.role;
+            const result = await employeeService_1.default.getAllEmployees(pageNum, size, search, userRole);
             return res.status(200).json(result);
         }
         catch (error) {
