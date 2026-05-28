@@ -83,11 +83,12 @@ app.use(
         return callback(null, true);
       }
 
-      // Cho phép custom domain từ .env (nếu có)
-      const normalizedFrontendUrl = String(process.env.FRONTEND_URL || "")
-        .trim()
-        .replace(/\/+$/, "");
-      if (normalizedFrontendUrl && origin === normalizedFrontendUrl) {
+      // Cho phép custom domain từ .env (hỗ trợ nhiều domain phân tách bằng dấu phẩy)
+      const frontendUrls = String(process.env.FRONTEND_URL || "")
+        .split(",")
+        .map(url => url.trim().replace(/\/+$/, ""))
+        .filter(url => url !== "");
+      if (frontendUrls.includes(origin)) {
         return callback(null, true);
       }
 
