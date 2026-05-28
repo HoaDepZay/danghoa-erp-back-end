@@ -1,8 +1,0 @@
-feat(api): thêm quản lý nhân viên đầy đủ và hoàn thiện tính năng xác thực (auth)
-
-Chi tiết (Body):
-- Cải thiện logic sinh JWT lưu thêm userEmail và userInfo.
-- Thêm các API auth: Login, Đổi mật khẩu, Cập nhật hồ sơ.
-- Xây dựng Employee CRUD (Controller, Service, Repository) với phân trang/tìm kiếm.
-- Cập nhật authMiddleware tự động cấp phát chuỗi kết nối SQL động từ token.
-- Tăng giới hạn body parser lên 50mb trong server.js.
