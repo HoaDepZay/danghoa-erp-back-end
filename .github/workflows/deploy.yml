@@ -49,6 +49,6 @@ jobs:
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
             cd ~/huit-erp-backend
             echo "$SSH_PASSWORD" | sudo -S docker pull $DOCKER_USERNAME/huit-erp-backend:latest
-            echo "$SSH_PASSWORD" | sudo -S docker compose down
-            echo "$SSH_PASSWORD" | sudo -S docker compose up -d
+            echo "$SSH_PASSWORD" | sudo -S DOCKER_USERNAME=$DOCKER_USERNAME docker compose down
+            echo "$SSH_PASSWORD" | sudo -S DOCKER_USERNAME=$DOCKER_USERNAME docker compose up -d
           EOF
