@@ -44,7 +44,7 @@ jobs:
             mkdir -p ~/huit-erp-backend
             cd ~/huit-erp-backend
             curl -o docker-compose.yml https://raw.githubusercontent.com/$GITHUB_REPO/main/docker-compose.yml
-            sudo docker pull $DOCKER_USERNAME/huit-erp-backend:latest
-            sudo docker compose down
-            sudo docker compose up -d
+            echo "$SSH_PASSWORD" | sudo -S docker pull $DOCKER_USERNAME/huit-erp-backend:latest
+            echo "$SSH_PASSWORD" | sudo -S docker compose down
+            echo "$SSH_PASSWORD" | sudo -S docker compose up -d
           EOF
