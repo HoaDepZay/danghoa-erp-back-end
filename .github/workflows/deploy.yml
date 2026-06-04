@@ -32,23 +32,19 @@ jobs:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
 
       - name: Deploy to Ubuntu Server via SSH
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          script: |
-            # Di chuyển vào thư mục chứa docker-compose (nếu chưa có thì tạo)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y sshpass
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
             mkdir -p ~/huit-erp-backend
             cd ~/huit-erp-backend
-            
-            # Kéo (pull) file docker-compose.yml mới nhất từ Github (để chạy)
-            # Giả sử bạn copy file docker-compose này lên server bằng curl hoặc wget
-            curl -o docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
-            
-            # Kéo Docker Image mới nhất về server
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/huit-erp-backend:latest
-            
-            # Tắt container cũ và khởi động container mới
+            curl -o docker-compose.yml https://raw.githubusercontent.com/$GITHUB_REPO/main/docker-compose.yml
+            sudo docker pull $DOCKER_USERNAME/huit-erp-backend:latest
             sudo docker compose down
             sudo docker compose up -d
+          EOF
