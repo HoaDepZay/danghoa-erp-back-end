@@ -8,7 +8,7 @@ const baseConfig: sql.config = {
   server: process.env.DB_SERVER || "",
   port: parseInt(process.env.DB_PORT || "1433"),
   options: {
-    encrypt: true, // Bắt buộc cho Azure SQL
+    encrypt: false,
     trustServerCertificate: true,
     connectTimeout: 30000,
   },

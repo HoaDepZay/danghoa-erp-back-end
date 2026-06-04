@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  erp-backend:
+    container_name: huit-erp-backend
+    build: .
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      # Các biến môi trường khác (DB, JWT Secret, v.v.)
+      # sẽ được lấy từ file .env nằm trên máy chủ (được khai báo ở dưới)
+    env_file:
+      - .env

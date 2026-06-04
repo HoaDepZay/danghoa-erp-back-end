@@ -1,0 +1,49 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main # Chạy khi push code lên nhánh main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/huit-erp-backend:latest
+
+      - name: Deploy to Ubuntu Server via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: |
+            # Di chuyển vào thư mục chứa docker-compose (nếu chưa có thì tạo)
+            mkdir -p ~/huit-erp-backend
+            cd ~/huit-erp-backend
+            
+            # Kéo (pull) file docker-compose.yml mới nhất từ Github (để chạy)
+            # Giả sử bạn copy file docker-compose này lên server bằng curl hoặc wget
+            curl -o docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
+            
+            # Kéo Docker Image mới nhất về server
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/huit-erp-backend:latest
+            
+            # Tắt container cũ và khởi động container mới
+            sudo docker compose down
+            sudo docker compose up -d

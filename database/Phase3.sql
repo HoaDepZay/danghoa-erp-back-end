@@ -8,8 +8,8 @@ AS
     SELECT
         YEAR(NGAYTUYENDUNG)                         AS Nam,
         MONTH(NGAYTUYENDUNG)                        AS Thang,
-        COUNT(MANV)                                 AS SoNhanVienMoi,
-        0                                           AS SoNhanVienNghi   -- placeholder, co the mo rong
+        COUNT(MANV)                                 AS SoNHAN_VIENMoi,
+        0                                           AS SoNHAN_VIENNghi   -- placeholder, co the mo rong
     FROM NHAN_VIEN
     WHERE NGAYTUYENDUNG IS NOT NULL
     GROUP BY YEAR(NGAYTUYENDUNG), MONTH(NGAYTUYENDUNG);
@@ -21,7 +21,7 @@ AS
     SELECT
         pb.MAPHG,
         pb.TENPB,
-        COUNT(nv.MANV)                              AS SoNhanVien,
+        COUNT(nv.MANV)                              AS SoNHAN_VIEN,
         ISNULL(SUM(CAST(nv.LUONG AS FLOAT)), 0)    AS TongLuong,
         ISNULL(AVG(CAST(nv.LUONG AS FLOAT)), 0)    AS LuongTrungBinh,
         ISNULL(MAX(CAST(nv.LUONG AS FLOAT)), 0)    AS LuongCaoNhat,
@@ -37,7 +37,7 @@ AS
     SELECT
         YEAR(b.NGAY)                                AS Nam,
         MONTH(b.NGAY)                               AS Thang,
-        COUNT(DISTINCT b.MANV)                      AS SoNhanVienDiLam,
+        COUNT(DISTINCT b.MANV)                      AS SoNHAN_VIENDiLam,
         COUNT(CASE WHEN b.DITRE = 1 THEN 1 END)    AS SoLuotDiTre,
         COUNT(b.MACC)                               AS TongLuotChamCong,
         CAST(AVG(CASE WHEN b.DITRE = 0 THEN 100.0 ELSE 0 END) AS DECIMAL(5,2)) AS TyLeDungGio
@@ -57,8 +57,8 @@ BEGIN
     )
     SELECT
         m.Nam, m.Thang,
-        ISNULL(v.SoNhanVienMoi, 0)  AS NhanVienMoi,
-        ISNULL(v.SoNhanVienNghi, 0) AS NhanVienNghi
+        ISNULL(v.SoNHAN_VIENMoi, 0)  AS NHAN_VIENMoi,
+        ISNULL(v.SoNHAN_VIENNghi, 0) AS NHAN_VIENNghi
     FROM Months m
     LEFT JOIN VW_BIEN_DONG_NHAN_SU v ON v.Nam = m.Nam AND v.Thang = m.Thang
     ORDER BY m.Nam ASC, m.Thang ASC;
@@ -70,7 +70,7 @@ CREATE OR ALTER PROCEDURE sp_analytics_salary_cost
 AS
 BEGIN
     SELECT * FROM VW_CHI_PHI_LUONG_PHONG_BAN
-    WHERE SoNhanVien > 0
+    WHERE SoNHAN_VIEN > 0
     ORDER BY TongLuong DESC;
 END
 GO
@@ -104,8 +104,8 @@ BEGIN
     ORDER BY SoLuong DESC;
 
     -- Top 5 phong ban nhieu nhan vien nhat
-    SELECT TOP 5 TENPB, SoNhanVien, TongLuong
+    SELECT TOP 5 TENPB, SoNHAN_VIEN, TongLuong
     FROM VW_CHI_PHI_LUONG_PHONG_BAN
-    ORDER BY SoNhanVien DESC;
+    ORDER BY SoNHAN_VIEN DESC;
 END
 GO

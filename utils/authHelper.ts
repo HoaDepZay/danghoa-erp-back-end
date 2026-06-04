@@ -7,12 +7,10 @@ import "dotenv/config";
  */
 const buildAzureSqlAuthUser = (loginName: string): string => {
   const server = process.env.DB_SERVER || "";
-  const azureServerShortName = server.split(".")[0];
-
-  if (azureServerShortName) {
+  if (server.includes("database.windows.net")) {
+    const azureServerShortName = server.split(".")[0];
     return `${loginName}@${azureServerShortName}`;
   }
-
   return loginName;
 };
 

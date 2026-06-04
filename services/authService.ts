@@ -33,14 +33,10 @@ const generateEmployeeId = () => {
 
 const buildAzureSqlAuthUser = (loginName: string) => {
   const server = process.env.DB_SERVER || "";
-  const azureServerShortName = server.split(".")[0];
-
-  // Azure SQL ODBC format: email@gmail.com + server => email@gmail.com@server
-  // Simply concatenate with @server (no brackets needed)
-  if (azureServerShortName) {
+  if (server.includes("database.windows.net")) {
+    const azureServerShortName = server.split(".")[0];
     return `${loginName}@${azureServerShortName}`;
   }
-
   return loginName;
 };
 

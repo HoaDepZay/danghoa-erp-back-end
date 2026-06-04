@@ -22,7 +22,7 @@ CREATE PROCEDURE sp_getPayrollStatistics
     @Nam INT = NULL
 AS
 BEGIN
-    SELECT Thang, Nam, SoNhanVienTinhLuong, 
+    SELECT Thang, Nam, SoNHAN_VIENTinhLuong, 
            ROUND(TongLuongCoBan, 0) AS TongLuongCoBan,
            ROUND(TongPhuCap, 0) AS TongPhuCap, 
            ROUND(TongThuong, 0) AS TongThuong,

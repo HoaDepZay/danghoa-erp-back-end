@@ -77,7 +77,7 @@ AS
 BEGIN
     SELECT p.ID, p.MaNV, p.MaCa, p.NgayLamViec, p.TrangThai,
            c.TenCa, c.GioBatDau, c.GioKetThuc,
-           n.HOTEN as TenNhanVien
+           n.HOTEN as TenNHAN_VIEN
     FROM PHAN_CONG_CA p
     JOIN CA_LAM_VIEC c ON p.MaCa = c.MaCa
     JOIN NHAN_VIEN n ON p.MaNV = n.MANV
@@ -124,7 +124,7 @@ CREATE OR ALTER PROCEDURE sp_getLeaves
     @TrangThaiDuyet NVARCHAR(50) = NULL
 AS
 BEGIN
-    SELECT d.*, n.HOTEN as TenNhanVien, n.MAPHG
+    SELECT d.*, n.HOTEN as TenNHAN_VIEN, n.MAPHG
     FROM DON_NGHI_PHEP d
     JOIN NHAN_VIEN n ON d.MANV = n.MANV
     WHERE (@MaNV IS NULL OR d.MANV = @MaNV)
