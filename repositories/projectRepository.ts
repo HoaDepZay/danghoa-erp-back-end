@@ -204,7 +204,7 @@ const projectRepository = {
       .request()
       .input("MADA", sql.Int, maDa)
       .input("MANV", sql.VarChar(20), maNv)
-      .input("VAITRODUAN", sql.NVarChar(100), vaiTroDuAn)
+      .input("VaiTroDU_AN", sql.NVarChar(100), vaiTroDuAn)
       .execute("sp_addProjectMember");
   },
 

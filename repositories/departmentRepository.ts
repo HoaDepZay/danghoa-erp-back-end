@@ -32,7 +32,7 @@ const departmentRepository = {
       .input("MaPhg", sql.Int, data.maphg)
       .input("TenPb", sql.NVarChar, data.tenpb)
       .input("MaTruongPhg", sql.VarChar, data.matruongphg || null)
-      .input("NgThanhLap", sql.DateTime, data.ng_thanhlap || new Date())
+      .input("NG_THANHLAP", sql.DateTime, data.ng_thanhlap || new Date())
       .execute("sp_createDepartment");
   },
 

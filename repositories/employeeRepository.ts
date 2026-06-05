@@ -46,8 +46,8 @@ const employeeRepository = {
       .input("MaPhg", sql.Int, data.maphg)
       .input("NgaySinh", sql.Date, data.ngaysinh || null)
       .input("GioiTinh", sql.NVarChar, data.gioitinh || null)
-      .input("DiaChiNhan", sql.NVarChar, data.diachinhan || null)
-      .input("NgayVaoLam", sql.Date, data.ngayvaolam || null)
+      .input("DiaChi", sql.NVarChar, data.diachinhan || null)
+      .input("NgayTuyenDung", sql.Date, data.ngayvaolam || null)
       .execute("sp_createEmployee");
   },
 
@@ -78,7 +78,7 @@ const employeeRepository = {
       request.input("GioiTinh", sql.NVarChar, data.gioitinh);
     }
     if (data.diachinhan !== undefined) {
-      request.input("DiaChiNhan", sql.NVarChar, data.diachinhan);
+      request.input("DiaChi", sql.NVarChar, data.diachinhan);
     }
 
     return await request.execute("sp_updateEmployee");

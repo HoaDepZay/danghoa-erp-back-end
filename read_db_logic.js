@@ -3,7 +3,7 @@ const sql = require('mssql');
 const config = {
   user: 'sa',
   password: '31052006Hoa*',
-  server: '100.69.220.17',
+  server: '100.108.208.39',
   database: 'QuanTriNhanSu',
   port: 1433,
   options: {
@@ -15,10 +15,10 @@ const config = {
 async function getSPContent() {
   try {
     await sql.connect(config);
-    const procedures = ['sp_ThucThiTinhLuong', 'sp_CheckIn', 'sp_CheckOut'];
+    const procedures = ['sp_createDepartment'];
     
     for (const proc of procedures) {
-      console.log(`\\n=== CONTENT OF ${proc} ===`);
+      console.log(`\n=== CONTENT OF ${proc} ===`);
       const result = await sql.query(`EXEC sp_helptext '${proc}'`);
       const text = result.recordset.map(r => r.Text).join('');
       console.log(text);
