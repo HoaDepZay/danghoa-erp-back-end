@@ -3,16 +3,16 @@ import payrollService from "../services/payrollService";
 const payrollController = {
   checkIn: async (req, res) => {
     try {
-      const maNv = req.body?.maNV || req.body?.MaNV || req.body?.manv;
+      const MA_NV = req.body?.maNV || req.body?.MaNV || req.body?.MA_NV;
 
-      if (!maNv) {
+      if (!MA_NV) {
         return res.status(400).json({
           success: false,
           message: "Mã nhân viên (maNV) là bắt buộc",
         });
       }
 
-      const result = await payrollService.checkIn(String(maNv));
+      const result = await payrollService.checkIn(String(MA_NV));
       return res.status(200).json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -30,16 +30,16 @@ const payrollController = {
 
   checkOut: async (req, res) => {
     try {
-      const maNv = req.body?.maNV || req.body?.MaNV || req.body?.manv;
+      const MA_NV = req.body?.maNV || req.body?.MaNV || req.body?.MA_NV;
 
-      if (!maNv) {
+      if (!MA_NV) {
         return res.status(400).json({
           success: false,
           message: "Mã nhân viên (maNV) là bắt buộc",
         });
       }
 
-      const result = await payrollService.checkOut(String(maNv));
+      const result = await payrollService.checkOut(String(MA_NV));
       return res.status(200).json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

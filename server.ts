@@ -109,17 +109,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// Tự động chuyển đổi toàn bộ response JSON sang camelCase
+// Tự động chuyển đổi toàn bộ response JSON sang UPPER_SNAKE_CASE
+import { keysToUpperSnakeCase } from "./utils/upperSnakeCaseHelper";
 app.use((req, res, next) => {
   const originalJson = res.json;
   res.json = function (body) {
     if (body) {
-      body = keysToCamelCase(body);
+      const isDashboardRoute = req.path.startsWith("/api/dashboard") || req.originalUrl.startsWith("/api/dashboard");
+      if (!isDashboardRoute) {
+        body = keysToUpperSnakeCase(body);
+      }
     }
     return originalJson.call(this, body);
   };
   next();
 });
+
 
 // PHÂN LOẠI Endpoint
 app.use("/api/auth", authRoutes);
@@ -143,8 +148,8 @@ const io = new SocketIOServer(httpServer, {
   },
 });
 
-export const emitNotification = (maNv: string, payload: any) => {
-  io.to(`user_${maNv}`).emit("new_notification", payload);
+export const emitNotification = (MA_NV: string, payload: any) => {
+  io.to(`user_${MA_NV}`).emit("new_notification", payload);
 };
 
 setupChatSocket(io);

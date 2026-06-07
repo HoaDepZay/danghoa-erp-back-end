@@ -207,28 +207,28 @@ const chatService = {
   },
 
   getOrCreateProjectRoomForMember: async (projectId, requesterMaNv) => {
-    const maDa = Number(projectId);
-    if (!maDa) {
+    const MA_DA = Number(projectId);
+    if (!MA_DA) {
       throw new Error("Mã dự án không hợp lệ.");
     }
 
-    const projectMembers = await chatRepository.getProjectMembers(maDa);
+    const projectMembers = await chatRepository.getProjectMembers(MA_DA);
     if (!projectMembers.includes(requesterMaNv)) {
       throw new Error("Bạn không thuộc dự án này.");
     }
 
     // Lấy tên dự án từ DB
-    const project = await chatRepository.getProjectInfo(maDa);
-    const tenDa = project?.TENDA || `Dự án #${maDa}`;
+    const project = await chatRepository.getProjectInfo(MA_DA);
+    const TEN_DA = project?.TENDA || `Dự án #${MA_DA}`;
 
     const room = await chatRepository.getOrCreateReferenceRoom(
       chatRepository.ROOM_TYPE.PROJECT,
-      String(maDa),
-      `Dự án: ${tenDa}`,
+      String(MA_DA),
+      `Dự án: ${TEN_DA}`,
     );
 
-    for (const maNv of projectMembers) {
-      await chatRepository.addMemberIfNotExists(room.MaPhong, maNv);
+    for (const MA_NV of projectMembers) {
+      await chatRepository.addMemberIfNotExists(room.MaPhong, MA_NV);
     }
 
     const members = await chatRepository.getRoomMembers(room.MaPhong);
@@ -261,24 +261,24 @@ const chatService = {
       `Phòng ban: ${tenPb}`,
     );
 
-    for (const maNv of departmentMembers) {
-      await chatRepository.addMemberIfNotExists(room.MaPhong, maNv);
+    for (const MA_NV of departmentMembers) {
+      await chatRepository.addMemberIfNotExists(room.MaPhong, MA_NV);
     }
 
     const members = await chatRepository.getRoomMembers(room.MaPhong);
     return { success: true, data: { ...room, thanhVien: members } };
   },
 
-  ensureProjectRoomCreated: async (maDa, tenDa) => {
+  ensureProjectRoomCreated: async (MA_DA, TEN_DA) => {
     const room = await chatRepository.getOrCreateReferenceRoom(
       chatRepository.ROOM_TYPE.PROJECT,
-      String(maDa),
-      tenDa ? `Dự án: ${tenDa}` : `Dự án #${maDa}`,
+      String(MA_DA),
+      TEN_DA ? `Dự án: ${TEN_DA}` : `Dự án #${MA_DA}`,
     );
 
-    const members = await chatRepository.getProjectMembers(maDa);
-    for (const maNv of members) {
-      await chatRepository.addMemberIfNotExists(room.MaPhong, maNv);
+    const members = await chatRepository.getProjectMembers(MA_DA);
+    for (const MA_NV of members) {
+      await chatRepository.addMemberIfNotExists(room.MaPhong, MA_NV);
     }
 
     return room;
@@ -292,29 +292,29 @@ const chatService = {
     );
 
     const members = await chatRepository.getDepartmentMembers(maPhg);
-    for (const maNv of members) {
-      await chatRepository.addMemberIfNotExists(room.MaPhong, maNv);
+    for (const MA_NV of members) {
+      await chatRepository.addMemberIfNotExists(room.MaPhong, MA_NV);
     }
 
     return room;
   },
 
-  syncProjectMemberAdded: async (maDa, maNv, tenDa = null) => {
+  syncProjectMemberAdded: async (MA_DA, MA_NV, TEN_DA = null) => {
     const room = await chatRepository.getOrCreateReferenceRoom(
       chatRepository.ROOM_TYPE.PROJECT,
-      String(maDa),
-      tenDa ? `Dự án: ${tenDa}` : `Dự án #${maDa}`,
+      String(MA_DA),
+      TEN_DA ? `Dự án: ${TEN_DA}` : `Dự án #${MA_DA}`,
     );
-    await chatRepository.addMemberIfNotExists(room.MaPhong, maNv);
+    await chatRepository.addMemberIfNotExists(room.MaPhong, MA_NV);
   },
 
-  syncProjectMemberRemoved: async (maDa, maNv) => {
+  syncProjectMemberRemoved: async (MA_DA, MA_NV) => {
     const room = await chatRepository.getOrCreateReferenceRoom(
       chatRepository.ROOM_TYPE.PROJECT,
-      String(maDa),
-      `Dự án #${maDa}`,
+      String(MA_DA),
+      `Dự án #${MA_DA}`,
     );
-    await chatRepository.removeMember(room.MaPhong, maNv);
+    await chatRepository.removeMember(room.MaPhong, MA_NV);
   },
 };
 

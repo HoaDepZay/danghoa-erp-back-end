@@ -34,19 +34,19 @@ router.post(
 
 // 1. Sửa nhân viên (Admin) - Đã chuyển sang gọi Stored Procedure: sp_updateEmployee
 router.put("/nhan-vien/edit", withUserConnection, requireAdmin, async (req: any, res: any) => {
-  const { manv, hoten, chucvu } = req.body;
-  const maphg = req.body.maphg === null ? null : Number(req.body.maphg);
-  const luong = Number(req.body.luong || 0);
+  const { MA_NV, HO_TEN, CHUC_VU } = req.body;
+  const MA_PHG = req.body.MA_PHG === null ? null : Number(req.body.MA_PHG);
+  const LUONG = Number(req.body.LUONG || 0);
 
-  if (!manv) return res.status(400).json({ error: "Thiếu mã nhân viên!" });
+  if (!MA_NV) return res.status(400).json({ error: "Thiếu mã nhân viên!" });
 
   try {
     await appPool.request()
-      .input("MANV", mssql.VarChar(20), manv)
-      .input("HOTEN", mssql.NVarChar(200), hoten || null)
-      .input("CHUCVU", mssql.NVarChar(100), chucvu || null)
-      .input("LUONG", mssql.Decimal(18, 2), luong)
-      .input("MAPHG", mssql.Int, maphg)
+      .input("MANV", mssql.VarChar(20), MA_NV)
+      .input("HOTEN", mssql.NVarChar(200), HO_TEN || null)
+      .input("CHUCVU", mssql.NVarChar(100), CHUC_VU || null)
+      .input("LUONG", mssql.Decimal(18, 2), LUONG)
+      .input("MAPHG", mssql.Int, MA_PHG)
       .execute("sp_updateEmployee");
     
     return res.json({ success: true, message: "Cập nhật nhân sự thành công!" });
@@ -57,14 +57,14 @@ router.put("/nhan-vien/edit", withUserConnection, requireAdmin, async (req: any,
 
 // 2. Xóa nhân viên (Admin) - Đã chuyển sang gọi Stored Procedure: sp_deleteEmployeeFull
 router.delete(
-  "/nhan-vien/:manv",
+  "/nhan-vien/:MA_NV",
   withUserConnection,
   requireAdmin,
   async (req: any, res: any) => {
-    const { manv } = req.params;
+    const { MA_NV } = req.params;
     try {
       await appPool.request()
-        .input("MANV", mssql.VarChar(20), manv)
+        .input("MANV", mssql.VarChar(20), MA_NV)
         .execute("sp_deleteEmployeeFull");
 
       return res.json({ success: true, message: "Xóa nhân viên thành công!" });
@@ -80,7 +80,7 @@ router.delete(
 router.get("/phong-ban", withUserConnection, requireAdmin, async (req: any, res: any) => {
   try {
     const result = await appPool.request().execute("sp_getAllDepartments");
-    return res.json(keysToCamelCase(result.recordset));
+    return res.json(result.recordset);
   } catch (err: any) {
     return res.status(403).json({ error: "Lỗi truy xuất hoặc bạn không có quyền Admin" });
   }
@@ -123,22 +123,22 @@ router.put(
   requireAdmin,
   async (req: any, res: any) => {
     try {
-      const maphg = Number(req.body.maphg);
+      const MA_PHG = Number(req.body.MA_PHG);
       const tenpb = req.body.tenpb;
       const matruongphg = req.body.matruongphg;
 
       console.log("[ADMIN][UPDATE_DEPARTMENT] Incoming body:", req.body);
       console.log("[ADMIN][UPDATE_DEPARTMENT] Parsed params:", {
-        maphg,
+        MA_PHG,
         tenpb,
         matruongphg,
-        maphgType: typeof maphg,
+        maphgType: typeof MA_PHG,
       });
 
-      if (!maphg) {
+      if (!MA_PHG) {
         console.warn(
-          "[ADMIN][UPDATE_DEPARTMENT] Invalid maphg:",
-          req.body.maphg,
+          "[ADMIN][UPDATE_DEPARTMENT] Invalid MA_PHG:",
+          req.body.MA_PHG,
         );
         return res.status(400).json({ error: "Thiếu mã phòng ban!" });
       }
@@ -153,13 +153,13 @@ router.put(
       }
 
       const request = appPool.request();
-      request.input("MaPhg", mssql.Int, maphg);
+      request.input("MaPhg", mssql.Int, MA_PHG);
       request.input("TenPb", mssql.NVarChar(100), tenpb ?? null);
       request.input("MaTruongPhg", mssql.VarChar(10), matruongphg ?? null);
       request.output("Status", mssql.Int);
 
       console.log("[ADMIN][UPDATE_DEPARTMENT] Executing sp_updateDepartment", {
-        MaPhg: maphg,
+        MaPhg: MA_PHG,
         TenPb: tenpb ?? null,
         MaTruongPhg: matruongphg ?? null,
       });
@@ -171,7 +171,7 @@ router.put(
       if (status !== 1) {
         const deptCheck = await appPool
           .request()
-          .input("MAPHG", mssql.Int, maphg)
+          .input("MAPHG", mssql.Int, MA_PHG)
           .execute("sp_getDepartmentById");
 
         const managerCheck = matruongphg
@@ -188,7 +188,7 @@ router.put(
           "[ADMIN][UPDATE_DEPARTMENT] Update failed with status != 1",
           {
             status,
-            maphg,
+            MA_PHG,
             tenpb,
             matruongphg,
           },
@@ -200,7 +200,7 @@ router.put(
           debug: {
             spStatus: status,
             requested: {
-              maphg,
+              MA_PHG,
               tenpb: tenpb ?? null,
               matruongphg: matruongphg ?? null,
             },
@@ -212,7 +212,7 @@ router.put(
       }
 
       console.log("[ADMIN][UPDATE_DEPARTMENT] Update success", {
-        maphg,
+        MA_PHG,
         status,
       });
       return res.json({ success: true, message: "Cập nhật thành công!" });
@@ -228,14 +228,14 @@ router.put(
 
 // 6. Xóa phòng ban (Admin) - Đã chuyển sang gọi Stored Procedure: sp_deleteDepartment
 router.delete(
-  "/phong-ban/:maphg",
+  "/phong-ban/:MA_PHG",
   withUserConnection,
   requireAdmin,
   async (req: any, res: any) => {
-    const { maphg } = req.params;
+    const { MA_PHG } = req.params;
     try {
       const checkRows = await appPool.request()
-        .input("MAPHG", mssql.Int, maphg)
+        .input("MAPHG", mssql.Int, MA_PHG)
         .execute("sp_getEmployeesByDepartment");
 
       if (checkRows.recordset.length > 0) {
@@ -243,7 +243,7 @@ router.delete(
       }
 
       await appPool.request()
-        .input("MAPHG", mssql.Int, maphg)
+        .input("MAPHG", mssql.Int, MA_PHG)
         .execute("sp_deleteDepartment");
 
       return res.json({ success: true, message: "Xóa phòng ban thành công!" });

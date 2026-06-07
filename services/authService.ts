@@ -78,9 +78,9 @@ const stripInvisibleChars = (value: string) =>
 
 const RESET_OTP_EXPIRE_MINUTES = 10;
 
-const validateSqlPasswordPolicy = (password: string, email: string) => {
+const validateSqlPasswordPolicy = (password: string, EMAIL: string) => {
   const normalizedPassword = String(password || "");
-  const normalizedEmail = String(email || "")
+  const normalizedEmail = String(EMAIL || "")
     .trim()
     .toLowerCase();
   const localPart = normalizedEmail.split("@")[0] || "";
@@ -107,19 +107,19 @@ const validateSqlPasswordPolicy = (password: string, email: string) => {
   }
 
   if (localPart && normalizedPassword.toLowerCase().includes(localPart)) {
-    throw new Error("Mật khẩu mới không được chứa email đăng nhập.");
+    throw new Error("Mật khẩu mới không được chứa EMAIL đăng nhập.");
   }
 };
 
 const authService = {
   register: async (userData) => {
     // Kiểm tra xem Email đã tồn tại chính thức chưa
-    const existing = await userRepository.getUserByEmail(userData.email);
+    const existing = await userRepository.getUserByEmail(userData.EMAIL);
     if (existing.recordset.length > 0) {
       throw new Error("Email này đã được đăng ký trong hệ thống!");
     }
 
-    const manv = generateEmployeeId();
+    const MA_NV = generateEmployeeId();
     const otpCode = crypto.randomInt(100000, 999999).toString();
     const expiredAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -128,7 +128,7 @@ const authService = {
     // Register chỉ lưu đăng ký tạm + OTP ở DB nghiệp vụ
     const stageResult = await userRepository.savePendingRegistration({
       ...userData,
-      manv,
+      MA_NV,
       encryptedPass,
       otpCode,
       expiredAt,
@@ -138,24 +138,24 @@ const authService = {
       throw new Error(stageResult.Message || "Không thể lưu đăng ký tạm.");
     }
 
-    sendOTPMail(userData.email, otpCode).catch((err) =>
+    sendOTPMail(userData.EMAIL, otpCode).catch((err) =>
       console.error("Lỗi gửi mail:", err),
     );
 
     return {
       success: true,
-      message: "Vui lòng kiểm tra mã OTP trong email của bạn.",
+      message: "Vui lòng kiểm tra mã OTP trong EMAIL của bạn.",
     };
   },
-  verifyOTP: async (email, otpCode) => {
+  verifyOTP: async (EMAIL, otpCode) => {
     // Bước 1: Kiểm tra OTP ở app pool
-    const pending = await userRepository.verifyPendingOtp(email, otpCode);
+    const pending = await userRepository.verifyPendingOtp(EMAIL, otpCode);
     if (!pending) {
       throw new Error("Mã OTP không đúng hoặc đã hết hạn");
     }
 
     // OTP hợp lệ: chỉ đánh dấu đã xác thực, chờ admin duyệt.
-    const marked = await userRepository.markOtpVerified(email, otpCode);
+    const marked = await userRepository.markOtpVerified(EMAIL, otpCode);
     if (!marked) {
       throw new Error("Không thể cập nhật trạng thái OTP. Vui lòng thử lại.");
     }
@@ -165,17 +165,17 @@ const authService = {
       message: "Xác thực OTP thành công. Vui lòng chờ admin phê duyệt.",
     };
   },
-  login: async (email, password) => {
+  login: async (EMAIL, password) => {
     // DEBUG: Log chi tiết
     console.log("=== LOGIN DEBUG ===");
     console.log("Time:", new Date().toISOString());
-    console.log("Email received:", { type: typeof email, value: email });
+    console.log("Email received:", { type: typeof EMAIL, value: EMAIL });
     console.log("Password received:", { type: typeof password, value: "***" });
 
-    // Kiểm tra xem email và password có phải string không
-    if (typeof email !== "string" || typeof password !== "string") {
+    // Kiểm tra xem EMAIL và password có phải string không
+    if (typeof EMAIL !== "string" || typeof password !== "string") {
       console.error("❌ LỖILỖI: Email hoặc Password không phải string!");
-      console.error("   Email:", email);
+      console.error("   Email:", EMAIL);
       console.error("   Password:", password);
       throw new Error(
         "Dữ liệu không hợp lệ - Email/Password phải là chuỗi text",
@@ -183,10 +183,10 @@ const authService = {
     }
 
     // Chuẩn hóa input để giảm lỗi nhập liệu từ mobile keyboard/autofill
-    const trimmedEmail = stripInvisibleChars(email).trim().toLowerCase();
+    const trimmedEmail = stripInvisibleChars(EMAIL).trim().toLowerCase();
     const trimmedPassword = stripInvisibleChars(password).trim();
 
-    console.log("After trim:", { email: trimmedEmail, password: "***" });
+    console.log("After trim:", { EMAIL: trimmedEmail, password: "***" });
 
     // 1. THỬ KẾT NỐI TRỰC TIẾP VÀO SQL SERVER ĐỂ XÁC THỰC MẬT KHẨU
     const sqlAuthUser = buildAzureSqlAuthUser(trimmedEmail);
@@ -281,7 +281,7 @@ const authService = {
     if (!user) {
       const pending =
         await userRepository.getPendingRegistrationStatusByEmail(trimmedEmail);
-      if (pending?.REGISTRATIONSTATUS === REGISTRATION_STATUS.OTP_VERIFIED) {
+      if (pending?.REGISTRATION_STATUS === REGISTRATION_STATUS.OTP_VERIFIED) {
         throw new Error("Tài khoản của bạn chưa được admin chấp nhận.");
       }
       throw new Error("Tài khoản chưa có hồ sơ nhân viên trong hệ thống.");
@@ -289,10 +289,10 @@ const authService = {
 
     // 3. TẠO JWT ACCESS/REFRESH TOKEN
     const tokenPayload = {
-      manv: user?.MANV || "",
-      hoten: user?.HOTEN || "",
-      email: user?.EMAIL || trimmedEmail,
-      role: user?.CHUCVU || "",
+      MA_NV: user?.MA_NV || "",
+      HO_TEN: user?.HO_TEN || "",
+      EMAIL: user?.EMAIL || trimmedEmail,
+      role: user?.CHUC_VU || "",
     };
 
     const token = generateToken(
@@ -313,9 +313,9 @@ const authService = {
       accessToken: token,
       refreshToken,
       user: {
-        manv: tokenPayload.manv,
-        hoten: tokenPayload.hoten,
-        email: tokenPayload.email,
+        MA_NV: tokenPayload.MA_NV,
+        HO_TEN: tokenPayload.HO_TEN,
+        EMAIL: tokenPayload.EMAIL,
         role: tokenPayload.role,
       },
     };
@@ -340,9 +340,9 @@ const authService = {
       accessToken: rotated.accessToken,
       refreshToken: rotated.refreshToken,
       user: {
-        manv: decoded?.session?.userInfo?.manv || "",
-        hoten: decoded?.session?.userInfo?.hoten || "",
-        email: decoded?.session?.userInfo?.email || "",
+        MA_NV: decoded?.session?.userInfo?.MA_NV || "",
+        HO_TEN: decoded?.session?.userInfo?.HO_TEN || "",
+        EMAIL: decoded?.session?.userInfo?.EMAIL || "",
         role: decoded?.session?.userInfo?.role || "",
       },
     };
@@ -358,43 +358,43 @@ const authService = {
   },
 
   acceptPendingRegistration: async (payload) => {
-    const { email, approvedBy } = payload || {};
-    if (!email) {
-      throw new Error("Thiếu email hồ sơ cần duyệt");
+    const { EMAIL, approvedBy } = payload || {};
+    if (!EMAIL) {
+      throw new Error("Thiếu EMAIL hồ sơ cần duyệt");
     }
 
-    const staged = await userRepository.getPendingApprovalByEmail(email);
+    const staged = await userRepository.getPendingApprovalByEmail(EMAIL);
     if (!staged) {
       throw new Error("Không tìm thấy hồ sơ chờ duyệt");
     }
 
-    if (staged.REGISTRATIONSTATUS !== REGISTRATION_STATUS.OTP_VERIFIED) {
+    if (staged.REGISTRATION_STATUS !== REGISTRATION_STATUS.OTP_VERIFIED) {
       throw new Error(
-        `Hồ sơ không ở trạng thái OTP_VERIFIED (hiện tại: ${staged.REGISTRATIONSTATUS})`,
+        `Hồ sơ không ở trạng thái OTP_VERIFIED (hiện tại: ${staged.REGISTRATION_STATUS})`,
       );
     }
 
-    // API duyệt chỉ cần email + thông tin nhân sự; MANV/HOTEN được tự suy ra từ hồ sơ chờ.
-    const normalizedStagedName = String(staged.HOTEN || "").trim();
-    const fallbackName = String(email).split("@")[0] || "Nhan vien moi";
+    // API duyệt chỉ cần EMAIL + thông tin nhân sự; MANV/HOTEN được tự suy ra từ hồ sơ chờ.
+    const normalizedStagedName = String(staged.HO_TEN || "").trim();
+    const fallbackName = String(EMAIL).split("@")[0] || "Nhan vien moi";
     const effectiveHoTen =
-      String(payload?.hoten || "").trim() ||
+      String(payload?.HO_TEN || "").trim() ||
       normalizedStagedName ||
       fallbackName;
     const effectiveManv =
-      String(payload?.manv || "").trim() ||
-      String(staged.MANV || "").trim() ||
+      String(payload?.MA_NV || "").trim() ||
+      String(staged.MA_NV || "").trim() ||
       generateEmployeeId();
 
-    const originalPassword = decrypt(staged.PASSWORDMAHOA);
+    const originalPassword = decrypt(staged.PASSWORD_MA_HOA);
     const result = await userRepository.approvePendingRegistration({
-      email,
+      EMAIL,
       password: originalPassword,
-      manv: effectiveManv,
-      hoten: effectiveHoTen,
-      maphg: payload.maphg,
-      luong: payload.luong,
-      chucvu: payload.chucvu,
+      MA_NV: effectiveManv,
+      HO_TEN: effectiveHoTen,
+      MA_PHG: payload.MA_PHG,
+      LUONG: payload.LUONG,
+      CHUC_VU: payload.CHUC_VU,
       approvedBy,
     });
 
@@ -409,13 +409,13 @@ const authService = {
     };
   },
 
-  rejectPendingRegistration: async (email, reason, rejectedBy) => {
-    if (!email) {
-      throw new Error("Thiếu email hồ sơ cần từ chối");
+  rejectPendingRegistration: async (EMAIL, reason, rejectedBy) => {
+    if (!EMAIL) {
+      throw new Error("Thiếu EMAIL hồ sơ cần từ chối");
     }
 
     const ok = await userRepository.rejectPendingRegistration(
-      email,
+      EMAIL,
       reason,
       rejectedBy,
     );
@@ -430,20 +430,20 @@ const authService = {
     };
   },
 
-  forgotPassword: async (email) => {
-    const normalizedEmail = String(email || "").trim();
+  forgotPassword: async (EMAIL) => {
+    const normalizedEmail = String(EMAIL || "").trim();
     if (!normalizedEmail) {
-      throw new Error("Vui lòng nhập email!");
+      throw new Error("Vui lòng nhập EMAIL!");
     }
 
     const userResult = await userRepository.getUserByEmail(normalizedEmail);
     const user = userResult.recordset[0];
 
-    // Không làm lộ email tồn tại hay không.
+    // Không làm lộ EMAIL tồn tại hay không.
     if (!user) {
       return {
         success: true,
-        message: "Nếu email tồn tại, hệ thống đã gửi mã OTP đặt lại mật khẩu.",
+        message: "Nếu EMAIL tồn tại, hệ thống đã gửi mã OTP đặt lại mật khẩu.",
       };
     }
 
@@ -468,16 +468,16 @@ const authService = {
 
     return {
       success: true,
-      message: "Nếu email tồn tại, hệ thống đã gửi mã OTP đặt lại mật khẩu.",
+      message: "Nếu EMAIL tồn tại, hệ thống đã gửi mã OTP đặt lại mật khẩu.",
     };
   },
 
-  resetForgotPassword: async (email, otpCode, newPassword) => {
-    const normalizedEmail = String(email || "").trim();
+  resetForgotPassword: async (EMAIL, otpCode, newPassword) => {
+    const normalizedEmail = String(EMAIL || "").trim();
     const normalizedOtp = String(otpCode || "").trim();
 
     if (!normalizedEmail || !normalizedOtp || !newPassword) {
-      throw new Error("Vui lòng nhập đầy đủ email, mã OTP và mật khẩu mới!");
+      throw new Error("Vui lòng nhập đầy đủ EMAIL, mã OTP và mật khẩu mới!");
     }
 
     if (newPassword.length < 8) {
@@ -515,8 +515,8 @@ const authService = {
   },
 
   // 8. Đổi mật khẩu
-  changePassword: async (email, oldPassword, newPassword) => {
-    console.log("🔄 Changing password for:", email);
+  changePassword: async (EMAIL, oldPassword, newPassword) => {
+    console.log("🔄 Changing password for:", EMAIL);
 
     if (!oldPassword || !newPassword) {
       throw new Error("Vui lòng nhập đầy đủ mật khẩu cũ và mới!");
@@ -526,14 +526,14 @@ const authService = {
       throw new Error("Mật khẩu mới phải có ít nhất 8 ký tự!");
     }
 
-    validateSqlPasswordPolicy(newPassword, email);
+    validateSqlPasswordPolicy(newPassword, EMAIL);
 
     if (oldPassword === newPassword) {
       throw new Error("Mật khẩu mới phải khác mật khẩu cũ!");
     }
 
     // 1. Lấy user info
-    const userResult = await userRepository.getUserByEmail(email);
+    const userResult = await userRepository.getUserByEmail(EMAIL);
     const user = userResult.recordset[0];
 
     if (!user) {
@@ -541,7 +541,7 @@ const authService = {
     }
 
     // 2. Xác thực mật khẩu cũ bằng cách thử kết nối SQL Server
-    const sqlAuthUser = buildAzureSqlAuthUser(email);
+    const sqlAuthUser = buildAzureSqlAuthUser(EMAIL);
     const verifyConfig = {
       user: sqlAuthUser,
       password: oldPassword,
@@ -565,9 +565,9 @@ const authService = {
     }
 
     // 3. Đổi mật khẩu của contained database user
-    await userRepository.updateDatabaseUserPassword(email, newPassword);
+    await userRepository.updateDatabaseUserPassword(EMAIL, newPassword);
 
-    console.log("✅ Password changed successfully for:", email);
+    console.log("✅ Password changed successfully for:", EMAIL);
 
     return {
       success: true,
@@ -576,24 +576,24 @@ const authService = {
   },
 
   // 9. Cập nhật profile cá nhân
-  updateProfile: async (email, data) => {
-    console.log("📝 Updating profile for:", email);
+  updateProfile: async (EMAIL, data) => {
+    console.log("📝 Updating profile for:", EMAIL);
 
     if (!data || Object.keys(data).length === 0) {
       throw new Error("Không có dữ liệu để cập nhật!");
     }
 
     // 1. Lấy user info
-    const userResult = await userRepository.getUserByEmail(email);
+    const userResult = await userRepository.getUserByEmail(EMAIL);
     const user = userResult.recordset[0];
 
     // 2. Chuẩn bị dữ liệu cập nhật
     const updateData = {
-      hoten: data.hoten,
-      ngaysinh: data.ngaysinh,
-      gioitinh: data.gioitinh,
-      diachinhan: data.diachinhan || data.diachi, // Support both naming conventions
-      sdt: data.sdt,
+      HO_TEN: data.HO_TEN,
+      NGAY_SINH: data.NGAY_SINH,
+      GIOI_TINH: data.GIOI_TINH,
+      DIA_CHI: data.DIA_CHI || data.DIA_CHI, // Support both naming conventions
+      SDT: data.SDT,
     };
 
     // Lọc các trường undefined
@@ -603,48 +603,48 @@ const authService = {
 
     // Nếu chưa có hồ sơ trong NHAN_VIEN: tự cấp MANV và tạo mới nhân viên.
     if (!user) {
-      if (!data.hoten || String(data.hoten).trim() === "") {
+      if (!data.HO_TEN || String(data.HO_TEN).trim() === "") {
         throw new Error("Thiếu họ tên để tạo hồ sơ nhân viên mới!");
       }
 
-      let manv = "";
+      let MA_NV = "";
       for (let i = 0; i < 10; i++) {
         const candidate = generateEmployeeId();
         const existed = await employeeRepository.getEmployeeById(candidate);
         if (!existed) {
-          manv = candidate;
+          MA_NV = candidate;
           break;
         }
       }
 
-      if (!manv) {
+      if (!MA_NV) {
         throw new Error("Không thể tạo mã nhân viên mới, vui lòng thử lại!");
       }
 
       const employeeData = {
-        manv,
-        hoten: data.hoten,
-        email: email,
-        chucvu: data.chucvu || "Nhân viên",
-        luong: data.luong ? parseFloat(data.luong) : 0,
-        maphg: data.maphg || null,
-        ngaysinh: data.ngaysinh || null,
-        gioitinh: data.gioitinh || null,
-        diachinhan: data.diachinhan || null,
-        ngayvaolam: new Date(),
+        MA_NV,
+        HO_TEN: data.HO_TEN,
+        EMAIL: EMAIL,
+        CHUC_VU: data.CHUC_VU || "Nhân viên",
+        LUONG: data.LUONG ? parseFloat(data.LUONG) : 0,
+        MA_PHG: data.MA_PHG || null,
+        NGAY_SINH: data.NGAY_SINH || null,
+        GIOI_TINH: data.GIOI_TINH || null,
+        DIA_CHI: data.DIA_CHI || null,
+        NGAY_TUYEN_DUNG: new Date(),
       };
 
       await employeeRepository.createEmployee(employeeData);
 
-      if (data.sdt) {
-        await employeeRepository.updateProfile(email, { sdt: data.sdt });
+      if (data.SDT) {
+        await employeeRepository.updateProfile(EMAIL, { SDT: data.SDT });
       }
 
-      console.log("✅ Created profile for manual SQL user:", email, "=>", manv);
+      console.log("✅ Created profile for manual SQL user:", EMAIL, "=>", MA_NV);
       return {
         success: true,
         message: "Tạo hồ sơ nhân viên mới thành công!",
-        manv,
+        MA_NV,
       };
     }
 
@@ -654,12 +654,12 @@ const authService = {
 
     // 3. Cập nhật vào DB
     try {
-      await employeeRepository.updateProfile(email, updateData);
+      await employeeRepository.updateProfile(EMAIL, updateData);
     } catch (err: any) {
       throw new Error("Lỗi cập nhật profile: " + err.message);
     }
 
-    console.log("✅ Profile updated successfully for:", email);
+    console.log("✅ Profile updated successfully for:", EMAIL);
 
     return {
       success: true,

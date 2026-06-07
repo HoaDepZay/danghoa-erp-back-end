@@ -49,7 +49,7 @@ async function run() {
   const beProcs = {};
 
   // Regexes to parse parameter inputs and executions
-  // e.g. .input("MADA", sql.Int, maDa) or .input("Email", sql.NVarChar(100), email)
+  // e.g. .input("MADA", sql.Int, MA_DA) or .input("Email", sql.NVarChar(100), EMAIL)
   const inputRegex = /\.input\(\s*["']([^"']+)["']\s*,\s*(sql\.[a-zA-Z0-9_()]+)/g;
   const execRegex = /\.execute\(\s*["']([^"']+)["']\s*\)/g;
 

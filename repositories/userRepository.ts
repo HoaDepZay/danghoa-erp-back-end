@@ -28,7 +28,7 @@ const getMasterDbConfig = (): sql.config => ({
 
 const userRepository = {
   // 1. Tạo hoặc xóa contained database user ở DB nghiệp vụ
-  handleDatabaseUser: async (email, password, action) => {
+  handleDatabaseUser: async (EMAIL, password, action) => {
     const normalizedAction = String(action || "").toUpperCase();
     if (normalizedAction !== "CREATE" && normalizedAction !== "DROP") {
       throw new Error("Action không hợp lệ. Chỉ hỗ trợ CREATE hoặc DROP");
@@ -36,7 +36,7 @@ const userRepository = {
 
     await appPool
       .request()
-      .input("Email", sql.NVarChar(100), email)
+      .input("Email", sql.NVarChar(100), EMAIL)
       .input("Password", sql.NVarChar(255), password)
       .input("Action", sql.VarChar(10), normalizedAction)
       .execute("sp_handleDatabaseUser");
@@ -46,13 +46,13 @@ const userRepository = {
   savePendingRegistration: async (data) => {
     await appPool
       .request()
-      .input("MaNV", sql.NVarChar(10), data.manv)
-      .input("Email", sql.NVarChar(100), data.email)
+      .input("MaNV", sql.NVarChar(10), data.MA_NV)
+      .input("Email", sql.NVarChar(100), data.EMAIL)
       .input("PassEnc", sql.NVarChar(sql.MAX), data.encryptedPass)
-      .input("HoTen", sql.NVarChar(200), data.hoten)
-      .input("MaPhg", sql.Int, data.maphg)
-      .input("Luong", sql.Decimal(18, 2), data.luong ?? 0)
-      .input("ChucVu", sql.NVarChar(100), data.chucvu || "Nhân viên")
+      .input("HoTen", sql.NVarChar(200), data.HO_TEN)
+      .input("MaPhg", sql.Int, data.MA_PHG)
+      .input("Luong", sql.Decimal(18, 2), data.LUONG ?? 0)
+      .input("ChucVu", sql.NVarChar(100), data.CHUC_VU || "Nhân viên")
       .input("OtpCode", sql.NVarChar(6), data.otpCode)
       .input("ExpiredAt", sql.DateTime, data.expiredAt)
       .execute("sp_savePendingRegistration");
@@ -63,10 +63,10 @@ const userRepository = {
     };
   },
 
-  markOtpVerified: async (email, otpCode) => {
+  markOtpVerified: async (EMAIL, otpCode) => {
     const result = await appPool
       .request()
-      .input("EMAIL", sql.NVarChar(100), email)
+      .input("EMAIL", sql.NVarChar(100), EMAIL)
       .input("OTPCODE", sql.NVarChar(6), otpCode)
       .input("STATUS_VERIFIED", sql.VarChar(20), REGISTRATION_STATUS.OTP_VERIFIED)
       .input("STATUS_PENDING", sql.VarChar(20), REGISTRATION_STATUS.PENDING_OTP)
@@ -76,15 +76,15 @@ const userRepository = {
   },
 
   // 3. Đổi mật khẩu contained database user
-  updateDatabaseUserPassword: async (email, newPassword) => {
-    const safeIdentifier = `[${String(email).replace(/]/g, "]]")}]`;
-    const safeEmailLiteral = String(email).replace(/'/g, "''");
+  updateDatabaseUserPassword: async (EMAIL, newPassword) => {
+    const safeIdentifier = `[${String(EMAIL).replace(/]/g, "]]")}]`;
+    const safeEmailLiteral = String(EMAIL).replace(/'/g, "''");
     const safePassword = String(newPassword).replace(/'/g, "''");
 
     try {
       await appPool
         .request()
-        .input("EMAIL", sql.NVarChar(100), email)
+        .input("EMAIL", sql.NVarChar(100), EMAIL)
         .input("PASSWORD", sql.NVarChar(255), newPassword)
         .execute("sp_updateDatabaseUserPassword");
       return;
@@ -131,10 +131,10 @@ const userRepository = {
     }
   },
 
-  savePasswordResetOtp: async (email, otpCode, expiredAt) => {
+  savePasswordResetOtp: async (EMAIL, otpCode, expiredAt) => {
     const result = await appPool
       .request()
-      .input("EMAIL", sql.NVarChar(100), email)
+      .input("EMAIL", sql.NVarChar(100), EMAIL)
       .input("OTPCODE", sql.NVarChar(6), otpCode)
       .input("EXPIREDAT", sql.DateTime, expiredAt)
       .execute("sp_savePasswordResetOtp");
@@ -142,28 +142,28 @@ const userRepository = {
     return (result.recordset?.[0]?.AffectedRows || 0) > 0;
   },
 
-  verifyPasswordResetOtp: async (email, otpCode) => {
+  verifyPasswordResetOtp: async (EMAIL, otpCode) => {
     const result = await appPool
       .request()
-      .input("EMAIL", sql.NVarChar(100), email)
+      .input("EMAIL", sql.NVarChar(100), EMAIL)
       .input("OTPCODE", sql.NVarChar(6), otpCode)
       .execute("sp_verifyPasswordResetOtp");
 
     return result.recordset[0] || null;
   },
 
-  clearPasswordResetOtp: async (email) => {
+  clearPasswordResetOtp: async (EMAIL) => {
     await appPool
       .request()
-      .input("EMAIL", sql.NVarChar(100), email)
+      .input("EMAIL", sql.NVarChar(100), EMAIL)
       .execute("sp_clearPasswordResetOtp");
   },
 
   // 5. Kiểm tra OTP còn hiệu lực trong bảng DANG_KY_CHO
-  verifyPendingOtp: async (email, otpCode) => {
+  verifyPendingOtp: async (EMAIL, otpCode) => {
     const result = await appPool
       .request()
-      .input("EMAIL", sql.NVarChar(100), email)
+      .input("EMAIL", sql.NVarChar(100), EMAIL)
       .input("OTPCODE", sql.NVarChar(6), otpCode)
       .input("STATUS_PENDING", sql.VarChar(20), REGISTRATION_STATUS.PENDING_OTP)
       .execute("sp_verifyPendingOtp");
@@ -171,10 +171,10 @@ const userRepository = {
     return result.recordset[0] || null;
   },
 
-  getPendingRegistrationStatusByEmail: async (email) => {
+  getPendingRegistrationStatusByEmail: async (EMAIL) => {
     const result = await appPool
       .request()
-      .input("EMAIL", sql.NVarChar(100), email)
+      .input("EMAIL", sql.NVarChar(100), EMAIL)
       .input("STATUS_PENDING", sql.VarChar(20), REGISTRATION_STATUS.PENDING_OTP)
       .input("STATUS_EXPIRED", sql.VarChar(20), REGISTRATION_STATUS.EXPIRED)
       .execute("sp_getPendingRegistrationStatusByEmail");
@@ -191,10 +191,10 @@ const userRepository = {
     return result.recordset;
   },
 
-  getPendingApprovalByEmail: async (email) => {
+  getPendingApprovalByEmail: async (EMAIL) => {
     const result = await appPool
       .request()
-      .input("EMAIL", sql.NVarChar(100), email)
+      .input("EMAIL", sql.NVarChar(100), EMAIL)
       .execute("sp_getPendingApprovalByEmail");
 
     return result.recordset[0] || null;
@@ -204,13 +204,13 @@ const userRepository = {
     try {
       const result = await appPool
         .request()
-        .input("EMAIL", sql.NVarChar(100), payload.email)
+        .input("EMAIL", sql.NVarChar(100), payload.EMAIL)
         .input("PASSWORD", sql.NVarChar(255), payload.password)
-        .input("MANV", sql.VarChar(10), payload.manv ?? null)
-        .input("HOTEN", sql.NVarChar(200), payload.hoten ?? null)
-        .input("MAPHG", sql.Int, payload.maphg ?? null)
-        .input("LUONG", sql.Decimal(18, 2), payload.luong ?? null)
-        .input("CHUCVU", sql.NVarChar(100), payload.chucvu ?? null)
+        .input("MANV", sql.VarChar(10), payload.MA_NV ?? null)
+        .input("HOTEN", sql.NVarChar(200), payload.HO_TEN ?? null)
+        .input("MAPHG", sql.Int, payload.MA_PHG ?? null)
+        .input("LUONG", sql.Decimal(18, 2), payload.LUONG ?? null)
+        .input("CHUCVU", sql.NVarChar(100), payload.CHUC_VU ?? null)
         .input("STATUS_VERIFIED", sql.VarChar(20), REGISTRATION_STATUS.OTP_VERIFIED)
         .execute("sp_approvePendingRegistration");
 
@@ -221,17 +221,17 @@ const userRepository = {
       return {
         Success: row.Success,
         Message: row.Message,
-        Data: { manv: row.MaNV, email: row.Email }
+        Data: { MA_NV: row.MaNV, EMAIL: row.Email }
       };
     } catch (error) {
       throw error;
     }
   },
 
-  rejectPendingRegistration: async (email, reason, rejectedBy) => {
+  rejectPendingRegistration: async (EMAIL, reason, rejectedBy) => {
     const result = await appPool
       .request()
-      .input("EMAIL", sql.NVarChar(100), email)
+      .input("EMAIL", sql.NVarChar(100), EMAIL)
       .input("REJECTREASON", sql.NVarChar(sql.MAX), reason ?? null)
       .input("REJECTEDBY", sql.NVarChar(100), rejectedBy ?? null)
       .input("STATUS_PENDING", sql.VarChar(20), REGISTRATION_STATUS.PENDING_OTP)
@@ -243,10 +243,10 @@ const userRepository = {
   },
 
   // 6. Lấy thông tin nhân viên (không lấy mật khẩu)
-  getUserByEmail: async (email) => {
+  getUserByEmail: async (EMAIL) => {
     const result = await appPool
       .request()
-      .input("EMAIL", sql.NVarChar(100), email)
+      .input("EMAIL", sql.NVarChar(100), EMAIL)
       .execute("sp_getUserByEmail");
 
     return result;

@@ -2,7 +2,7 @@ import "dotenv/config";
 
 /**
  * Build Azure SQL authentication user
- * Chuyển email thành định dạng ODBC cho Azure SQL
+ * Chuyển EMAIL thành định dạng ODBC cho Azure SQL
  * Ví dụ: user@gmail.com + server.database.windows.net => user@gmail.com@server
  */
 const buildAzureSqlAuthUser = (loginName: string): string => {
@@ -22,6 +22,7 @@ const normalizeRole = (role: unknown): string => {
   return String(role || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
     .toLowerCase()
     .replace(/\s+/g, "")
     .trim();
@@ -31,7 +32,8 @@ const normalizeRole = (role: unknown): string => {
  * Kiểm tra xem user là admin hay không
  */
 const isAdminRole = (role: unknown): boolean => {
-  return normalizeRole(role) === "admin";
+  const norm = normalizeRole(role);
+  return norm === "admin" || norm === "giamdoc";
 };
 
 export { buildAzureSqlAuthUser, normalizeRole, isAdminRole };

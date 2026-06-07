@@ -1,10 +1,10 @@
 import { appPool, sql } from "../config/db";
 
 const payrollRepository = {
-  checkIn: async (maNv) => {
+  checkIn: async (MA_NV) => {
     const result = await appPool
       .request()
-      .input("MaNV", sql.VarChar, maNv)
+      .input("MaNV", sql.VarChar, MA_NV)
       .output("Result", sql.Int)
       .output("ErrorDetail", sql.NVarChar(500))
       .execute("sp_CheckIn");
@@ -16,10 +16,10 @@ const payrollRepository = {
     };
   },
 
-  checkOut: async (maNv) => {
+  checkOut: async (MA_NV) => {
     const result = await appPool
       .request()
-      .input("MaNV", sql.VarChar, maNv)
+      .input("MaNV", sql.VarChar, MA_NV)
       .output("Result", sql.Int)
       .output("ErrorDetail", sql.NVarChar(500))
       .execute("sp_CheckOut");
@@ -42,10 +42,10 @@ const payrollRepository = {
   },
 
   // Lấy chấm công của nhân viên theo ngày hoặc khoảng ngày
-  getEmployeeAttendance: async (maNv, fromDate, toDate) => {
+  getEmployeeAttendance: async (MA_NV, fromDate, toDate) => {
     const result = await appPool
       .request()
-      .input("MANV", sql.VarChar(20), maNv)
+      .input("MANV", sql.VarChar(20), MA_NV)
       .input("FROMDATE", sql.Date, fromDate ?? null)
       .input("TODATE", sql.Date, toDate ?? null)
       .execute("sp_getEmployeeAttendance");
@@ -65,10 +65,10 @@ const payrollRepository = {
   },
 
   // Lấy chi tiết lương của NV
-  getEmployeePayslip: async (maNv, month, year) => {
+  getEmployeePayslip: async (MA_NV, month, year) => {
     const result = await appPool
       .request()
-      .input("MANV", sql.VarChar(20), maNv)
+      .input("MANV", sql.VarChar(20), MA_NV)
       .input("THANG", sql.Int, month)
       .input("NAM", sql.Int, year)
       .execute("sp_getEmployeePayslip");

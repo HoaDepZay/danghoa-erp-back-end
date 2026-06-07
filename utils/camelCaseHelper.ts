@@ -1,21 +1,19 @@
 const SPECIAL_KEYS: Record<string, string> = {
   // Employees
-  manv: "manv",
+  MA_NV: "MA_NV",
   manvda: "maNvDa",
-  hoten: "hoten",
-  email: "email",
-  chucvu: "chucvu",
-  luong: "luong",
-  maphg: "maphg",
-  ngaysinh: "ngaysinh",
-  gioitinh: "gioitinh",
-  diachinhan: "diachinhan",
-  diachi: "diachinhan",
-  ngayvaolam: "ngayvaolam",
-  ngaytuyendung: "ngayvaolam",
+  HO_TEN: "HO_TEN",
+  EMAIL: "EMAIL",
+  CHUC_VU: "CHUC_VU",
+  LUONG: "LUONG",
+  MA_PHG: "MA_PHG",
+  NGAY_SINH: "NGAY_SINH",
+  GIOI_TINH: "GIOI_TINH",
+  DIA_CHI: "DIA_CHI",
+  NGAY_TUYEN_DUNG: "NGAY_TUYEN_DUNG",
+  ngaytuyendung: "NGAY_TUYEN_DUNG",
   status: "status",
-  sodienthoai: "sodienthoai",
-  sdt: "sdt",
+  SDT: "SDT",
 
   // Departments
   tenpb: "tenpb",
@@ -25,18 +23,18 @@ const SPECIAL_KEYS: Record<string, string> = {
   tentruongphong: "tenTruongPhong",
 
   // Projects
-  mada: "mada",
-  tenda: "tenda",
-  mota: "mota",
-  trangthai: "trangthai",
-  ngaybatdau: "ngaybatdau",
-  ngayketthuc: "ngayketthuc",
+  MA_DA: "MA_DA",
+  TEN_DA: "TEN_DA",
+  MO_TA: "MO_TA",
+  TRANG_THAI: "TRANG_THAI",
+  NGAY_BAT_DAU: "NGAY_BAT_DAU",
+  NGAY_KET_THUC: "NGAY_KET_THUC",
 
   // Tasks
-  tennhiemvu: "tennhiemvu",
-  douutien: "douutien",
-  phantramhoanthanh: "phantramhoanthanh",
-  ghichusauhoanthanh: "ghichusauhoanthanh",
+  TEN_NHIEM_VU: "TEN_NHIEM_VU",
+  DO_UU_TIEN: "DO_UU_TIEN",
+  PHAN_TRAM_HOAN_THANH: "PHAN_TRAM_HOAN_THANH",
+  GHI_CHU_SAU_HOAN_THANH: "GHI_CHU_SAU_HOAN_THANH",
 
   // Payroll
   macc: "macc",
@@ -61,8 +59,8 @@ const SPECIAL_KEYS: Record<string, string> = {
   // Chat
   maphong: "maphong",
   tenphong: "tenphong",
-  loaiphong: "loaiphong",
-  mathamchieu: "mathamchieu",
+  LOAI_PHONG: "LOAI_PHONG",
+  MA_THAM_CHIEU: "MA_THAM_CHIEU",
   ngaytao: "ngaytao",
   sothanhvien: "soThanhVien",
   tinnhangannhat: "tinNhanGanNhat",

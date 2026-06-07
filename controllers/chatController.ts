@@ -3,7 +3,7 @@ import chatService from "../services/chatService";
 const chatController = {
   getMyRooms: async (req, res) => {
     try {
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const result = await chatService.listMyRooms(requesterMaNv);
       console.log("DEBUG getMyRooms returned:", result.data?.length, "rooms for", requesterMaNv);
       if (result.data?.length > 0) console.log("DEBUG first room:", result.data[0]);
@@ -16,7 +16,7 @@ const chatController = {
 
   getOrCreateDirectRoom: async (req, res) => {
     try {
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const { targetMaNv } = req.body;
       const result = await chatService.getOrCreateDirectRoom(
         requesterMaNv,
@@ -30,7 +30,7 @@ const chatController = {
 
   getRoomMessages: async (req, res) => {
     try {
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const { roomId } = req.params;
       const { limit = 50 } = req.query;
       const result = await chatService.getRoomMessagesForMember(
@@ -46,7 +46,7 @@ const chatController = {
 
   getLatestRoomMessage: async (req, res) => {
     try {
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const { roomId } = req.params;
       const result = await chatService.getLatestMessageForMember(
         roomId,
@@ -60,7 +60,7 @@ const chatController = {
 
   searchRoomMessages: async (req, res) => {
     try {
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const { roomId } = req.params;
       const { keyword } = req.query;
       const result = await chatService.searchMessagesForMember(
@@ -76,7 +76,7 @@ const chatController = {
 
   sendMessage: async (req, res) => {
     try {
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const { roomId } = req.params;
       const { noiDung } = req.body;
       const result = await chatService.sendMessageToRoom(
@@ -92,7 +92,7 @@ const chatController = {
 
   createCustomGroup: async (req, res) => {
     try {
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const result = await chatService.createCustomGroup(
         requesterMaNv,
         req.body,
@@ -105,13 +105,13 @@ const chatController = {
 
   addMemberToCustomGroup: async (req, res) => {
     try {
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const { roomId } = req.params;
-      const { maNv } = req.body;
+      const { MA_NV } = req.body;
       const result = await chatService.addMemberToCustomGroup(
         roomId,
         requesterMaNv,
-        maNv,
+        MA_NV,
       );
       return res.status(200).json(result);
     } catch (error) {
@@ -121,7 +121,7 @@ const chatController = {
 
   removeMemberFromCustomGroup: async (req, res) => {
     try {
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const { roomId, memberId } = req.params;
       const result = await chatService.removeMemberFromCustomGroup(
         roomId,
@@ -136,7 +136,7 @@ const chatController = {
 
   getOrCreateProjectRoom: async (req, res) => {
     try {
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const { projectId } = req.params;
       const result = await chatService.getOrCreateProjectRoomForMember(
         projectId,
@@ -150,7 +150,7 @@ const chatController = {
 
   getOrCreateDepartmentRoom: async (req, res) => {
     try {
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const { departmentId } = req.params;
       const isAdmin = req.isAdmin || false;
       const result = await chatService.getOrCreateDepartmentRoomForMember(

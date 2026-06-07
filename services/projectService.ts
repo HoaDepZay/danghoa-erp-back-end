@@ -18,9 +18,9 @@ const normalizeRole = (value) =>
     .trim();
 
 const projectService = {
-  getProjectTasksForMember: async (maDa, requesterMaNv) => {
+  getProjectTasksForMember: async (MA_DA, requesterMaNv) => {
     try {
-      const normalizedMaDa = Number(maDa);
+      const normalizedMaDa = Number(MA_DA);
       if (!normalizedMaDa) {
         throw new Error("Mã dự án không hợp lệ");
       }
@@ -32,9 +32,9 @@ const projectService = {
     }
   },
 
-  createTaskForMember: async (maDa, requesterMaNv, payload) => {
+  createTaskForMember: async (MA_DA, requesterMaNv, payload) => {
     try {
-      const normalizedMaDa = Number(maDa);
+      const normalizedMaDa = Number(MA_DA);
       if (!normalizedMaDa) {
         throw new Error("Mã dự án không hợp lệ");
       }
@@ -43,11 +43,11 @@ const projectService = {
         throw new Error("Không xác định được nhân viên gọi API.");
       }
 
-      if (!payload?.tennhiemvu || !String(payload.tennhiemvu).trim()) {
+      if (!payload?.TEN_NHIEM_VU || !String(payload.TEN_NHIEM_VU).trim()) {
         throw new Error("Tên nhiệm vụ là bắt buộc");
       }
 
-      if (!payload?.manv || !String(payload.manv).trim()) {
+      if (!payload?.MA_NV || !String(payload.MA_NV).trim()) {
         throw new Error("Mã nhân viên được giao task là bắt buộc");
       }
 
@@ -75,9 +75,9 @@ const projectService = {
     }
   },
 
-  updateTaskForMember: async (maDa, maNvDa, requesterMaNv, payload) => {
+  updateTaskForMember: async (MA_DA, maNvDa, requesterMaNv, payload) => {
     try {
-      const normalizedMaDa = Number(maDa);
+      const normalizedMaDa = Number(MA_DA);
       const normalizedTaskId = Number(maNvDa);
       const normalizedRequesterMaNv = String(requesterMaNv || "").trim();
 
@@ -123,8 +123,8 @@ const projectService = {
 
       if (
         !isProjectLead &&
-        payload?.manv !== undefined &&
-        String(payload.manv || "").trim() !== normalizedRequesterMaNv
+        payload?.MA_NV !== undefined &&
+        String(payload.MA_NV || "").trim() !== normalizedRequesterMaNv
       ) {
         throw new Error(
           "Bạn không được chuyển task sang nhân viên khác qua API này.",
@@ -147,14 +147,14 @@ const projectService = {
     }
   },
 
-  getMyJoinedProjectsWithMembers: async (maNv) => {
+  getMyJoinedProjectsWithMembers: async (MA_NV) => {
     try {
-      if (!maNv || String(maNv).trim() === "") {
+      if (!MA_NV || String(MA_NV).trim() === "") {
         throw new Error("Không xác định được mã nhân viên từ token.");
       }
 
       const rows =
-        await projectRepository.getProjectsWithMembersByEmployee(maNv);
+        await projectRepository.getProjectsWithMembersByEmployee(MA_NV);
       const projectMap = new Map();
 
       for (const row of rows) {
@@ -202,15 +202,15 @@ const projectService = {
     }
   },
 
-  getProjectById: async (maDa, requesterMaNv, requesterRole) => {
+  getProjectById: async (MA_DA, requesterMaNv, requesterRole) => {
     try {
-      const normalizedMaDa = Number(maDa);
+      const normalizedMaDa = Number(MA_DA);
       if (!normalizedMaDa) {
         throw new Error("Mã dự án không hợp lệ");
       }
 
       // Check quyền: admin hoặc nhân viên tham gia dự án
-      const isAdmin = normalizeRole(requesterRole) === "admin";
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
       const isMember = await projectRepository.isEmployeeInProject(
         normalizedMaDa,
         requesterMaNv,
@@ -239,9 +239,9 @@ const projectService = {
     }
   },
 
-  getEmployeeProjects: async (maNv) => {
+  getEmployeeProjects: async (MA_NV) => {
     try {
-      const data = await projectRepository.getEmployeeProjects(maNv);
+      const data = await projectRepository.getEmployeeProjects(MA_NV);
       return { success: true, data };
     } catch (error) {
       throw new Error(
@@ -252,7 +252,7 @@ const projectService = {
 
   createProject: async (data) => {
     try {
-      if (!data.tenda) throw new Error("Tên dự án là bắt buộc.");
+      if (!data.TEN_DA) throw new Error("Tên dự án là bắt buộc.");
 
       const createdProject = await projectRepository.createProject(data);
 
@@ -276,43 +276,43 @@ const projectService = {
     }
   },
 
-  updateProject: async (maDa, data) => {
+  updateProject: async (MA_DA, data) => {
     try {
-      const existing = await projectRepository.getProjectById(maDa);
+      const existing = await projectRepository.getProjectById(MA_DA);
       if (!existing) throw new Error("Dự án không tồn tại.");
 
       const updateData = {
-        tenda: data.tenda,
-        mota: data.mota,
-        ngaybatdau: data.ngaybatdau,
-        ngayketthuc: data.ngayketthuc,
-        trangthai: data.trangthai,
+        TEN_DA: data.TEN_DA,
+        MO_TA: data.MO_TA,
+        NGAY_BAT_DAU: data.NGAY_BAT_DAU,
+        NGAY_KET_THUC: data.NGAY_KET_THUC,
+        TRANG_THAI: data.TRANG_THAI,
       };
 
       Object.keys(updateData).forEach(
         (k) => updateData[k] === undefined && delete updateData[k],
       );
 
-      await projectRepository.updateProject(maDa, updateData);
+      await projectRepository.updateProject(MA_DA, updateData);
       return { success: true, message: "Cập nhật dự án thành công" };
     } catch (error) {
       throw new Error("Lỗi cập nhật dự án: " + error.message);
     }
   },
 
-  deleteProject: async (maDa) => {
+  deleteProject: async (MA_DA) => {
     try {
-      const existing = await projectRepository.getProjectById(maDa);
+      const existing = await projectRepository.getProjectById(MA_DA);
       if (!existing) throw new Error("Dự án không tồn tại.");
 
       // Bước 1: Xóa danh sách nhiệm vụ của dự án
-      await projectRepository.deleteProjectTasks(maDa);
+      await projectRepository.deleteProjectTasks(MA_DA);
 
       // Bước 2: Xóa phân công nhân viên của dự án
-      await projectRepository.deleteProjectAssignments(maDa);
+      await projectRepository.deleteProjectAssignments(MA_DA);
 
       // Bước 3: Xóa dự án
-      await projectRepository.deleteProject(maDa);
+      await projectRepository.deleteProject(MA_DA);
 
       return { success: true, message: "Xóa dự án thành công" };
     } catch (error) {
@@ -320,17 +320,17 @@ const projectService = {
     }
   },
 
-  addProjectMember: async (maDa, maNv, vaiTro) => {
+  addProjectMember: async (MA_DA, MA_NV, vaiTro) => {
     try {
       if (!vaiTro) throw new Error("Vai trò dự án là bắt buộc.");
 
-      const existing = await projectRepository.getProjectById(maDa);
+      const existing = await projectRepository.getProjectById(MA_DA);
       if (!existing) throw new Error("Dự án không tồn tại.");
 
-      await projectRepository.addProjectMember(maDa, maNv, vaiTro);
+      await projectRepository.addProjectMember(MA_DA, MA_NV, vaiTro);
 
       // Sync vào phòng chat với tên dự án
-      await chatService.syncProjectMemberAdded(maDa, maNv, existing.TENDA);
+      await chatService.syncProjectMemberAdded(MA_DA, MA_NV, existing.TENDA);
 
       return { success: true, message: "Thêm thành viên vào dự án thành công" };
     } catch (error) {
@@ -342,10 +342,10 @@ const projectService = {
     }
   },
 
-  removeProjectMember: async (maDa, maNv, requesterMaNv) => {
+  removeProjectMember: async (MA_DA, MA_NV, requesterMaNv) => {
     try {
-      const normalizedMaDa = Number(maDa);
-      const normalizedTargetMaNv = String(maNv || "").trim();
+      const normalizedMaDa = Number(MA_DA);
+      const normalizedTargetMaNv = String(MA_NV || "").trim();
       const normalizedRequesterMaNv = String(requesterMaNv || "").trim();
 
       if (!normalizedMaDa || !normalizedTargetMaNv) {

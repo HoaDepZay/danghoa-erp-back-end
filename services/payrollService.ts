@@ -42,13 +42,13 @@ const resolveErrorMessage = (
 };
 
 const payrollService = {
-  checkIn: async (maNv) => {
+  checkIn: async (MA_NV) => {
     try {
-      if (!maNv?.trim()) {
+      if (!MA_NV?.trim()) {
         throw new Error("Mã nhân viên (maNV) là bắt buộc");
       }
 
-      const result = await payrollRepository.checkIn(maNv);
+      const result = await payrollRepository.checkIn(MA_NV);
 
       if (!result.success) {
         throw new Error(result.message || "Check-in thất bại");
@@ -64,13 +64,13 @@ const payrollService = {
     }
   },
 
-  checkOut: async (maNv) => {
+  checkOut: async (MA_NV) => {
     try {
-      if (!maNv?.trim()) {
+      if (!MA_NV?.trim()) {
         throw new Error("Mã nhân viên (maNV) là bắt buộc");
       }
 
-      const result = await payrollRepository.checkOut(maNv);
+      const result = await payrollRepository.checkOut(MA_NV);
 
       if (!result.success) {
         throw new Error(result.message || "Check-out thất bại");
@@ -101,14 +101,14 @@ const payrollService = {
     }
   },
 
-  getEmployeeAttendance: async (maNv, fromDate, toDate) => {
+  getEmployeeAttendance: async (MA_NV, fromDate, toDate) => {
     try {
-      if (!maNv?.trim()) {
+      if (!MA_NV?.trim()) {
         throw new Error("Mã nhân viên (maNV) là bắt buộc");
       }
 
       const data = await payrollRepository.getEmployeeAttendance(
-        maNv,
+        MA_NV,
         fromDate,
         toDate,
       );
@@ -131,10 +131,10 @@ const payrollService = {
     }
   },
 
-  getEmployeePayslip: async (maNv, month, year) => {
+  getEmployeePayslip: async (MA_NV, month, year) => {
     try {
       const data = await payrollRepository.getEmployeePayslip(
-        maNv,
+        MA_NV,
         month,
         year,
       );

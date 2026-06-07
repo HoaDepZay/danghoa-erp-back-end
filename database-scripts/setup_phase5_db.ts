@@ -1,4 +1,4 @@
-import { connectDB, appPool } from "./config/db";
+import { connectDB, appPool } from "../config/db";
 
 async function run() {
   await connectDB();

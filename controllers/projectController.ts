@@ -13,10 +13,10 @@ const normalizeRole = (role) =>
 const projectController = {
   getProjectTasksForMember: async (req, res) => {
     try {
-      const { id: maDa } = req.params;
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const { id: MA_DA } = req.params;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const result = await projectService.getProjectTasksForMember(
-        maDa,
+        MA_DA,
         requesterMaNv,
       );
       return res.status(200).json(result);
@@ -27,23 +27,23 @@ const projectController = {
 
   createTaskForMember: async (req, res) => {
     try {
-      const { id: maDa } = req.params;
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const { id: MA_DA } = req.params;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const result = await projectService.createTaskForMember(
-        maDa,
+        MA_DA,
         requesterMaNv,
         req.body,
       );
       
       try {
         const notif = await createNotification(
-          req.body.manv || requesterMaNv, // Nếu payload có manv thì giao cho manv đó, nếu không thì tự nhận
+          req.body.MA_NV || requesterMaNv, // Nếu payload có MA_NV thì giao cho MA_NV đó, nếu không thì tự nhận
           "Nhiệm vụ mới",
-          `Bạn vừa được giao một nhiệm vụ mới: ${req.body.tennhiemvu}`,
+          `Bạn vừa được giao một nhiệm vụ mới: ${req.body.TEN_NHIEM_VU}`,
           "task_assign",
-          `/projects/${maDa}`
+          `/projects/${MA_DA}`
         );
-        if (notif) emitNotification(req.body.manv || requesterMaNv, notif);
+        if (notif) emitNotification(req.body.MA_NV || requesterMaNv, notif);
       } catch (e) {
         console.error("Notif task error", e);
       }
@@ -56,10 +56,10 @@ const projectController = {
 
   updateTaskForMember: async (req, res) => {
     try {
-      const { id: maDa, taskId } = req.params;
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const { id: MA_DA, taskId } = req.params;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const result = await projectService.updateTaskForMember(
-        maDa,
+        MA_DA,
         taskId,
         requesterMaNv,
         req.body,
@@ -72,7 +72,7 @@ const projectController = {
 
   getMyJoinedProjectsWithMembers: async (req, res) => {
     try {
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const result =
         await projectService.getMyJoinedProjectsWithMembers(requesterMaNv);
       return res.status(200).json(result);
@@ -93,7 +93,7 @@ const projectController = {
   getProjectById: async (req, res) => {
     try {
       const { id } = req.params;
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const requesterRole = req.user?.userInfo?.role;
       const result = await projectService.getProjectById(
         id,
@@ -109,9 +109,9 @@ const projectController = {
   getEmployeeProjects: async (req, res) => {
     try {
       const { id } = req.params; // Lấy employeeId
-      const requesterMaNv = String(req.user?.userInfo?.manv || "").trim();
+      const requesterMaNv = String(req.user?.userInfo?.MA_NV || "").trim();
       const requesterRole = req.user?.userInfo?.role;
-      const isAdmin = normalizeRole(requesterRole) === "admin";
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
 
       if (!isAdmin && requesterMaNv !== String(id || "").trim()) {
         return res.status(403).json({
@@ -158,23 +158,23 @@ const projectController = {
 
   addProjectMember: async (req, res) => {
     try {
-      const { id: maDa } = req.params;
-      const { manv, vaitroduan } = req.body;
+      const { id: MA_DA } = req.params;
+      const { MA_NV, VAI_TRO_DU_AN } = req.body;
       const result = await projectService.addProjectMember(
-        maDa,
-        manv,
-        vaitroduan,
+        MA_DA,
+        MA_NV,
+        VAI_TRO_DU_AN,
       );
       
       try {
         const notif = await createNotification(
-          manv,
+          MA_NV,
           "Dự án mới",
-          `Bạn đã được thêm vào dự án với vai trò: ${vaitroduan}`,
+          `Bạn đã được thêm vào dự án với vai trò: ${VAI_TRO_DU_AN}`,
           "project_assign",
-          `/projects/${maDa}`
+          `/projects/${MA_DA}`
         );
-        if (notif) emitNotification(manv, notif);
+        if (notif) emitNotification(MA_NV, notif);
       } catch (e) {
         console.error("Notif project error", e);
       }
@@ -187,11 +187,11 @@ const projectController = {
 
   removeProjectMember: async (req, res) => {
     try {
-      const { id: maDa, employeeId: maNv } = req.params;
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const { id: MA_DA, employeeId: MA_NV } = req.params;
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const result = await projectService.removeProjectMember(
-        maDa,
-        maNv,
+        MA_DA,
+        MA_NV,
         requesterMaNv,
       );
       return res.status(200).json(result);

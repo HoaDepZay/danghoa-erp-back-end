@@ -29,10 +29,10 @@ const departmentRepository = {
   createDepartment: async (data) => {
     const request = appPool.request();
     await request
-      .input("MaPhg", sql.Int, data.maphg)
+      .input("MaPhg", sql.Int, data.MA_PHG)
       .input("TenPb", sql.NVarChar, data.tenpb)
       .input("MaTruongPhg", sql.VarChar, data.matruongphg || null)
-      .input("NG_THANHLAP", sql.DateTime, data.ng_thanhlap || new Date())
+      .input("NgThanhLap", sql.DateTime, data.ng_thanhlap || new Date())
       .execute("sp_createDepartment");
   },
 
@@ -92,28 +92,28 @@ const departmentRepository = {
   },
 
   // 7. Lấy danh sách phòng ban mà nhân viên đang tham gia
-  getDepartmentsByEmployee: async (maNv) => {
+  getDepartmentsByEmployee: async (MA_NV) => {
     const result = await appPool
       .request()
-      .input("MaNV", sql.VarChar(20), maNv)
+      .input("MaNV", sql.VarChar(20), MA_NV)
       .execute("sp_getDepartmentsByEmployee");
     return result.recordset;
   },
 
   // 8. Lấy chi tiết phòng ban của nhân viên cùng danh sách nhân viên
-  getDepartmentDetailsByEmployee: async (maNv) => {
+  getDepartmentDetailsByEmployee: async (MA_NV) => {
     try {
       const request = appPool.request();
       request.multiple = true;
       const result = await request
-        .input("MaNV", sql.VarChar(20), maNv)
+        .input("MaNV", sql.VarChar(20), MA_NV)
         .execute("sp_getDepartmentDetailsByEmployee");
 
       // Recordset 0: Thông tin phòng ban
       const departmentInfo = result.recordsets?.[0]?.[0];
       if (!departmentInfo) {
         throw new Error(
-          `Nhân viên với mã "${maNv}" không tồn tại hoặc không có phòng ban.`,
+          `Nhân viên với mã "${MA_NV}" không tồn tại hoặc không có phòng ban.`,
         );
       }
 
@@ -130,16 +130,29 @@ const departmentRepository = {
   },
 
   // 9. Kiểm tra nhân viên có thuộc phòng ban không
-  isEmployeeInDepartment: async (maNv, maPhg) => {
+  isEmployeeInDepartment: async (MA_NV, maPhg) => {
     try {
       const result = await appPool
         .request()
-        .input("MaNV", sql.VarChar(20), maNv)
+        .input("MaNV", sql.VarChar(20), MA_NV)
         .input("MaPhg", sql.Int, maPhg)
         .execute("sp_isEmployeeInDepartment");
       return result.recordset[0].count > 0;
     } catch (error) {
       throw new Error(`Lỗi kiểm tra thành viên phòng ban: ${error}`);
+    }
+  },
+
+  // 10. Cập nhật mã phòng chat cho phòng ban
+  updateDepartmentChatRoom: async (maPhg, maPhongChat) => {
+    try {
+      await appPool
+        .request()
+        .input("MaPhg", sql.Int, maPhg)
+        .input("MaPhongChat", sql.Int, maPhongChat)
+        .query("UPDATE PHONG_BAN SET MA_PHONG_CHAT = @MaPhongChat WHERE MA_PHG = @MaPhg");
+    } catch (error) {
+      throw new Error(`Lỗi cập nhật phòng chat cho phòng ban: ${error}`);
     }
   },
 };

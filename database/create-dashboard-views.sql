@@ -19,17 +19,19 @@ GO
 CREATE VIEW VW_DASHBOARD_SUMMARY AS
 SELECT 
   'Tổng nhân viên' AS TieuChi,
-  COUNT(DISTINCT MANV) AS SoLuong,
+  COUNT(DISTINCT nv.MANV) AS SoLuong,
   'employee' AS IconType
-FROM NHAN_VIEN
-WHERE TrangThaiLamViec = N'Chính thức'
+FROM NHAN_VIEN nv
+LEFT JOIN THONG_TIN_CONG_VIEC cv ON nv.MANV = cv.MANV
+WHERE cv.TrangThaiLamViec = N'Chính thức'
 UNION ALL
 SELECT 
   'Nhân viên tạm',
-  COUNT(DISTINCT MANV),
+  COUNT(DISTINCT nv.MANV),
   'employee'
-FROM NHAN_VIEN
-WHERE TrangThaiLamViec != N'Chính thức'
+FROM NHAN_VIEN nv
+LEFT JOIN THONG_TIN_CONG_VIEC cv ON nv.MANV = cv.MANV
+WHERE cv.TrangThaiLamViec != N'Chính thức' OR cv.TrangThaiLamViec IS NULL
 UNION ALL
 SELECT 
   'Tổng phòng ban',
@@ -70,13 +72,15 @@ SELECT
   pb.MAPHG,
   pb.TENPB,
   COUNT(nv.MANV) AS TongNHAN_VIEN,
-  SUM(CASE WHEN nv.TrangThaiLamViec = N'Chính thức' THEN 1 ELSE 0 END) AS NHAN_VIENChinhThuc,
-  SUM(CASE WHEN nv.TrangThaiLamViec != N'Chính thức' THEN 1 ELSE 0 END) AS NHAN_VIENTam,
-  AVG(CAST(nv.LUONG AS FLOAT)) AS LuongTrungBinh,
-  SUM(nv.LUONG) AS TongLuong,
+  SUM(CASE WHEN cv.TrangThaiLamViec = N'Chính thức' THEN 1 ELSE 0 END) AS NHAN_VIENChinhThuc,
+  SUM(CASE WHEN cv.TrangThaiLamViec != N'Chính thức' THEN 1 ELSE 0 END) AS NHAN_VIENTam,
+  AVG(CAST(tc.LUONG AS FLOAT)) AS LuongTrungBinh,
+  SUM(tc.LUONG) AS TongLuong,
   nv2.HOTEN AS TenTruongPhong
 FROM PHONG_BAN pb
-LEFT JOIN NHAN_VIEN nv ON pb.MAPHG = nv.MAPHG
+LEFT JOIN THONG_TIN_CONG_VIEC cv ON pb.MAPHG = cv.MAPHG
+LEFT JOIN NHAN_VIEN nv ON cv.MANV = nv.MANV
+LEFT JOIN THONG_TIN_TAI_CHINH tc ON nv.MANV = tc.MANV
 LEFT JOIN NHAN_VIEN nv2 ON pb.MaTruongPhg = nv2.MANV
 GROUP BY pb.MAPHG, pb.TENPB, nv2.HOTEN;
 GO
@@ -161,9 +165,11 @@ SELECT
   ISNULL(cd.MaChucDanh, 0) AS MaChucDanh,
   ISNULL(cd.TenChucDanh, N'Chưa xác định') AS TenChucDanh,
   COUNT(DISTINCT nv.MANV) AS SoNHAN_VIEN,
-  AVG(CAST(nv.LUONG AS FLOAT)) AS LuongTrungBinh
+  AVG(CAST(tc.LUONG AS FLOAT)) AS LuongTrungBinh
 FROM NHAN_VIEN nv
-LEFT JOIN CHUCDANH cd ON nv.MaChucDanh = cd.MaChucDanh
+LEFT JOIN THONG_TIN_CONG_VIEC cv ON nv.MANV = cv.MANV
+LEFT JOIN THONG_TIN_TAI_CHINH tc ON nv.MANV = tc.MANV
+LEFT JOIN CHUC_DANH cd ON cv.MaChucDanh = cd.MaChucDanh
 GROUP BY cd.MaChucDanh, cd.TenChucDanh;
 GO
 
@@ -175,25 +181,29 @@ IF EXISTS (SELECT * FROM sys.views WHERE name = 'VW_HOATDONG_GANDDAY')
 GO
 
 CREATE VIEW VW_HOATDONG_GANDDAY AS
-SELECT TOP 10
-  1 AS DoUuTien,
-  N'Nhân viên mới' AS LoaiHoatDong,
-  MANV AS MaDoiTuong,
-  HOTEN AS TenDoiTuong,
-  CAST(NgayTuyenDung AS DATETIME) AS ThoiGian,
-  N'Nhân viên' AS Loai
-FROM NHAN_VIEN
-WHERE NgayTuyenDung IS NOT NULL
-UNION ALL
-SELECT 
-  2,
-  N'Dự án mới',
-  CAST(MADA AS VARCHAR),
-  TENDA,
-  CAST(NgayBatDau AS DATETIME),
-  N'Dự án'
-FROM DU_AN
-WHERE NgayBatDau IS NOT NULL;
+SELECT TOP 10 * FROM (
+  SELECT 
+    1 AS DoUuTien,
+    N'Nhân viên mới' AS LoaiHoatDong,
+    nv.MANV AS MaDoiTuong,
+    nv.HOTEN AS TenDoiTuong,
+    CAST(cv.NgayTuyenDung AS DATETIME) AS ThoiGian,
+    N'Nhân viên' AS Loai
+  FROM NHAN_VIEN nv
+  INNER JOIN THONG_TIN_CONG_VIEC cv ON nv.MANV = cv.MANV
+  WHERE cv.NgayTuyenDung IS NOT NULL
+  UNION ALL
+  SELECT 
+    2,
+    N'Dự án mới',
+    CAST(MADA AS VARCHAR),
+    TENDA,
+    CAST(NgayBatDau AS DATETIME),
+    N'Dự án'
+  FROM DU_AN
+  WHERE NgayBatDau IS NOT NULL
+) AS combined
+ORDER BY ThoiGian DESC;
 GO
 
 PRINT N'✅ Tất cả Dashboard Views đã được tạo thành công!';

@@ -123,6 +123,7 @@ router.get("/realtime", dashboardController.getRealtimeDashboard);
 
 // ── HR Analytics Routes (Phase 3) ─────────────────────────────────────────
 router.get("/analytics/turnover",     dashboardController.getAnalyticsTurnover);
+router.get("/analytics",              dashboardController.getAnalyticsTurnover);
 router.get("/analytics/salary-cost",  dashboardController.getAnalyticsSalaryCost);
 router.get("/analytics/attendance",   dashboardController.getAnalyticsAttendance);
 router.get("/analytics/summary",      dashboardController.getAnalyticsSummary);

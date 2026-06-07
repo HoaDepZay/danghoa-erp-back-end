@@ -12,11 +12,22 @@ const generateRandomRoomId = (): string => {
   return `ROOM_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 };
 
+const mapRoomRow = (row: any) => {
+  if (!row) return null;
+  return {
+    MaPhong: row.MAPHONG ?? row.MaPhong,
+    TenPhong: row.TENPHONG ?? row.TenPhong,
+    LoaiPhong: row.LOAIPHONG ?? row.LoaiPhong,
+    MaThamChieu: row.MATHAMCHIEU ?? row.MaThamChieu,
+    NgayTao: row.NGAYTAO ?? row.NgayTao,
+  };
+};
+
 const chatRepository = {
-  getMyRooms: async (maNv) => {
+  getMyRooms: async (MA_NV) => {
     const result = await appPool
       .request()
-      .input("MaNV", sql.VarChar(20), maNv)
+      .input("MaNV", sql.VarChar(20), MA_NV)
       .execute("sp_getMyRooms");
 
     return result.recordset.map((row) => ({
@@ -30,11 +41,11 @@ const chatRepository = {
     }));
   },
 
-  isRoomMember: async (maPhong, maNv) => {
+  isRoomMember: async (maPhong, MA_NV) => {
     const result = await appPool
       .request()
       .input("MaPhong", sql.Int, maPhong)
-      .input("MaNV", sql.VarChar(20), maNv)
+      .input("MaNV", sql.VarChar(20), MA_NV)
       .execute("sp_isRoomMember");
 
     return result.recordset.length > 0;
@@ -46,16 +57,7 @@ const chatRepository = {
       .input("MaPhong", sql.Int, maPhong)
       .execute("sp_getRoomById");
 
-    const row = result.recordset[0];
-    if (!row) return null;
-
-    return {
-      MaPhong: row.MAPHONG ?? row.MaPhong,
-      TenPhong: row.TENPHONG ?? row.TenPhong,
-      LoaiPhong: row.LOAIPHONG ?? row.LoaiPhong,
-      MaThamChieu: row.MATHAMCHIEU ?? row.MaThamChieu,
-      NgayTao: row.NGAYTAO ?? row.NgayTao,
-    };
+    return mapRoomRow(result.recordset[0]);
   },
 
   getRoomMessages: async (maPhong, limit = 50) => {
@@ -142,7 +144,7 @@ const chatRepository = {
       .input("LOAIPHONG", sql.TinyInt, ROOM_TYPE.DIRECT)
       .execute("sp_findDirectRoom");
 
-    return result.recordset[0] || null;
+    return mapRoomRow(result.recordset[0]);
   },
 
   createDirectRoom: async (maNvA, maNvB) => {
@@ -155,7 +157,7 @@ const chatRepository = {
       .input("MATHAMCHIEU", sql.VarChar(50), maThamChieu)
       .execute("sp_createDirectRoom");
 
-    return result.recordset[0] || null;
+    return mapRoomRow(result.recordset[0]);
   },
 
   getOrCreateReferenceRoom: async (roomType, maThamChieu, tenPhong = null) => {
@@ -166,23 +168,23 @@ const chatRepository = {
       .input("TENPHONG", sql.NVarChar(255), tenPhong)
       .execute("sp_getOrCreateReferenceRoom");
 
-    return result.recordset[0] || null;
+    return mapRoomRow(result.recordset[0]);
   },
 
-  addMemberIfNotExists: async (maPhong, maNv, vaiTro = "Thành viên") => {
+  addMemberIfNotExists: async (maPhong, MA_NV, vaiTro = "Thành viên") => {
     await appPool
       .request()
       .input("MAPHONG", sql.Int, maPhong)
-      .input("MANV", sql.VarChar(20), maNv)
+      .input("MANV", sql.VarChar(20), MA_NV)
       .input("VAITRO", sql.NVarChar(50), vaiTro)
       .execute("sp_addRoomMember");
   },
 
-  removeMember: async (maPhong, maNv) => {
+  removeMember: async (maPhong, MA_NV) => {
     await appPool
       .request()
       .input("MAPHONG", sql.Int, maPhong)
-      .input("MANV", sql.VarChar(20), maNv)
+      .input("MANV", sql.VarChar(20), MA_NV)
       .execute("sp_removeRoomMember");
   },
 
@@ -195,19 +197,19 @@ const chatRepository = {
     return result.recordset.map((r) => r.MANV);
   },
 
-  getProjectMembers: async (maDa) => {
+  getProjectMembers: async (MA_DA) => {
     const result = await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
+      .input("MADA", sql.Int, MA_DA)
       .execute("sp_getProjectMembersSimple");
 
     return result.recordset.map((r) => r.MaNV);
   },
 
-  getProjectInfo: async (maDa) => {
+  getProjectInfo: async (MA_DA) => {
     const result = await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
+      .input("MADA", sql.Int, MA_DA)
       .execute("sp_getProjectInfo");
 
     return result.recordset[0] || null;
@@ -237,14 +239,14 @@ const chatRepository = {
       .input("MEMBERIDS", sql.NVarChar(sql.MAX), memberIdsStr)
       .execute("sp_createCustomGroupRoom");
 
-    return result.recordset[0] || null;
+    return mapRoomRow(result.recordset[0]);
   },
 
-  getRoomMemberRole: async (maPhong, maNv) => {
+  getRoomMemberRole: async (maPhong, MA_NV) => {
     const result = await appPool
       .request()
       .input("MAPHONG", sql.Int, maPhong)
-      .input("MANV", sql.VarChar(20), maNv)
+      .input("MANV", sql.VarChar(20), MA_NV)
       .execute("sp_getRoomMemberRole");
 
     return result.recordset[0]?.VaiTro || null;

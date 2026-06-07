@@ -19,86 +19,86 @@ const mapTaskRow = (row: any) => {
 };
 
 const projectRepository = {
-  isEmployeeInProject: async (maDa, maNv) => {
+  isEmployeeInProject: async (MA_DA, MA_NV) => {
     const result = await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
-      .input("MANV", sql.VarChar(20), maNv)
+      .input("MADA", sql.Int, MA_DA)
+      .input("MANV", sql.VarChar(20), MA_NV)
       .execute("sp_isEmployeeInProject");
 
     return result.recordset.length > 0;
   },
 
-  getProjectMemberRole: async (maDa, maNv) => {
+  getProjectMemberRole: async (MA_DA, MA_NV) => {
     const result = await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
-      .input("MANV", sql.VarChar(20), maNv)
+      .input("MADA", sql.Int, MA_DA)
+      .input("MANV", sql.VarChar(20), MA_NV)
       .execute("sp_getProjectMemberRole");
 
     return result.recordset[0]?.VaiTroDuAn || null;
   },
 
-  getProjectTasks: async (maDa) => {
+  getProjectTasks: async (MA_DA) => {
     const result = await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
+      .input("MADA", sql.Int, MA_DA)
       .execute("sp_getProjectTasks");
 
     return result.recordset;
   },
 
-  createTask: async (maDa, data) => {
+  createTask: async (MA_DA, data) => {
     const result = await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
-      .input("MANV", sql.VarChar(20), data.manv)
-      .input("TENNHIEMVU", sql.NVarChar(255), data.tennhiemvu)
-      .input("MOTA", sql.NVarChar(sql.MAX), data.mota ?? null)
-      .input("NGAYBATDAU", sql.Date, data.ngaybatdau ?? null)
-      .input("NGAYKETTHUC", sql.Date, data.ngayketthuc ?? null)
-      .input("DOUUTIEN", sql.NVarChar(20), data.douutien ?? null)
-      .input("TRANGTHAI", sql.NVarChar(50), data.trangthai ?? "Mới")
-      .input("PHANTRAMHOANTHANH", sql.Int, data.phantramhoanthanh ?? 0)
-      .input("GHICHUSAUHOANTHANH", sql.NVarChar(sql.MAX), data.ghichusauhoanthanh ?? null)
+      .input("MADA", sql.Int, MA_DA)
+      .input("MANV", sql.VarChar(20), data.MA_NV)
+      .input("TENNHIEMVU", sql.NVarChar(255), data.TEN_NHIEM_VU)
+      .input("MOTA", sql.NVarChar(sql.MAX), data.MO_TA ?? null)
+      .input("NGAYBATDAU", sql.Date, data.NGAY_BAT_DAU ?? null)
+      .input("NGAYKETTHUC", sql.Date, data.NGAY_KET_THUC ?? null)
+      .input("DOUUTIEN", sql.NVarChar(20), data.DO_UU_TIEN ?? null)
+      .input("TRANGTHAI", sql.NVarChar(50), data.TRANG_THAI ?? "Mới")
+      .input("PHANTRAMHOANTHANH", sql.Int, data.PHAN_TRAM_HOAN_THANH ?? 0)
+      .input("GHICHUSAUHOANTHANH", sql.NVarChar(sql.MAX), data.GHI_CHU_SAU_HOAN_THANH ?? null)
       .execute("sp_createProjectTask");
 
     return mapTaskRow(result.recordset[0]);
   },
 
-  getTaskByIdInProject: async (maDa, maNvDa) => {
+  getTaskByIdInProject: async (MA_DA, maNvDa) => {
     const result = await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
+      .input("MADA", sql.Int, MA_DA)
       .input("MANVDA", sql.Int, maNvDa)
       .execute("sp_getTaskByIdInProject");
 
     return mapTaskRow(result.recordset[0]);
   },
 
-  updateTask: async (maDa, maNvDa, data) => {
+  updateTask: async (MA_DA, maNvDa, data) => {
     const result = await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
+      .input("MADA", sql.Int, MA_DA)
       .input("MANVDA", sql.Int, maNvDa)
-      .input("MANV", sql.VarChar(20), data.manv ?? null)
-      .input("MANV_PASSED", sql.Bit, data.manv !== undefined ? 1 : 0)
-      .input("TENNHIEMVU", sql.NVarChar(255), data.tennhiemvu ?? null)
-      .input("TENNHIEMVU_PASSED", sql.Bit, data.tennhiemvu !== undefined ? 1 : 0)
-      .input("MOTA", sql.NVarChar(sql.MAX), data.mota ?? null)
-      .input("MOTA_PASSED", sql.Bit, data.mota !== undefined ? 1 : 0)
-      .input("NGAYBATDAU", sql.Date, data.ngaybatdau ?? null)
-      .input("NGAYBATDAU_PASSED", sql.Bit, data.ngaybatdau !== undefined ? 1 : 0)
-      .input("NGAYKETTHUC", sql.Date, data.ngayketthuc ?? null)
-      .input("NGAYKETTHUC_PASSED", sql.Bit, data.ngayketthuc !== undefined ? 1 : 0)
-      .input("DOUUTIEN", sql.NVarChar(20), data.douutien ?? null)
-      .input("DOUUTIEN_PASSED", sql.Bit, data.douutien !== undefined ? 1 : 0)
-      .input("TRANGTHAI", sql.NVarChar(50), data.trangthai ?? null)
-      .input("TRANGTHAI_PASSED", sql.Bit, data.trangthai !== undefined ? 1 : 0)
-      .input("PHANTRAMHOANTHANH", sql.Int, data.phantramhoanthanh ?? null)
-      .input("PHANTRAMHOANTHANH_PASSED", sql.Bit, data.phantramhoanthanh !== undefined ? 1 : 0)
-      .input("GHICHUSAUHOANTHANH", sql.NVarChar(sql.MAX), data.ghichusauhoanthanh ?? null)
-      .input("GHICHUSAUHOANTHANH_PASSED", sql.Bit, data.ghichusauhoanthanh !== undefined ? 1 : 0)
+      .input("MANV", sql.VarChar(20), data.MA_NV ?? null)
+      .input("MANV_PASSED", sql.Bit, data.MA_NV !== undefined ? 1 : 0)
+      .input("TENNHIEMVU", sql.NVarChar(255), data.TEN_NHIEM_VU ?? null)
+      .input("TENNHIEMVU_PASSED", sql.Bit, data.TEN_NHIEM_VU !== undefined ? 1 : 0)
+      .input("MOTA", sql.NVarChar(sql.MAX), data.MO_TA ?? null)
+      .input("MOTA_PASSED", sql.Bit, data.MO_TA !== undefined ? 1 : 0)
+      .input("NGAYBATDAU", sql.Date, data.NGAY_BAT_DAU ?? null)
+      .input("NGAYBATDAU_PASSED", sql.Bit, data.NGAY_BAT_DAU !== undefined ? 1 : 0)
+      .input("NGAYKETTHUC", sql.Date, data.NGAY_KET_THUC ?? null)
+      .input("NGAYKETTHUC_PASSED", sql.Bit, data.NGAY_KET_THUC !== undefined ? 1 : 0)
+      .input("DOUUTIEN", sql.NVarChar(20), data.DO_UU_TIEN ?? null)
+      .input("DOUUTIEN_PASSED", sql.Bit, data.DO_UU_TIEN !== undefined ? 1 : 0)
+      .input("TRANGTHAI", sql.NVarChar(50), data.TRANG_THAI ?? null)
+      .input("TRANGTHAI_PASSED", sql.Bit, data.TRANG_THAI !== undefined ? 1 : 0)
+      .input("PHANTRAMHOANTHANH", sql.Int, data.PHAN_TRAM_HOAN_THANH ?? null)
+      .input("PHANTRAMHOANTHANH_PASSED", sql.Bit, data.PHAN_TRAM_HOAN_THANH !== undefined ? 1 : 0)
+      .input("GHICHUSAUHOANTHANH", sql.NVarChar(sql.MAX), data.GHI_CHU_SAU_HOAN_THANH ?? null)
+      .input("GHICHUSAUHOANTHANH_PASSED", sql.Bit, data.GHI_CHU_SAU_HOAN_THANH !== undefined ? 1 : 0)
       .execute("sp_updateProjectTask");
 
     return mapTaskRow(result.recordset[0]);
@@ -112,37 +112,37 @@ const projectRepository = {
     return result.recordset;
   },
 
-  getProjectById: async (maDa) => {
+  getProjectById: async (MA_DA) => {
     const result = await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
+      .input("MADA", sql.Int, MA_DA)
       .execute("sp_getProjectById");
 
     return result.recordset[0] || null;
   },
 
-  getProjectMembers: async (maDa) => {
+  getProjectMembers: async (MA_DA) => {
     const result = await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
+      .input("MADA", sql.Int, MA_DA)
       .execute("sp_getProjectMembers");
 
     return result.recordset;
   },
 
-  getEmployeeProjects: async (maNv) => {
+  getEmployeeProjects: async (MA_NV) => {
     const result = await appPool
       .request()
-      .input("MANV", sql.VarChar(20), maNv)
+      .input("MANV", sql.VarChar(20), MA_NV)
       .execute("sp_getEmployeeProjects");
 
     return result.recordset;
   },
 
-  getProjectsWithMembersByEmployee: async (maNv) => {
+  getProjectsWithMembersByEmployee: async (MA_NV) => {
     const result = await appPool
       .request()
-      .input("MANV", sql.VarChar(20), maNv)
+      .input("MANV", sql.VarChar(20), MA_NV)
       .execute("sp_getProjectsWithMembersByEmployee");
 
     return result.recordset;
@@ -151,76 +151,76 @@ const projectRepository = {
   createProject: async (data) => {
     const result = await appPool
       .request()
-      .input("TENDA", sql.NVarChar(255), data.tenda)
-      .input("MOTA", sql.NVarChar(sql.MAX), data.mota || null)
-      .input("NGAYBATDAU", sql.Date, data.ngaybatdau || new Date())
-      .input("NGAYKETTHUC", sql.Date, data.ngayketthuc || null)
-      .input("TRANGTHAI", sql.NVarChar(50), data.trangthai || "Đang lên kế hoạch")
+      .input("TENDA", sql.NVarChar(255), data.TEN_DA)
+      .input("MOTA", sql.NVarChar(sql.MAX), data.MO_TA || null)
+      .input("NGAYBATDAU", sql.Date, data.NGAY_BAT_DAU || new Date())
+      .input("NGAYKETTHUC", sql.Date, data.NGAY_KET_THUC || null)
+      .input("TRANGTHAI", sql.NVarChar(50), data.TRANG_THAI || "Đang lên kế hoạch")
       .execute("sp_createProject");
 
     return result.recordset[0] || null;
   },
 
-  updateProject: async (maDa, data) => {
+  updateProject: async (MA_DA, data) => {
     await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
-      .input("TENDA", sql.NVarChar(255), data.tenda ?? null)
-      .input("TENDA_PASSED", sql.Bit, data.tenda !== undefined ? 1 : 0)
-      .input("MOTA", sql.NVarChar(sql.MAX), data.mota ?? null)
-      .input("MOTA_PASSED", sql.Bit, data.mota !== undefined ? 1 : 0)
-      .input("NGAYBATDAU", sql.Date, data.ngaybatdau ?? null)
-      .input("NGAYBATDAU_PASSED", sql.Bit, data.ngaybatdau !== undefined ? 1 : 0)
-      .input("NGAYKETTHUC", sql.Date, data.ngayketthuc ?? null)
-      .input("NGAYKETTHUC_PASSED", sql.Bit, data.ngayketthuc !== undefined ? 1 : 0)
-      .input("TRANGTHAI", sql.NVarChar(50), data.trangthai ?? null)
-      .input("TRANGTHAI_PASSED", sql.Bit, data.trangthai !== undefined ? 1 : 0)
+      .input("MADA", sql.Int, MA_DA)
+      .input("TENDA", sql.NVarChar(255), data.TEN_DA ?? null)
+      .input("TENDA_PASSED", sql.Bit, data.TEN_DA !== undefined ? 1 : 0)
+      .input("MOTA", sql.NVarChar(sql.MAX), data.MO_TA ?? null)
+      .input("MOTA_PASSED", sql.Bit, data.MO_TA !== undefined ? 1 : 0)
+      .input("NGAYBATDAU", sql.Date, data.NGAY_BAT_DAU ?? null)
+      .input("NGAYBATDAU_PASSED", sql.Bit, data.NGAY_BAT_DAU !== undefined ? 1 : 0)
+      .input("NGAYKETTHUC", sql.Date, data.NGAY_KET_THUC ?? null)
+      .input("NGAYKETTHUC_PASSED", sql.Bit, data.NGAY_KET_THUC !== undefined ? 1 : 0)
+      .input("TRANGTHAI", sql.NVarChar(50), data.TRANG_THAI ?? null)
+      .input("TRANGTHAI_PASSED", sql.Bit, data.TRANG_THAI !== undefined ? 1 : 0)
       .execute("sp_updateProject");
   },
 
-  deleteProjectTasks: async (maDa) => {
+  deleteProjectTasks: async (MA_DA) => {
     await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
+      .input("MADA", sql.Int, MA_DA)
       .execute("sp_deleteProjectTasks");
   },
 
-  deleteProjectAssignments: async (maDa) => {
+  deleteProjectAssignments: async (MA_DA) => {
     await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
+      .input("MADA", sql.Int, MA_DA)
       .execute("sp_deleteProjectAssignments");
   },
 
-  deleteProject: async (maDa) => {
+  deleteProject: async (MA_DA) => {
     await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
+      .input("MADA", sql.Int, MA_DA)
       .execute("sp_deleteProject");
   },
 
-  addProjectMember: async (maDa, maNv, vaiTroDuAn) => {
+  addProjectMember: async (MA_DA, MA_NV, vaiTroDuAn) => {
     await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
-      .input("MANV", sql.VarChar(20), maNv)
+      .input("MADA", sql.Int, MA_DA)
+      .input("MANV", sql.VarChar(20), MA_NV)
       .input("VaiTroDU_AN", sql.NVarChar(100), vaiTroDuAn)
       .execute("sp_addProjectMember");
   },
 
-  updateProjectChatRoom: async (maDa, maPhongChat) => {
+  updateProjectChatRoom: async (MA_DA, maPhongChat) => {
     await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
+      .input("MADA", sql.Int, MA_DA)
       .input("MAPHONGCHAT", sql.Int, maPhongChat)
-      .query("UPDATE DU_AN SET MaPhongChat = @MAPHONGCHAT WHERE MADA = @MADA");
+      .query("UPDATE DU_AN SET MA_PHONG_CHAT = @MAPHONGCHAT WHERE MA_DA = @MADA");
   },
 
-  removeProjectMember: async (maDa, maNv) => {
+  removeProjectMember: async (MA_DA, MA_NV) => {
     const result = await appPool
       .request()
-      .input("MADA", sql.Int, maDa)
-      .input("MANV", sql.VarChar(20), maNv)
+      .input("MADA", sql.Int, MA_DA)
+      .input("MANV", sql.VarChar(20), MA_NV)
       .execute("sp_removeProjectMember");
 
     const removedMemberCount = result.recordset?.[0]?.RemovedMemberCount || 0;

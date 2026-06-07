@@ -7,7 +7,7 @@ const register = async (req, res) => {
     console.log(newUser);
     return res.status(201).json({
       success: true,
-      message: "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.",
+      message: "Đăng ký thành công! Vui lòng kiểm tra EMAIL để lấy mã OTP.",
       data: newUser,
     });
   } catch (error) {
@@ -20,8 +20,8 @@ const register = async (req, res) => {
 
 const verifyOtp = async (req, res) => {
   try {
-    const { email, otpCode } = req.body;
-    const result = await authService.verifyOTP(email, otpCode);
+    const { EMAIL, otpCode } = req.body;
+    const result = await authService.verifyOTP(EMAIL, otpCode);
 
     // Debug: Xem thực tế Service trả về cái gì
     console.log("Kết quả từ Service:", result);
@@ -38,16 +38,16 @@ const verifyOtp = async (req, res) => {
 };
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { EMAIL, password } = req.body;
 
-    if (!email || !password) {
+    if (!EMAIL || !password) {
       return res.status(400).json({
         success: false,
         message: "Vui lòng nhập đầy đủ Email và Mật khẩu!",
       });
     }
 
-    const result = await authService.login(email, password);
+    const result = await authService.login(EMAIL, password);
 
     // Trả về Token và thông tin User cho Frontend lưu vào LocalStorage
     return res.status(200).json(result);
@@ -90,16 +90,16 @@ const logout = async (_req, res) => {
 
 const forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { EMAIL } = req.body;
 
-    if (!email) {
+    if (!EMAIL) {
       return res.status(400).json({
         success: false,
-        message: "Vui lòng nhập email!",
+        message: "Vui lòng nhập EMAIL!",
       });
     }
 
-    const result = await authService.forgotPassword(email);
+    const result = await authService.forgotPassword(EMAIL);
     return res.status(200).json(result);
   } catch (error) {
     return res.status(400).json({
@@ -111,17 +111,17 @@ const forgotPassword = async (req, res) => {
 
 const resetForgotPassword = async (req, res) => {
   try {
-    const { email, otpCode, newPassword } = req.body;
+    const { EMAIL, otpCode, newPassword } = req.body;
 
-    if (!email || !otpCode || !newPassword) {
+    if (!EMAIL || !otpCode || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: "Vui lòng nhập đầy đủ email, mã OTP và mật khẩu mới!",
+        message: "Vui lòng nhập đầy đủ EMAIL, mã OTP và mật khẩu mới!",
       });
     }
 
     const result = await authService.resetForgotPassword(
-      email,
+      EMAIL,
       otpCode,
       newPassword,
     );
@@ -136,17 +136,17 @@ const resetForgotPassword = async (req, res) => {
 
 const changePassword = async (req, res) => {
   try {
-    const { email, oldPassword, newPassword } = req.body;
+    const { EMAIL, oldPassword, newPassword } = req.body;
 
-    if (!email || !oldPassword || !newPassword) {
+    if (!EMAIL || !oldPassword || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: "Vui lòng nhập đầy đủ email, mật khẩu cũ và mật khẩu mới!",
+        message: "Vui lòng nhập đầy đủ EMAIL, mật khẩu cũ và mật khẩu mới!",
       });
     }
 
     const result = await authService.changePassword(
-      email,
+      EMAIL,
       oldPassword,
       newPassword,
     );
@@ -162,7 +162,7 @@ const changePassword = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    // 🔐 Lấy email của user đang đăng nhập từ JWT token
+    // 🔐 Lấy EMAIL của user đang đăng nhập từ JWT token
     const currentUserEmail = req.user?.userEmail;
     if (!currentUserEmail) {
       return res.status(401).json({
@@ -172,7 +172,7 @@ const updateProfile = async (req, res) => {
     }
 
     // 📋 Email cần cập nhật - có thể từ body hoặc chính user hiện tại
-    const targetEmail = req.body.email || currentUserEmail;
+    const targetEmail = req.body.EMAIL || currentUserEmail;
 
     // 🔒 KIỂM TRA QUYỀN: User chỉ có thể cập nhật profile của chính mình
     if (currentUserEmail.toLowerCase() !== targetEmail.toLowerCase()) {
@@ -219,9 +219,9 @@ const acceptPendingRegistration = async (req, res) => {
 
 const rejectPendingRegistration = async (req, res) => {
   try {
-    const { email, reason, rejectedBy } = req.body;
+    const { EMAIL, reason, rejectedBy } = req.body;
     const result = await authService.rejectPendingRegistration(
-      email,
+      EMAIL,
       reason,
       rejectedBy,
     );

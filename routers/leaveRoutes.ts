@@ -9,9 +9,9 @@ const router = express.Router();
 // GET / - Lấy danh sách đơn (admin/manager xem tất cả, nhân viên xem của mình)
 router.get("/", withUserConnection, async (req: Request, res: Response) => {
   try {
-    const { maNv, trangThaiDuyet } = req.query;
+    const { MA_NV, trangThaiDuyet } = req.query;
     const request = appPool.request();
-    if (maNv) request.input("MaNV", sql.VarChar(20), maNv);
+    if (MA_NV) request.input("MaNV", sql.VarChar(20), MA_NV);
     if (trangThaiDuyet) request.input("TrangThaiDuyet", sql.NVarChar(50), trangThaiDuyet);
 
     const result = await request.execute("sp_getLeaves");
@@ -35,12 +35,12 @@ router.get("/types", withUserConnection, async (req: Request, res: Response) => 
 // Duyệt đơn nghỉ phép (đa cấp)
 router.post("/approve", withUserConnection, async (req: Request, res: Response) => {
   try {
-    const { maDon, capDuyet, trangThai, lyDoTuChoi } = req.body;
+    const { maDon, capDuyet, TRANG_THAI, lyDoTuChoi } = req.body;
     // req.user được gán từ withUserConnection (middleware)
     // Lấy mã NV của người duyệt
     const nguoiDuyet = (req as any).user?.MANV || "ADMIN";
 
-    if (!maDon || !capDuyet || !trangThai) {
+    if (!maDon || !capDuyet || !TRANG_THAI) {
       return res.status(400).json({ success: false, message: "Thiếu dữ liệu" });
     }
 
@@ -48,7 +48,7 @@ router.post("/approve", withUserConnection, async (req: Request, res: Response) 
       .input("MaDon", sql.Int, maDon)
       .input("NguoiDuyet", sql.VarChar(20), nguoiDuyet)
       .input("CapDuyet", sql.Int, capDuyet)
-      .input("TrangThai", sql.NVarChar(50), trangThai);
+      .input("TrangThai", sql.NVarChar(50), TRANG_THAI);
 
     if (lyDoTuChoi) {
       request.input("LyDoTuChoi", sql.NVarChar(500), lyDoTuChoi);
@@ -65,51 +65,52 @@ router.post("/approve", withUserConnection, async (req: Request, res: Response) 
 // POST / - Nhân viên nộp đơn nghỉ phép mới
 router.post("/", withUserConnection, async (req: Request, res: Response) => {
   try {
-    const maNv = (req as any).user?.userInfo?.manv;
+    const MA_NV = (req as any).user?.userInfo?.MA_NV;
     const { tuNgay, denNgay, lyDo, maLoaiNghi } = req.body;
 
-    if (!maNv) return res.status(401).json({ success: false, message: "Không xác định được nhân viên" });
+    if (!MA_NV) return res.status(401).json({ success: false, message: "Không xác định được nhân viên" });
     if (!tuNgay || !denNgay || !lyDo || !maLoaiNghi) {
       return res.status(400).json({ success: false, message: "Vui lòng điền đầy đủ thông tin nộp đơn" });
     }
 
     await appPool.request()
-      .input("MANV",   sql.VarChar(20),   maNv)
+      .input("MANV",   sql.VarChar(20),   MA_NV)
       .input("TUNGAY", sql.Date,          new Date(tuNgay))
       .input("DENNGAY",sql.Date,          new Date(denNgay))
       .input("LYDO",   sql.NVarChar(500), lyDo)
       .input("MALOAINGHI", sql.Int,       maLoaiNghi)
       .query(`
-        INSERT INTO DON_NGHI_PHEP (MANV, TUNGAY, DENNGAY, LYDO, TRANGTHAIDUYET, MALOAINGHI)
+        INSERT INTO DON_NGHI_PHEP (MA_NV, TU_NGAY, DEN_NGAY, LY_DO, TRANG_THAI_DUYET, MA_LOAI_NGHI)
         VALUES (@MANV, @TUNGAY, @DENNGAY, @LYDO, N'Chờ duyệt', @MALOAINGHI)
       `);
 
     // Logic gửi thông báo cho Trưởng phòng
     try {
       const deptHeadQuery = await appPool.request()
-        .input("MANV", sql.VarChar(20), maNv)
+        .input("MANV", sql.VarChar(20), MA_NV)
         .query(`
-          SELECT pb.MATRUONGPHG 
+          SELECT pb.MA_TRUONG_PHG 
           FROM NHAN_VIEN nv
-          LEFT JOIN PHONG_BAN pb ON nv.MAPHG = pb.MAPHG
-          WHERE nv.MANV = @MANV
+          LEFT JOIN THONG_TIN_CONG_VIEC cv ON nv.MA_NV = cv.MA_NV
+          LEFT JOIN PHONG_BAN pb ON cv.MA_PHG = pb.MA_PHG
+          WHERE nv.MA_NV = @MANV
         `);
       
-      const maTruongPhg = deptHeadQuery.recordset[0]?.MATRUONGPHG;
+      const maTruongPhg = deptHeadQuery.recordset[0]?.MA_TRUONG_PHG;
       let targetMaNv = maTruongPhg;
 
       // Nếu không có Trưởng phòng, tìm 1 admin làm fallback
       if (!targetMaNv) {
         const adminQuery = await appPool.request()
-          .query("SELECT TOP 1 MANV FROM TAI_KHOAN WHERE ROLE = 'admin'");
-        targetMaNv = adminQuery.recordset[0]?.MANV;
+          .query("SELECT TOP 1 MA_NV FROM TAI_KHOANG WHERE MA_VAI_TRO = 1");
+        targetMaNv = adminQuery.recordset[0]?.MA_NV;
       }
 
       if (targetMaNv) {
         const notif = await createNotification(
           targetMaNv,
           "Đơn nghỉ phép mới",
-          `Nhân viên ${maNv} vừa nộp đơn xin nghỉ phép. Vui lòng kiểm tra và phê duyệt.`,
+          `Nhân viên ${MA_NV} vừa nộp đơn xin nghỉ phép. Vui lòng kiểm tra và phê duyệt.`,
           "leave_request",
           "/leaves"
         );
@@ -129,11 +130,11 @@ router.post("/", withUserConnection, async (req: Request, res: Response) => {
 // GET /my - Nhân viên xem đơn nghỉ phép của bản thân
 router.get("/my", withUserConnection, async (req: Request, res: Response) => {
   try {
-    const maNv = (req as any).user?.userInfo?.manv;
-    if (!maNv) return res.status(401).json({ success: false, message: "Không xác định được nhân viên" });
+    const MA_NV = (req as any).user?.userInfo?.MA_NV;
+    if (!MA_NV) return res.status(401).json({ success: false, message: "Không xác định được nhân viên" });
 
     const result = await appPool.request()
-      .input("MaNV", sql.VarChar(20), maNv)
+      .input("MaNV", sql.VarChar(20), MA_NV)
       .execute("sp_getLeaves");
 
     res.json({ success: true, data: result.recordset });

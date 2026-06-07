@@ -35,7 +35,7 @@ async function createSP() {
           END
           ELSE
           BEGIN
-              SELECT 0 AS Success, 'Không tìm thấy tài khoản với email này' AS Message;
+              SELECT 0 AS Success, 'Không tìm thấy tài khoản với EMAIL này' AS Message;
           END
       END
     `;

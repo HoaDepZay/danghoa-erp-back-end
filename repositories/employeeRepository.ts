@@ -26,10 +26,10 @@ const employeeRepository = {
   },
 
   // 2. Lấy chi tiết 1 nhân viên
-  getEmployeeById: async (manv) => {
+  getEmployeeById: async (MA_NV) => {
     const result = await appPool
       .request()
-      .input("MaNV", sql.NVarChar, manv)
+      .input("MaNV", sql.NVarChar, MA_NV)
       .execute("sp_getEmployeeById");
     return result.recordset[0] || null;
   },
@@ -38,89 +38,93 @@ const employeeRepository = {
   createEmployee: async (data) => {
     return await appPool
       .request()
-      .input("MaNV", sql.NVarChar, data.manv)
-      .input("HoTen", sql.NVarChar, data.hoten)
-      .input("Email", sql.NVarChar, data.email)
-      .input("ChucVu", sql.NVarChar, data.chucvu)
-      .input("Luong", sql.Decimal(18, 2), data.luong)
-      .input("MaPhg", sql.Int, data.maphg)
-      .input("NgaySinh", sql.Date, data.ngaysinh || null)
-      .input("GioiTinh", sql.NVarChar, data.gioitinh || null)
-      .input("DiaChi", sql.NVarChar, data.diachinhan || null)
-      .input("NgayTuyenDung", sql.Date, data.ngayvaolam || null)
+      .input("MaNV", sql.NVarChar, data.MA_NV)
+      .input("HoTen", sql.NVarChar, data.HO_TEN)
+      .input("Email", sql.NVarChar, data.EMAIL)
+      .input("ChucVu", sql.NVarChar, data.CHUC_VU)
+      .input("Luong", sql.Decimal(18, 2), data.LUONG)
+      .input("MaPhg", sql.Int, data.MA_PHG)
+      .input("NgaySinh", sql.Date, data.NGAY_SINH || null)
+      .input("GioiTinh", sql.NVarChar, data.GIOI_TINH || null)
+      .input("SDT", sql.NVarChar, data.SDT || null)
+      .input("DiaChi", sql.NVarChar, data.DIA_CHI || null)
+      .input("NgayTuyenDung", sql.Date, data.NGAY_TUYEN_DUNG || null)
       .execute("sp_createEmployee");
   },
 
   // 4. Cập nhật thông tin nhân viên
-  updateEmployee: async (manv, data) => {
+  updateEmployee: async (MA_NV, data) => {
     const request = appPool.request();
-    request.input("MaNV", sql.NVarChar, manv);
+    request.input("MaNV", sql.NVarChar, MA_NV);
 
-    if (data.hoten !== undefined) {
-      request.input("HoTen", sql.NVarChar, data.hoten);
+    if (data.HO_TEN !== undefined) {
+      request.input("HoTen", sql.NVarChar, data.HO_TEN);
     }
-    if (data.email !== undefined) {
-      request.input("Email", sql.NVarChar, data.email);
+    if (data.EMAIL !== undefined) {
+      request.input("Email", sql.NVarChar, data.EMAIL);
     }
-    if (data.chucvu !== undefined) {
-      request.input("ChucVu", sql.NVarChar, data.chucvu);
+    if (data.CHUC_VU !== undefined) {
+      request.input("ChucVu", sql.NVarChar, data.CHUC_VU);
     }
-    if (data.luong !== undefined) {
-      request.input("Luong", sql.Decimal(18, 2), data.luong);
+    if (data.LUONG !== undefined) {
+      request.input("Luong", sql.Decimal(18, 2), data.LUONG);
     }
-    if (data.maphg !== undefined) {
-      request.input("MaPhg", sql.Int, data.maphg);
+    if (data.MA_PHG !== undefined) {
+      request.input("MaPhg", sql.Int, data.MA_PHG);
     }
-    if (data.ngaysinh !== undefined) {
-      request.input("NgaySinh", sql.Date, data.ngaysinh);
+    if (data.NGAY_SINH !== undefined) {
+      request.input("NgaySinh", sql.Date, data.NGAY_SINH);
     }
-    if (data.gioitinh !== undefined) {
-      request.input("GioiTinh", sql.NVarChar, data.gioitinh);
+    if (data.GIOI_TINH !== undefined) {
+      request.input("GioiTinh", sql.NVarChar, data.GIOI_TINH);
     }
-    if (data.diachinhan !== undefined) {
-      request.input("DiaChi", sql.NVarChar, data.diachinhan);
+    if (data.SDT !== undefined) {
+      request.input("SDT", sql.NVarChar, data.SDT);
+    }
+    if (data.DIA_CHI !== undefined) {
+      request.input("DiaChi", sql.NVarChar, data.DIA_CHI);
     }
 
     return await request.execute("sp_updateEmployee");
   },
 
   // 5. Xóa/Khóa nhân viên (cập nhật status)
-  deleteEmployee: async (manv) => {
+  deleteEmployee: async (MA_NV) => {
     await appPool
       .request()
-      .input("MaNV", sql.NVarChar, manv)
+      .input("MaNV", sql.NVarChar, MA_NV)
       .execute("sp_deleteEmployeeFull");
   },
 
   // 6. Đổi mật khẩu nhân viên
-  changePassword: async (email, newPassword) => {
+  changePassword: async (EMAIL, newPassword) => {
     return await appPool
       .request()
-      .input("Email", sql.NVarChar, email)
+      .input("Email", sql.NVarChar, EMAIL)
       .input("NewPassword", sql.NVarChar, newPassword)
       .execute("sp_changePassword");
   },
 
   // 7. Cập nhật profile nhân viên
-  updateProfile: async (email, data) => {
+  updateProfile: async (EMAIL, data) => {
     const request = appPool.request();
-    request.input("Email", sql.NVarChar, email);
+    request.input("Email", sql.NVarChar, EMAIL);
 
-    if (data.hoten !== undefined) {
-      request.input("HoTen", sql.NVarChar, data.hoten);
+    if (data.HO_TEN !== undefined) {
+      request.input("HoTen", sql.NVarChar, data.HO_TEN);
     }
-    if (data.ngaysinh !== undefined) {
-      request.input("NgaySinh", sql.Date, data.ngaysinh);
+    if (data.NGAY_SINH !== undefined) {
+      request.input("NgaySinh", sql.Date, data.NGAY_SINH);
     }
-    if (data.gioitinh !== undefined) {
-      request.input("GioiTinh", sql.NVarChar, data.gioitinh);
+    if (data.GIOI_TINH !== undefined) {
+      request.input("GioiTinh", sql.NVarChar, data.GIOI_TINH);
     }
-    const diaChiValue = data.diachinhan || data.diachi;
+    const diaChiValue = data.DIA_CHI || data.DIA_CHI;
     if (diaChiValue !== undefined) {
       request.input("DiaChi", sql.NVarChar, diaChiValue);
     }
-    if (data.sdt !== undefined) {
-      request.input("SDT", sql.NVarChar, data.sdt);
+    if (data.SDT !== undefined) {
+      request.input("SDT", sql.NVarChar, data.SDT);
     }
 
     return await request.execute("sp_updateProfile");

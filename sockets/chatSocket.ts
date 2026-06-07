@@ -5,8 +5,8 @@ import chatService from "../services/chatService";
 
 type AuthenticatedSocket = Socket & {
   user?: {
-    manv: string;
-    email?: string;
+    MA_NV: string;
+    EMAIL?: string;
     role?: string;
   };
 };
@@ -39,14 +39,14 @@ const setupChatSocket = (io: Server) => {
       }
 
       const decoded: any = verifyToken(token);
-      const manv = String(decoded?.userInfo?.manv || "").trim();
-      if (!manv) {
+      const MA_NV = String(decoded?.userInfo?.MA_NV || "").trim();
+      if (!MA_NV) {
         return next(new Error("Token không chứa mã nhân viên hợp lệ"));
       }
 
       socket.user = {
-        manv,
-        email: decoded?.userInfo?.email,
+        MA_NV,
+        EMAIL: decoded?.userInfo?.EMAIL,
         role: decoded?.userInfo?.role,
       };
 
@@ -57,7 +57,7 @@ const setupChatSocket = (io: Server) => {
   });
 
   io.on("connection", (socket: AuthenticatedSocket) => {
-    const requesterMaNv = socket.user?.manv || "";
+    const requesterMaNv = socket.user?.MA_NV || "";
 
     socket.on("chat:join_room", async (payload, ack) => {
       try {
@@ -141,7 +141,7 @@ const setupChatSocket = (io: Server) => {
           const { emitNotification } = require("../server");
           
           const members = await appPool.request().input("MaPhong", maPhong).query(`
-            SELECT MaNV FROM THANH_VIEN_PHONG WHERE MaPhong = @MaPhong AND MaNV != '${requesterMaNv}'
+            SELECT MA_NV AS MaNV FROM THANH_VIEN_PHONG_CHAT WHERE MA_PHONG = @MaPhong AND MA_NV != '${requesterMaNv}'
           `);
           
           for (const member of members.recordset) {

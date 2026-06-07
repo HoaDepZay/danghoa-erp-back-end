@@ -51,8 +51,8 @@ const departmentController = {
 
   getEmployeeDepartments: async (req, res) => {
     try {
-      const { id } = req.params; // maNv
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const { id } = req.params; // MA_NV
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const requesterRole = req.user?.userInfo?.role;
 
       const result = await departmentService.getEmployeeDepartments(
@@ -68,8 +68,8 @@ const departmentController = {
 
   getEmployeeDepartmentWithMembers: async (req, res) => {
     try {
-      const { id } = req.params; // maNv
-      const requesterMaNv = req.user?.userInfo?.manv;
+      const { id } = req.params; // MA_NV
+      const requesterMaNv = req.user?.userInfo?.MA_NV;
       const requesterRole = req.user?.userInfo?.role;
 
       const result = await departmentService.getEmployeeDepartmentWithMembers(

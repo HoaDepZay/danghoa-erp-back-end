@@ -14,11 +14,11 @@ const employeeService = {
       );
 
       const normalizedRole = userRole ? normalizeRole(userRole) : "";
-      const hasSalaryAccess = (normalizedRole === "admin" || normalizedRole === "quanly");
+      const hasSalaryAccess = (normalizedRole === "admin" || normalizedRole === "quanly" || normalizedRole === "giamdoc");
 
       if (!hasSalaryAccess && result.data) {
         result.data = result.data.map((emp: any) => {
-          const { LUONG, luong, ...rest } = emp;
+          const { LUONG, ...rest } = emp;
           return rest;
         });
       }
@@ -34,13 +34,13 @@ const employeeService = {
   },
 
   // 2. Lấy chi tiết 1 nhân viên
-  getEmployeeById: async (manv) => {
+  getEmployeeById: async (MA_NV) => {
     try {
-      if (!manv || manv.trim() === "") {
+      if (!MA_NV || MA_NV.trim() === "") {
         throw new Error("Mã nhân viên không hợp lệ");
       }
 
-      const employee = await employeeRepository.getEmployeeById(manv);
+      const employee = await employeeRepository.getEmployeeById(MA_NV);
 
       if (!employee) {
         throw new Error("Nhân viên không tồn tại");
@@ -58,32 +58,33 @@ const employeeService = {
   createEmployee: async (data) => {
     try {
       // Validate dữ liệu
-      if (!data.hoten || !data.email || !data.chucvu || !data.luong) {
+      if (!data.HO_TEN || !data.EMAIL || !data.CHUC_VU || !data.LUONG) {
         throw new Error("Vui lòng điền đầy đủ thông tin nhân viên");
       }
 
       // Tạo Mã nhân viên nếu không có
-      let manv = data.manv;
-      if (!manv) {
+      let MA_NV = data.MA_NV;
+      if (!MA_NV) {
         const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         let randomChars = "";
         for (let i = 0; i < 4; i++) {
           randomChars += chars.charAt(crypto.randomInt(0, chars.length));
         }
-        manv = `NV${randomChars}`;
+        MA_NV = `NV${randomChars}`;
       }
 
       const employeeData = {
-        manv,
-        hoten: data.hoten,
-        email: data.email,
-        chucvu: data.chucvu,
-        luong: parseFloat(data.luong),
-        maphg: data.maphg || null,
-        ngaysinh: data.ngaysinh || null,
-        gioitinh: data.gioitinh || null,
-        diachinhan: data.diachinhan || null,
-        ngayvaolam: data.ngayvaolam || new Date(),
+        MA_NV,
+        HO_TEN: data.HO_TEN,
+        EMAIL: data.EMAIL,
+        CHUC_VU: data.CHUC_VU,
+        LUONG: parseFloat(data.LUONG),
+        MA_PHG: data.MA_PHG || null,
+        NGAY_SINH: data.NGAY_SINH || null,
+        GIOI_TINH: data.GIOI_TINH || null,
+        SDT: data.SDT || null,
+        DIA_CHI: data.DIA_CHI || null,
+        NGAY_TUYEN_DUNG: data.NGAY_TUYEN_DUNG || new Date(),
       };
 
       await employeeRepository.createEmployee(employeeData);
@@ -91,7 +92,7 @@ const employeeService = {
       return {
         success: true,
         message: "Tạo nhân viên mới thành công",
-        manv,
+        MA_NV,
       };
     } catch (error) {
       throw new Error("Lỗi tạo nhân viên: " + error.message);
@@ -99,32 +100,33 @@ const employeeService = {
   },
 
   // 4. Cập nhật thông tin nhân viên (Admin)
-  updateEmployee: async (manv, data) => {
+  updateEmployee: async (MA_NV, data) => {
     try {
-      if (!manv || manv.trim() === "") {
+      if (!MA_NV || MA_NV.trim() === "") {
         throw new Error("Mã nhân viên không hợp lệ");
       }
 
       // Kiểm tra nhân viên tồn tại
-      const existing = await employeeRepository.getEmployeeById(manv);
+      const existing = await employeeRepository.getEmployeeById(MA_NV);
       if (!existing) {
         throw new Error("Nhân viên không tồn tại");
       }
 
       // Validate dữ liệu nếu có
-      if (data.luong !== undefined && isNaN(parseFloat(data.luong))) {
+      if (data.LUONG !== undefined && isNaN(parseFloat(data.LUONG))) {
         throw new Error("Lương phải là số hợp lệ");
       }
 
       const updateData = {
-        hoten: data.hoten,
-        email: data.email,
-        chucvu: data.chucvu,
-        luong: data.luong ? parseFloat(data.luong) : undefined,
-        maphg: data.maphg,
-        ngaysinh: data.ngaysinh,
-        gioitinh: data.gioitinh,
-        diachinhan: data.diachinhan,
+        HO_TEN: data.HO_TEN,
+        EMAIL: data.EMAIL,
+        CHUC_VU: data.CHUC_VU,
+        LUONG: data.LUONG ? parseFloat(data.LUONG) : undefined,
+        MA_PHG: data.MA_PHG,
+        NGAY_SINH: data.NGAY_SINH,
+        GIOI_TINH: data.GIOI_TINH,
+        SDT: data.SDT,
+        DIA_CHI: data.DIA_CHI,
       };
 
       // Lọc các trường undefined
@@ -132,7 +134,7 @@ const employeeService = {
         (key) => updateData[key] === undefined && delete updateData[key],
       );
 
-      await employeeRepository.updateEmployee(manv, updateData);
+      await employeeRepository.updateEmployee(MA_NV, updateData);
 
       return {
         success: true,
@@ -144,19 +146,19 @@ const employeeService = {
   },
 
   // 5. Xóa/Khóa nhân viên
-  deleteEmployee: async (manv) => {
+  deleteEmployee: async (MA_NV) => {
     try {
-      if (!manv || manv.trim() === "") {
+      if (!MA_NV || MA_NV.trim() === "") {
         throw new Error("Mã nhân viên không hợp lệ");
       }
 
       // Kiểm tra nhân viên tồn tại
-      const existing = await employeeRepository.getEmployeeById(manv);
+      const existing = await employeeRepository.getEmployeeById(MA_NV);
       if (!existing) {
         throw new Error("Nhân viên không tồn tại");
       }
 
-      await employeeRepository.deleteEmployee(manv);
+      await employeeRepository.deleteEmployee(MA_NV);
 
       return {
         success: true,
@@ -168,7 +170,7 @@ const employeeService = {
   },
 
   // 6. Đổi mật khẩu
-  changePassword: async (email, oldPassword, newPassword) => {
+  changePassword: async (EMAIL, oldPassword, newPassword) => {
     try {
       if (!oldPassword || !newPassword) {
         throw new Error("Vui lòng nhập đầy đủ mật khẩu cũ và mới");
@@ -184,7 +186,7 @@ const employeeService = {
       // Mã hóa mật khẩu mới
       const encryptedPassword = encrypt(newPassword);
 
-      await employeeRepository.changePassword(email, encryptedPassword);
+      await employeeRepository.changePassword(EMAIL, encryptedPassword);
 
       return {
         success: true,
@@ -196,17 +198,17 @@ const employeeService = {
   },
 
   // 7. Cập nhật profile cá nhân
-  updateProfile: async (email, data) => {
+  updateProfile: async (EMAIL, data) => {
     try {
       if (!data || Object.keys(data).length === 0) {
         throw new Error("Không có dữ liệu để cập nhật");
       }
 
       const updateData = {
-        hoten: data.hoten,
-        ngaysinh: data.ngaysinh,
-        gioitinh: data.gioitinh,
-        diachinhan: data.diachinhan || data.diachi, // Support both naming conventions
+        HO_TEN: data.HO_TEN,
+        NGAY_SINH: data.NGAY_SINH,
+        GIOI_TINH: data.GIOI_TINH,
+        DIA_CHI: data.DIA_CHI || data.DIA_CHI, // Support both naming conventions
       };
 
       // Lọc các trường undefined
@@ -214,7 +216,7 @@ const employeeService = {
         (key) => updateData[key] === undefined && delete updateData[key],
       );
 
-      await employeeRepository.updateProfile(email, updateData);
+      await employeeRepository.updateProfile(EMAIL, updateData);
 
       return {
         success: true,

@@ -4,12 +4,12 @@ import { withUserConnection } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-// GET /api/contracts?maNv=xxx  -  Lấy lịch sử hợp đồng của một nhân viên
+// GET /api/contracts?MA_NV=xxx  -  Lấy lịch sử hợp đồng của một nhân viên
 router.get("/", withUserConnection, async (req: Request, res: Response) => {
   try {
-    const { maNv } = req.query;
+    const { MA_NV } = req.query;
     const request = appPool.request();
-    if (maNv) request.input("MaNV", sql.VarChar(20), maNv);
+    if (MA_NV) request.input("MaNV", sql.VarChar(20), MA_NV);
     const result = await request.execute("sp_getContracts");
     res.json({ success: true, data: result.recordset });
   } catch (error: any) {
@@ -35,12 +35,12 @@ router.get("/expiring", withUserConnection, async (req: Request, res: Response) 
 // POST /api/contracts  -  Tạo hợp đồng mới cho nhân viên
 router.post("/", withUserConnection, async (req: Request, res: Response) => {
   try {
-    const { maNv, loaiHopDong, tuNgay, denNgay, luongCoBan, ngayKy, ghiChu } = req.body;
-    if (!maNv || !loaiHopDong || !tuNgay || !luongCoBan) {
+    const { MA_NV, loaiHopDong, tuNgay, denNgay, luongCoBan, ngayKy, ghiChu } = req.body;
+    if (!MA_NV || !loaiHopDong || !tuNgay || !luongCoBan) {
       return res.status(400).json({ success: false, message: "Thiếu dữ liệu bắt buộc" });
     }
     const request = appPool.request()
-      .input("MaNV",         sql.VarChar(20),    maNv)
+      .input("MaNV",         sql.VarChar(20),    MA_NV)
       .input("LoaiHopDong",  sql.NVarChar(100),  loaiHopDong)
       .input("TuNgay",       sql.Date,           tuNgay)
       .input("LuongCoBan",   sql.Decimal(18, 2), luongCoBan);
@@ -59,11 +59,11 @@ router.post("/", withUserConnection, async (req: Request, res: Response) => {
 // PUT /api/contracts/legal  -  Cập nhật thông tin pháp lý của nhân viên
 router.put("/legal", withUserConnection, async (req: Request, res: Response) => {
   try {
-    const { maNv, maSoThue, soTaiKhoan, nganHang, soNguoiPhuThuoc } = req.body;
-    if (!maNv) {
+    const { MA_NV, maSoThue, soTaiKhoan, nganHang, soNguoiPhuThuoc } = req.body;
+    if (!MA_NV) {
       return res.status(400).json({ success: false, message: "Thiếu mã nhân viên" });
     }
-    const request = appPool.request().input("MaNV", sql.VarChar(20), maNv);
+    const request = appPool.request().input("MaNV", sql.VarChar(20), MA_NV);
     if (maSoThue)        request.input("MaSoThue",        sql.VarChar(20),    maSoThue);
     if (soTaiKhoan)      request.input("SoTaiKhoan",      sql.VarChar(30),    soTaiKhoan);
     if (nganHang)        request.input("NganHang",        sql.NVarChar(100),  nganHang);

@@ -96,7 +96,7 @@ const dashboardRepository = {
     return result.recordset;
   },
 
-  // Analytics: Chi phi luong theo phong ban
+  // Analytics: Chi phi LUONG theo phong ban
   getAnalyticsSalaryCost: async () => {
     const result = await appPool.request().execute("sp_analytics_salary_cost");
     return result.recordset;

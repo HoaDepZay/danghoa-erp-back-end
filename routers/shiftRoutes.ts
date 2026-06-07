@@ -18,9 +18,9 @@ router.get("/", withUserConnection, async (req: Request, res: Response) => {
 // Lấy danh sách lịch phân công ca
 router.get("/assignments", withUserConnection, async (req: Request, res: Response) => {
   try {
-    const { maNv, tuNgay, denNgay } = req.query;
+    const { MA_NV, tuNgay, denNgay } = req.query;
     const request = appPool.request();
-    if (maNv) request.input("MaNV", sql.VarChar(20), maNv);
+    if (MA_NV) request.input("MaNV", sql.VarChar(20), MA_NV);
     if (tuNgay) request.input("TuNgay", sql.Date, tuNgay);
     if (denNgay) request.input("DenNgay", sql.Date, denNgay);
 
@@ -35,18 +35,18 @@ router.get("/assignments", withUserConnection, async (req: Request, res: Respons
 // Thêm hoặc cập nhật phân công ca
 router.post("/assignments", withUserConnection, async (req: Request, res: Response) => {
   try {
-    const { maNv, maCa, ngayLamViec, trangThai } = req.body;
-    if (!maNv || !maCa || !ngayLamViec) {
+    const { MA_NV, maCa, ngayLamViec, TRANG_THAI } = req.body;
+    if (!MA_NV || !maCa || !ngayLamViec) {
       return res.status(400).json({ success: false, message: "Thiếu dữ liệu" });
     }
 
     const request = appPool.request()
-      .input("MaNV", sql.VarChar(20), maNv)
+      .input("MaNV", sql.VarChar(20), MA_NV)
       .input("MaCa", sql.Int, maCa)
       .input("NgayLamViec", sql.Date, ngayLamViec);
       
-    if (trangThai) {
-      request.input("TrangThai", sql.NVarChar(50), trangThai);
+    if (TRANG_THAI) {
+      request.input("TrangThai", sql.NVarChar(50), TRANG_THAI);
     }
 
     await request.execute("sp_createShiftAssignment");

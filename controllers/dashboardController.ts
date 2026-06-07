@@ -168,7 +168,7 @@ const dashboardController = {
     }
   },
 
-  // 14. GET /api/dashboard/analytics/salary-cost - Chi phi luong theo phong ban
+  // 14. GET /api/dashboard/analytics/salary-cost - Chi phi LUONG theo phong ban
   getAnalyticsSalaryCost: async (req, res) => {
     try {
       const result = await dashboardService.getAnalyticsSalaryCost();

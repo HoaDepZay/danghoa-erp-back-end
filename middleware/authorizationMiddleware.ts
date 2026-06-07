@@ -48,8 +48,8 @@ const checkAdminOrPass = (req, res, next) => {
 const checkMaNVOwnership = (req, res, next) => {
   try {
     const userRole = req.user?.userInfo?.role;
-    const tokenMaNV = req.user?.userInfo?.manv;
-    const bodyMaNV = req.body?.maNV;
+    const tokenMaNV = req.user?.userInfo?.MA_NV || req.user?.userInfo?.manv;
+    const bodyMaNV = req.body?.MA_NV || req.body?.maNV;
 
     const isAdmin = isAdminRole(userRole);
 
@@ -66,7 +66,7 @@ const checkMaNVOwnership = (req, res, next) => {
     if (!bodyMaNV) {
       return res.status(400).json({
         success: false,
-        message: "Mã nhân viên (maNV) là bắt buộc trong request body",
+        message: "Mã nhân viên (MA_NV) là bắt buộc trong request body",
       });
     }
 
@@ -94,7 +94,11 @@ const requireManagerOrAdmin = (req, res, next) => {
   const userRole = req.user?.userInfo?.role;
   const normalizedRole = normalizeRole(userRole);
 
-  if (normalizedRole !== "admin" && normalizedRole !== "quanly") {
+  if (
+    normalizedRole !== "admin" &&
+    normalizedRole !== "quanly" &&
+    normalizedRole !== "giamdoc"
+  ) {
     return res.status(403).json({
       success: false,
       message:
@@ -111,20 +115,20 @@ const requireManagerOrAdmin = (req, res, next) => {
  */
 const checkMaNVParamOwnership = (req, res, next) => {
   try {
-    const tokenMaNV = req.user?.userInfo?.manv;
-    const paramMaNV = req.params?.maNV;
+    const tokenMaNV = req.user?.userInfo?.MA_NV || req.user?.userInfo?.manv;
+    const paramMaNV = req.params?.MA_NV || req.params?.maNV || req.params?.id;
 
     if (!paramMaNV) {
       return res.status(400).json({
         success: false,
-        message: "Mã nhân viên (maNV) là bắt buộc trên đường dẫn API",
+        message: "Mã nhân viên (MA_NV) là bắt buộc trên đường dẫn API",
       });
     }
 
     if (tokenMaNV !== paramMaNV) {
       return res.status(403).json({
         success: false,
-        message: "Bạn chỉ được phép xem dữ liệu chấm công của chính mình",
+        message: "Bạn chỉ được phép xem dữ liệu của chính mình",
       });
     }
 
@@ -147,17 +151,21 @@ const checkMaNVParamOwnershipOrManagerAdmin = (req, res, next) => {
   try {
     const userRole = req.user?.userInfo?.role;
     const normalizedRole = normalizeRole(userRole);
-    const tokenMaNV = req.user?.userInfo?.manv;
-    const paramMaNV = req.params?.maNV;
+    const tokenMaNV = req.user?.userInfo?.MA_NV || req.user?.userInfo?.manv;
+    const paramMaNV = req.params?.MA_NV || req.params?.maNV || req.params?.id;
 
     if (!paramMaNV) {
       return res.status(400).json({
         success: false,
-        message: "Mã nhân viên (maNV) là bắt buộc trên đường dẫn API",
+        message: "Mã nhân viên (MA_NV) là bắt buộc trên đường dẫn API",
       });
     }
 
-    if (normalizedRole === "admin" || normalizedRole === "quanly") {
+    if (
+      normalizedRole === "admin" ||
+      normalizedRole === "quanly" ||
+      normalizedRole === "giamdoc"
+    ) {
       return next();
     }
 

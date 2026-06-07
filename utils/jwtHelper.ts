@@ -14,11 +14,11 @@ const createAccessPayload = (userData, password) => {
   const encryptedPass = CryptoJS.AES.encrypt(password, SECRET_KEY).toString();
 
   return {
-    userEmail: userData.email,
+    userEmail: userData.EMAIL,
     userInfo: {
-      manv: userData.manv || "",
-      hoten: userData.hoten || "",
-      email: userData.email || "",
+      MA_NV: userData.MA_NV || "",
+      HO_TEN: userData.HO_TEN || "",
+      EMAIL: userData.EMAIL || "",
       role: userData.role || "",
     },
     sqlPassEncrypted: encryptedPass,
@@ -31,9 +31,9 @@ const signAccessToken = (payload) => {
 
 // Hàm tạo Token (Sign)
 const generateToken = (userData, password) => {
-  // userData có thể là string (email) hoặc object với thông tin user
+  // userData có thể là string (EMAIL) hoặc object với thông tin user
   if (typeof userData === "string") {
-    userData = { email: userData };
+    userData = { EMAIL: userData };
   }
 
   const accessPayload = createAccessPayload(userData, password);
