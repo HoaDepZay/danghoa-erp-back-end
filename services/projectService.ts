@@ -257,10 +257,13 @@ const projectService = {
       const createdProject = await projectRepository.createProject(data);
 
       if (createdProject?.MADA) {
-        await chatService.ensureProjectRoomCreated(
+        const room = await chatService.ensureProjectRoomCreated(
           createdProject.MADA,
           createdProject.TENDA,
         );
+        if (room?.MaPhong) {
+          await projectRepository.updateProjectChatRoom(createdProject.MADA, room.MaPhong);
+        }
       }
 
       return {

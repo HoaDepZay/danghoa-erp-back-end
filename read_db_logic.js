@@ -15,7 +15,7 @@ const config = {
 async function getSPContent() {
   try {
     await sql.connect(config);
-    const procedures = ['sp_createDepartment'];
+    const procedures = ['sp_createProject'];
     
     for (const proc of procedures) {
       console.log(`\n=== CONTENT OF ${proc} ===`);

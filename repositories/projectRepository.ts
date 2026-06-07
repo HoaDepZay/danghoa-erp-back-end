@@ -208,6 +208,14 @@ const projectRepository = {
       .execute("sp_addProjectMember");
   },
 
+  updateProjectChatRoom: async (maDa, maPhongChat) => {
+    await appPool
+      .request()
+      .input("MADA", sql.Int, maDa)
+      .input("MAPHONGCHAT", sql.Int, maPhongChat)
+      .query("UPDATE DU_AN SET MaPhongChat = @MAPHONGCHAT WHERE MADA = @MADA");
+  },
+
   removeProjectMember: async (maDa, maNv) => {
     const result = await appPool
       .request()
