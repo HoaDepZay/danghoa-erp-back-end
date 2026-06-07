@@ -15,11 +15,11 @@ const generateRandomRoomId = (): string => {
 const mapRoomRow = (row: any) => {
   if (!row) return null;
   return {
-    MaPhong: row.MAPHONG ?? row.MaPhong,
-    TenPhong: row.TENPHONG ?? row.TenPhong,
-    LoaiPhong: row.LOAIPHONG ?? row.LoaiPhong,
-    MaThamChieu: row.MATHAMCHIEU ?? row.MaThamChieu,
-    NgayTao: row.NGAYTAO ?? row.NgayTao,
+    MaPhong: row.MA_PHONG ?? row.MAPHONG ?? row.MaPhong,
+    TenPhong: row.TEN_PHONG ?? row.TENPHONG ?? row.TenPhong,
+    LoaiPhong: row.LOAI_PHONG ?? row.LOAIPHONG ?? row.LoaiPhong,
+    MaThamChieu: row.MA_THAM_CHIEU ?? row.MATHAMCHIEU ?? row.MaThamChieu,
+    NgayTao: row.NGAY_TAO ?? row.NGAYTAO ?? row.NgayTao,
   };
 };
 
@@ -27,25 +27,25 @@ const chatRepository = {
   getMyRooms: async (MA_NV) => {
     const result = await appPool
       .request()
-      .input("MaNV", sql.VarChar(20), MA_NV)
+      .input("MA_NV", sql.VarChar(20), MA_NV)
       .execute("sp_getMyRooms");
 
     return result.recordset.map((row) => ({
-      MaPhong: row.MAPHONG ?? row.MaPhong,
-      TenPhong: row.TENPHONG ?? row.TenPhong,
-      LoaiPhong: row.LOAIPHONG ?? row.LoaiPhong,
-      MaThamChieu: row.MATHAMCHIEU ?? row.MaThamChieu,
-      NgayTao: row.NGAYTAO ?? row.NgayTao,
-      SoThanhVien: row.SoThanhVien,
-      TinNhanGanNhat: row.TinNhanGanNhat,
+      MaPhong: row.MA_PHONG ?? row.MAPHONG ?? row.MaPhong,
+      TenPhong: row.TEN_PHONG ?? row.TENPHONG ?? row.TenPhong,
+      LoaiPhong: row.LOAI_PHONG ?? row.LOAIPHONG ?? row.LoaiPhong,
+      MaThamChieu: row.MA_THAM_CHIEU ?? row.MATHAMCHIEU ?? row.MaThamChieu,
+      NgayTao: row.NGAY_TAO ?? row.NGAYTAO ?? row.NgayTao,
+      SoThanhVien: row.SoThanhVien ?? row.SO_THANH_VIEN,
+      TinNhanGanNhat: row.TinNhanGanNhat ?? row.TIN_NHAN_GAN_NHAT,
     }));
   },
 
   isRoomMember: async (maPhong, MA_NV) => {
     const result = await appPool
       .request()
-      .input("MaPhong", sql.Int, maPhong)
-      .input("MaNV", sql.VarChar(20), MA_NV)
+      .input("MA_PHG", sql.Int, maPhong)
+      .input("MA_NV", sql.VarChar(20), MA_NV)
       .execute("sp_isRoomMember");
 
     return result.recordset.length > 0;
@@ -54,7 +54,7 @@ const chatRepository = {
   getRoomById: async (maPhong) => {
     const result = await appPool
       .request()
-      .input("MaPhong", sql.Int, maPhong)
+      .input("MA_PHG", sql.Int, maPhong)
       .execute("sp_getRoomById");
 
     return mapRoomRow(result.recordset[0]);
@@ -64,17 +64,17 @@ const chatRepository = {
     const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 200));
     const result = await appPool
       .request()
-      .input("MaPhong", sql.Int, maPhong)
+      .input("MA_PHG", sql.Int, maPhong)
       .input("Limit", sql.Int, safeLimit)
       .execute("sp_getRoomMessages");
 
     return result.recordset.reverse().map((row) => ({
-      MaTN: row.MATN ?? row.MaTN,
-      MaPhong: row.MAPHONG ?? row.MaPhong,
+      MaTN: row.MA_TN ?? row.MATN ?? row.MaTN,
+      MaPhong: row.MA_PHONG ?? row.MAPHONG ?? row.MaPhong,
       MaNV_Gui: row.MANV_GUI ?? row.MaNV_Gui,
-      TenNguoiGui: row.TenNguoiGui,
-      NoiDung: row.NOIDUNG ?? row.NoiDung,
-      ThoiGianGui: row.THOIGIANGUI ?? row.ThoiGianGui,
+      TenNguoiGui: row.TenNguoiGui ?? row.TEN_NGUOI_GUI,
+      NoiDung: row.NOI_DUNG ?? row.NOIDUNG ?? row.NoiDung,
+      ThoiGianGui: row.THOI_GIAN_GUI ?? row.THOIGIANGUI ?? row.ThoiGianGui,
     }));
   },
 
@@ -95,20 +95,20 @@ const chatRepository = {
       .execute("sp_searchMessagesByKeyword");
 
     return result.recordset.map((row) => ({
-      MaTN: row.MATN ?? row.MaTN,
-      MaPhong: row.MAPHONG ?? row.MaPhong,
+      MaTN: row.MA_TN ?? row.MATN ?? row.MaTN,
+      MaPhong: row.MA_PHONG ?? row.MAPHONG ?? row.MaPhong,
       MaNV_Gui: row.MANV_GUI ?? row.MaNV_Gui,
-      NoiDung: row.NOIDUNG ?? row.NoiDung,
-      ThoiGianGui: row.THOIGIANGUI ?? row.ThoiGianGui,
+      NoiDung: row.NOI_DUNG ?? row.NOIDUNG ?? row.NoiDung,
+      ThoiGianGui: row.THOI_GIAN_GUI ?? row.THOIGIANGUI ?? row.ThoiGianGui,
     }));
   },
 
   sendMessage: async (maPhong, maNvGui, noiDung, fileUrl: string | null = null, fileType: string | null = null) => {
     const result = await appPool
       .request()
-      .input("MaPhong", sql.Int, maPhong)
+      .input("MA_PHG", sql.Int, maPhong)
       .input("MaNV_Gui", sql.VarChar(20), maNvGui)
-      .input("NoiDung", sql.NVarChar(sql.MAX), noiDung)
+      .input("NOI_DUNG", sql.NVarChar(sql.MAX), noiDung)
       .input("FileUrl", sql.NVarChar(sql.MAX), fileUrl)
       .input("FileType", sql.VarChar(50), fileType)
       .execute("sp_sendMessage");
@@ -117,13 +117,13 @@ const chatRepository = {
     if (!row) return null;
 
     return {
-      MaTN: row.MATN ?? row.MaTN,
-      MaPhong: row.MAPHONG ?? row.MaPhong,
+      MaTN: row.MA_TN ?? row.MATN ?? row.MaTN,
+      MaPhong: row.MA_PHONG ?? row.MAPHONG ?? row.MaPhong,
       MaNV_Gui: row.MANV_GUI ?? row.MaNV_Gui,
-      NoiDung: row.NOIDUNG ?? row.NoiDung,
-      ThoiGianGui: row.THOIGIANGUI ?? row.ThoiGianGui,
-      FileUrl: row.FILEURL ?? row.FileUrl ?? null,
-      FileType: row.FILETYPE ?? row.FileType ?? null,
+      NoiDung: row.NOI_DUNG ?? row.NOIDUNG ?? row.NoiDung,
+      ThoiGianGui: row.THOI_GIAN_GUI ?? row.THOIGIANGUI ?? row.ThoiGianGui,
+      FileUrl: row.FILE_URL ?? row.FILEURL ?? row.FileUrl ?? null,
+      FileType: row.FILE_TYPE ?? row.FILETYPE ?? row.FileType ?? null,
     };
   },
 
