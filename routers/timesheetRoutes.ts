@@ -11,10 +11,11 @@ router.get("/:MA_DA", async (req, res) => {
     const result = await appPool.request()
       .input("MaDA", sql.Int, parseInt(MA_DA))
       .query(`
-        SELECT t.*, n.HO_TEN AS HoTen, cv.CHUC_VU AS ChucVu
+        SELECT t.*, n.HO_TEN AS HoTen, cd.TEN_CHUC_DANH AS ChucVu
         FROM TIMESHEET_DU_AN t
         JOIN NHAN_VIEN n ON t.MA_NV = n.MA_NV
         LEFT JOIN THONG_TIN_CONG_VIEC cv ON n.MA_NV = cv.MA_NV
+        LEFT JOIN CHUC_DANH cd ON cv.MA_CHUC_DANH = cd.MA_CHUC_DANH
         WHERE t.MA_DA = @MaDA
         ORDER BY t.NGAY DESC
       `);
