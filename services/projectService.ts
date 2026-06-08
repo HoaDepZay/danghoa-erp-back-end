@@ -164,20 +164,20 @@ const projectService = {
       const projectMap = new Map();
 
       for (const row of rows) {
-        if (!projectMap.has(row.MADA)) {
-          projectMap.set(row.MADA, {
-            MADA: row.MADA,
-            TENDA: row.TENDA,
-            MoTa: row.MoTa,
-            NgayBatDau: row.NgayBatDau,
-            NgayKetThuc: row.NgayKetThuc,
-            TrangThai: row.TrangThai,
+        if (!projectMap.has(row.MA_DA)) {
+          projectMap.set(row.MA_DA, {
+            MADA: row.MA_DA,
+            TENDA: row.TEN_DA,
+            MoTa: row.MO_TA,
+            NgayBatDau: row.NGAY_BAT_DAU,
+            NgayKetThuc: row.NGAY_KET_THUC,
+            TrangThai: row.TRANG_THAI,
             thanhVien: [],
           });
         }
 
         if (row.MemberMaNV) {
-          projectMap.get(row.MADA).thanhVien.push({
+          projectMap.get(row.MA_DA).thanhVien.push({
             MaNV: row.MemberMaNV,
             HOTEN: row.MemberHoTen,
             EMAIL: row.MemberEmail,
