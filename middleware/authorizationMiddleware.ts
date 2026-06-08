@@ -110,6 +110,28 @@ const requireManagerOrAdmin = (req, res, next) => {
 };
 
 /**
+ * Middleware kiểm tra quyền Trưởng phòng hoặc Giám đốc
+ * Chấp nhận role: admin, giamdoc, truongphong
+ */
+const requireProjectCreator = (req, res, next) => {
+  const userRole = req.user?.userInfo?.role;
+  const normalizedRole = normalizeRole(userRole);
+
+  if (
+    normalizedRole !== "admin" &&
+    normalizedRole !== "giamdoc" &&
+    normalizedRole !== "truongphong"
+  ) {
+    return res.status(403).json({
+      success: false,
+      message: "Bạn không có quyền tạo dự án. Chỉ Giám đốc hoặc Trưởng phòng mới có thể thực hiện.",
+    });
+  }
+
+  next();
+};
+
+/**
  * Middleware kiểm tra MaNV trong params có trùng với token hay không
  * Chỉ cho phép user xem dữ liệu chấm công của chính mình
  */
@@ -190,6 +212,7 @@ export {
   checkAdminOrPass,
   checkMaNVOwnership,
   requireManagerOrAdmin,
+  requireProjectCreator,
   checkMaNVParamOwnership,
   checkMaNVParamOwnershipOrManagerAdmin,
 };

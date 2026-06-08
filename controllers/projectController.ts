@@ -29,9 +29,11 @@ const projectController = {
     try {
       const { id: MA_DA } = req.params;
       const requesterMaNv = req.user?.userInfo?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role;
       const result = await projectService.createTaskForMember(
         MA_DA,
         requesterMaNv,
+        requesterRole,
         req.body,
       );
       
@@ -58,10 +60,12 @@ const projectController = {
     try {
       const { id: MA_DA, taskId } = req.params;
       const requesterMaNv = req.user?.userInfo?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role;
       const result = await projectService.updateTaskForMember(
         MA_DA,
         taskId,
         requesterMaNv,
+        requesterRole,
         req.body,
       );
       return res.status(200).json(result);
@@ -189,10 +193,12 @@ const projectController = {
     try {
       const { id: MA_DA, employeeId: MA_NV } = req.params;
       const requesterMaNv = req.user?.userInfo?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role;
       const result = await projectService.removeProjectMember(
         MA_DA,
         MA_NV,
         requesterMaNv,
+        requesterRole,
       );
       return res.status(200).json(result);
     } catch (error) {

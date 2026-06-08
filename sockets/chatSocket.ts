@@ -58,6 +58,9 @@ const setupChatSocket = (io: Server) => {
 
   io.on("connection", (socket: AuthenticatedSocket) => {
     const requesterMaNv = socket.user?.MA_NV || "";
+    const requesterRole = socket.user?.role || "";
+    const normalizeRole = (value: string) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").toLowerCase().replace(/\s+/g, "").trim();
+    const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
 
     socket.on("chat:join_room", async (payload, ack) => {
       try {
@@ -70,7 +73,7 @@ const setupChatSocket = (io: Server) => {
           maPhong,
           requesterMaNv,
         );
-        if (!isMember) {
+        if (!isAdmin && !isMember) {
           throw new Error("Bạn không phải thành viên của phòng chat");
         }
 
@@ -118,7 +121,8 @@ const setupChatSocket = (io: Server) => {
           requesterMaNv,
           noiDung,
           fileUrl,
-          fileType
+          fileType,
+          requesterRole
         );
 
         const message = result?.data;

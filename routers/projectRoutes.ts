@@ -1,7 +1,7 @@
 import express from "express";
 import projectController from "../controllers/projectController";
 import withUserConnection from "../middleware/authMiddleware";
-import { requireAdmin } from "../middleware/authorizationMiddleware";
+import { requireAdmin, requireProjectCreator } from "../middleware/authorizationMiddleware";
 
 const router = express.Router();
 
@@ -46,7 +46,7 @@ router.get("/:id", withUserConnection, projectController.getProjectById);
 router.post(
   "/",
   withUserConnection,
-  requireAdmin,
+  requireProjectCreator,
   projectController.createProject,
 );
 
@@ -61,7 +61,7 @@ router.get(
 router.put(
   "/:id",
   withUserConnection,
-  requireAdmin,
+  requireProjectCreator,
   projectController.updateProject,
 );
 
@@ -69,7 +69,7 @@ router.put(
 router.delete(
   "/:id",
   withUserConnection,
-  requireAdmin,
+  requireProjectCreator,
   projectController.deleteProject,
 );
 
@@ -77,7 +77,7 @@ router.delete(
 router.post(
   "/:id/members",
   withUserConnection,
-  requireAdmin,
+  requireProjectCreator,
   projectController.addProjectMember,
 );
 router.delete(

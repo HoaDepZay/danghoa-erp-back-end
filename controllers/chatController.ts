@@ -31,12 +31,14 @@ const chatController = {
   getRoomMessages: async (req, res) => {
     try {
       const requesterMaNv = req.user?.userInfo?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role;
       const { roomId } = req.params;
       const { limit = 50 } = req.query;
       const result = await chatService.getRoomMessagesForMember(
         roomId,
         requesterMaNv,
         limit,
+        requesterRole,
       );
       return res.status(200).json(result);
     } catch (error) {
@@ -77,12 +79,16 @@ const chatController = {
   sendMessage: async (req, res) => {
     try {
       const requesterMaNv = req.user?.userInfo?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role;
       const { roomId } = req.params;
       const { noiDung } = req.body;
       const result = await chatService.sendMessageToRoom(
         roomId,
         requesterMaNv,
         noiDung,
+        null,
+        null,
+        requesterRole,
       );
       return res.status(201).json(result);
     } catch (error) {
@@ -137,10 +143,12 @@ const chatController = {
   getOrCreateProjectRoom: async (req, res) => {
     try {
       const requesterMaNv = req.user?.userInfo?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role;
       const { projectId } = req.params;
       const result = await chatService.getOrCreateProjectRoomForMember(
         projectId,
         requesterMaNv,
+        requesterRole,
       );
       return res.status(200).json(result);
     } catch (error) {

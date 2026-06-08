@@ -4,6 +4,7 @@ const normalizeRole = (value) =>
   String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
     .toLowerCase()
     .replace(/\s+/g, "")
     .trim();
@@ -39,14 +40,15 @@ const chatService = {
     return { success: true, data: { ...room, thanhVien: members } };
   },
 
-  getRoomMessagesForMember: async (roomId, requesterMaNv, limit) => {
+  getRoomMessagesForMember: async (roomId, requesterMaNv, limit, requesterRole) => {
     const maPhong = Number(roomId);
     if (!maPhong) {
       throw new Error("Mã phòng không hợp lệ.");
     }
 
+    const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
     const isMember = await chatRepository.isRoomMember(maPhong, requesterMaNv);
-    if (!isMember) {
+    if (!isAdmin && !isMember) {
       throw new Error("Bạn không phải thành viên của phòng chat.");
     }
 
@@ -107,7 +109,7 @@ const chatService = {
     };
   },
 
-  sendMessageToRoom: async (roomId, requesterMaNv, noiDung, fileUrl = null, fileType = null) => {
+  sendMessageToRoom: async (roomId, requesterMaNv, noiDung, fileUrl = null, fileType = null, requesterRole = null) => {
     const maPhong = Number(roomId);
     const content = String(noiDung || "").trim();
 
@@ -119,8 +121,9 @@ const chatService = {
       throw new Error("Nội dung tin nhắn không được để trống.");
     }
 
+    const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
     const isMember = await chatRepository.isRoomMember(maPhong, requesterMaNv);
-    if (!isMember) {
+    if (!isAdmin && !isMember) {
       throw new Error("Bạn không phải thành viên của phòng chat.");
     }
 
@@ -206,14 +209,15 @@ const chatService = {
     return { success: true, message: "Xóa thành viên khỏi nhóm thành công" };
   },
 
-  getOrCreateProjectRoomForMember: async (projectId, requesterMaNv) => {
+  getOrCreateProjectRoomForMember: async (projectId, requesterMaNv, requesterRole) => {
     const MA_DA = Number(projectId);
     if (!MA_DA) {
       throw new Error("Mã dự án không hợp lệ.");
     }
 
+    const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
     const projectMembers = await chatRepository.getProjectMembers(MA_DA);
-    if (!projectMembers.includes(requesterMaNv)) {
+    if (!isAdmin && !projectMembers.includes(requesterMaNv)) {
       throw new Error("Bạn không thuộc dự án này.");
     }
 

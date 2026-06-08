@@ -42,8 +42,8 @@ const departmentRepository = {
       const request = appPool.request();
 
       request.input("MaPhg", sql.Int, maPhg);
-      request.input("TenPb", sql.NVarChar(100), data?.tenpb ?? null);
-      request.input("MaTruongPhg", sql.VarChar(10), data?.matruongphg ?? null);
+      request.input("TenPb", sql.NVarChar(100), data?.tenpb ?? data?.TEN_PB ?? null);
+      request.input("MaTruongPhg", sql.VarChar(10), data?.matruongphg ?? data?.MATRUONGPHG ?? null);
       request.output("Status", sql.Int);
 
       const result = await request.execute("sp_updateDepartment");

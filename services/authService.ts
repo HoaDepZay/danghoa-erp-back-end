@@ -1,5 +1,6 @@
 // HÀM LOGIN XỬ LÝ API
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import sql from "mssql"; // Cần mssql để thử kết nối lúc Login
 import { appPool } from "../config/db";
 import userRepository from "../repositories/userRepository";
@@ -123,7 +124,7 @@ const authService = {
     const otpCode = crypto.randomInt(100000, 999999).toString();
     const expiredAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    const encryptedPass = encrypt(userData.password);
+    const encryptedPass = bcrypt.hashSync(userData.password, 10);
 
     // Register chỉ lưu đăng ký tạm + OTP ở DB nghiệp vụ
     const stageResult = await userRepository.savePendingRegistration({
@@ -188,70 +189,22 @@ const authService = {
 
     console.log("After trim:", { EMAIL: trimmedEmail, password: "***" });
 
-    // 1. THỬ KẾT NỐI TRỰC TIẾP VÀO SQL SERVER ĐỂ XÁC THỰC MẬT KHẨU
-    const sqlAuthUser = buildAzureSqlAuthUser(trimmedEmail);
-    const rawPassword = String(password || "");
-    const passwordCandidates = Array.from(
-      new Set([
-        trimmedPassword,
-        stripInvisibleChars(rawPassword),
-        stripInvisibleChars(rawPassword).trim(),
-        rawPassword.normalize("NFKC"),
-        rawPassword.normalize("NFKC").trim(),
-      ]),
-    ).filter(Boolean);
+    // 1. KIỂM TRA MẬT KHẨU BẰNG BCRYPT VỚI BẢNG TAI_KHOANG
+    const hash = await userRepository.getUserPasswordHash(trimmedEmail);
 
+    let authPassed = false;
     let effectivePassword = trimmedPassword;
 
-    console.log("📤 Attempting SQL Server connection with:");
-    console.log({
-      user: sqlAuthUser,
-      password: "***",
-      server: process.env.DB_SERVER,
-      database: process.env.DB_NAME,
-      passwordCandidateCount: passwordCandidates.length,
-    });
-
-    // Login cho khách hàng
-    try {
-      let authPassed = false;
-
-      for (const candidatePassword of passwordCandidates) {
-        const loginConfig = {
-          user: sqlAuthUser,
-          password: candidatePassword,
-          server: process.env.DB_SERVER,
-          database: process.env.DB_NAME,
-          options: {
-            encrypt: true,
-            trustServerCertificate: true,
-            connectionTimeout: 30000,
-            requestTimeout: 30000,
-          },
-        };
-
-        try {
-          const tempConn = new sql.ConnectionPool(loginConfig);
-          await tempConn.connect();
-          await tempConn.close();
-          effectivePassword = candidatePassword;
-          authPassed = true;
-          break;
-        } catch (_candidateError) {
-          // thử candidate tiếp theo
-        }
+    if (hash) {
+      if (bcrypt.compareSync(trimmedPassword, hash)) {
+        authPassed = true;
       }
+    }
 
-      if (!authPassed) {
-        throw new Error("SQL_AUTH_FAILED");
-      }
+    if (!authPassed) {
+      console.error("❌ Authentication failed for:", trimmedEmail);
 
-      console.log("✅ SQL Server authentication successful!");
-    } catch (err) {
-      console.error("❌ SQL Server login failed:", err.message);
-
-      const pending =
-        await userRepository.getPendingRegistrationStatusByEmail(trimmedEmail);
+      const pending = await userRepository.getPendingRegistrationStatusByEmail(trimmedEmail);
       if (pending?.REGISTRATIONSTATUS === REGISTRATION_STATUS.OTP_VERIFIED) {
         throw new Error("Tài khoản của bạn chưa được admin chấp nhận.");
       }
@@ -269,10 +222,10 @@ const authService = {
         throw new Error("Mã OTP đã hết hạn. Vui lòng đăng ký lại.");
       }
 
-      throw new Error(
-        "Mật khẩu không chính xác! Nếu đang dùng điện thoại, hãy tắt tự động viết hoa/sửa chính tả và thử nhập lại.",
-      );
+      throw new Error("Mật khẩu không chính xác hoặc tài khoản không tồn tại!");
     }
+
+    console.log("✅ Authentication successful!");
 
     // 2. Lấy profile nhân viên sau khi SQL Login thành công (không dùng để chặn đăng nhập)
     const userResult = await userRepository.getUserByEmail(trimmedEmail);
@@ -386,10 +339,19 @@ const authService = {
       String(staged.MA_NV || "").trim() ||
       generateEmployeeId();
 
-    const originalPassword = decrypt(staged.PASSWORD_MA_HOA);
+    let finalPasswordHash = staged.PASSWORD_MA_HOA;
+    if (finalPasswordHash && !finalPasswordHash.startsWith("$2")) {
+      try {
+        const plain = decrypt(finalPasswordHash);
+        finalPasswordHash = bcrypt.hashSync(plain, 10);
+      } catch (e) {
+        console.warn("Failed to decrypt old password format, ignoring.");
+      }
+    }
+
     const result = await userRepository.approvePendingRegistration({
       EMAIL,
-      password: originalPassword,
+      password: finalPasswordHash,
       MA_NV: effectiveManv,
       HO_TEN: effectiveHoTen,
       MA_PHG: payload.MA_PHG,
@@ -501,9 +463,10 @@ const authService = {
       throw new Error("Mã OTP không đúng hoặc đã hết hạn!");
     }
 
+    const newHash = bcrypt.hashSync(newPassword, 10);
     await userRepository.updateDatabaseUserPassword(
       normalizedEmail,
-      newPassword,
+      newHash,
     );
 
     await userRepository.clearPasswordResetOtp(normalizedEmail);
@@ -540,32 +503,16 @@ const authService = {
       throw new Error("Email không tồn tại trong hệ thống!");
     }
 
-    // 2. Xác thực mật khẩu cũ bằng cách thử kết nối SQL Server
-    const sqlAuthUser = buildAzureSqlAuthUser(EMAIL);
-    const verifyConfig = {
-      user: sqlAuthUser,
-      password: oldPassword,
-      server: process.env.DB_SERVER,
-      database: process.env.DB_NAME,
-      options: {
-        encrypt: true,
-        trustServerCertificate: true,
-        connectionTimeout: 30000,
-        requestTimeout: 30000,
-      },
-    };
-
-    try {
-      const tempConn = new sql.ConnectionPool(verifyConfig);
-      await tempConn.connect();
-      await tempConn.close();
-    } catch (err) {
-      console.error("❌ Old password verification failed:", err.message);
+    // 2. Xác thực mật khẩu cũ bằng bảng TAI_KHOANG
+    const hash = await userRepository.getUserPasswordHash(EMAIL);
+    if (!hash || !bcrypt.compareSync(oldPassword, hash)) {
+      console.error("❌ Old password verification failed for:", EMAIL);
       throw new Error("Mật khẩu cũ không chính xác!");
     }
 
-    // 3. Đổi mật khẩu của contained database user
-    await userRepository.updateDatabaseUserPassword(EMAIL, newPassword);
+    // 3. Đổi mật khẩu của tài khoản
+    const newHash = bcrypt.hashSync(newPassword, 10);
+    await userRepository.updateDatabaseUserPassword(EMAIL, newHash);
 
     console.log("✅ Password changed successfully for:", EMAIL);
 

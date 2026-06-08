@@ -28,8 +28,9 @@ const departmentService = {
 
   createDepartment: async (data) => {
     try {
+      const tenPhongBan = data.tenpb || data.TEN_PB;
       // Validate tên phòng ban
-      if (!data.tenpb || data.tenpb.trim() === "") {
+      if (!tenPhongBan || tenPhongBan.trim() === "") {
         throw new Error("Tên phòng ban là bắt buộc.");
       }
 
@@ -93,9 +94,9 @@ const departmentService = {
       // Tạo dữ liệu để insert
       const createData = {
         MA_PHG: MA_PHG,
-        tenpb: data.tenpb.trim(),
-        matruongphg: data.matruongphg || null,
-        ng_thanhlap: data.ng_thanhlap || new Date(),
+        tenpb: tenPhongBan.trim(),
+        matruongphg: data.matruongphg || data.MATRUONGPHG || null,
+        ng_thanhlap: data.ng_thanhlap || data.NG_THANHLAP || new Date(),
       };
 
       console.log(
@@ -104,7 +105,7 @@ const departmentService = {
       );
 
       await departmentRepository.createDepartment(createData);
-      const room = await chatService.ensureDepartmentRoomCreated(MA_PHG, data.tenpb);
+      const room = await chatService.ensureDepartmentRoomCreated(MA_PHG, tenPhongBan);
       if (room?.MaPhong) {
         await departmentRepository.updateDepartmentChatRoom(MA_PHG, room.MaPhong);
       }

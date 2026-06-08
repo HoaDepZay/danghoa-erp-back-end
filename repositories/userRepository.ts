@@ -75,60 +75,25 @@ const userRepository = {
     return (result.recordset?.[0]?.AffectedRows || 0) > 0;
   },
 
-  // 3. Đổi mật khẩu contained database user
-  updateDatabaseUserPassword: async (EMAIL, newPassword) => {
-    const safeIdentifier = `[${String(EMAIL).replace(/]/g, "]]")}]`;
-    const safeEmailLiteral = String(EMAIL).replace(/'/g, "''");
-    const safePassword = String(newPassword).replace(/'/g, "''");
-
+  // 3. Đổi mật khẩu tài khoản
+  updateDatabaseUserPassword: async (EMAIL, newPasswordHash) => {
     try {
       await appPool
         .request()
         .input("EMAIL", sql.NVarChar(100), EMAIL)
-        .input("PASSWORD", sql.NVarChar(255), newPassword)
-        .execute("sp_updateDatabaseUserPassword");
-      return;
+        .input("PASSWORD", sql.NVarChar(255), newPasswordHash)
+        .query("UPDATE TAI_KHOANG SET PASSWORD_HASH = @PASSWORD WHERE EMAIL = @EMAIL");
     } catch (error: any) {
-      const errMessage = String(error?.message || "");
-      const mustUseLoginChange =
-        errMessage.includes(
-          "The parameter PASSWORD cannot be provided for users that cannot authenticate in a database",
-        ) || errMessage.includes("cannot authenticate in a database");
-
-      if (!mustUseLoginChange) {
-        throw error;
-      }
+      throw new Error("Không thể cập nhật mật khẩu. Chi tiết: " + error.message);
     }
+  },
 
-    const masterPool = new sql.ConnectionPool(getMasterDbConfig());
-
-    try {
-      await masterPool.connect();
-      await masterPool.request().query(`
-        IF EXISTS (SELECT 1 FROM sys.sql_logins WHERE name = N'${safeEmailLiteral}')
-        BEGIN
-          ALTER LOGIN ${safeIdentifier} WITH PASSWORD = '${safePassword}';
-        END
-      `);
-    } catch (error: any) {
-      const errMessage = String(error?.message || "");
-      if (
-        errMessage.includes("does not meet policy requirements") ||
-        errMessage.includes("not complex enough") ||
-        errMessage.includes("Password validation failed")
-      ) {
-        throw new Error(
-          "Mật khẩu mới không đạt chính sách SQL Server. Hãy dùng tối thiểu 8 ký tự và kết hợp chữ hoa, chữ thường, số, ký tự đặc biệt.",
-        );
-      }
-
-      throw new Error(
-        "Không thể đổi mật khẩu SQL Login trên master. Hãy kiểm tra quyền ALTER ANY LOGIN hoặc SECURITYADMIN. Chi tiết: " +
-          error.message,
-      );
-    } finally {
-      await masterPool.close().catch(() => undefined);
-    }
+  getUserPasswordHash: async (EMAIL) => {
+    const result = await appPool
+      .request()
+      .input("EMAIL", sql.NVarChar(100), EMAIL)
+      .query("SELECT PASSWORD_HASH FROM TAI_KHOANG WHERE EMAIL = @EMAIL");
+    return result.recordset[0]?.PASSWORD_HASH || null;
   },
 
   savePasswordResetOtp: async (EMAIL, otpCode, expiredAt) => {

@@ -194,7 +194,7 @@ const chatRepository = {
       .input("MAPHG", sql.Int, maPhg)
       .execute("sp_getDepartmentMembers");
 
-    return result.recordset.map((r) => r.MANV);
+    return result.recordset.map((r) => r.MANV ?? r.MA_NV ?? r.MaNV).filter(Boolean);
   },
 
   getProjectMembers: async (MA_DA) => {
@@ -203,7 +203,7 @@ const chatRepository = {
       .input("MADA", sql.Int, MA_DA)
       .execute("sp_getProjectMembersSimple");
 
-    return result.recordset.map((r) => r.MaNV);
+    return result.recordset.map((r) => r.MaNV ?? r.MA_NV ?? r.MANV).filter(Boolean);
   },
 
   getProjectInfo: async (MA_DA) => {

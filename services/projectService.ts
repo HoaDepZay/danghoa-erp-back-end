@@ -5,6 +5,7 @@ const normalizeProjectRole = (role: unknown) =>
   String(role || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
     .toLowerCase()
     .replace(/\s+/g, "")
     .trim();
@@ -13,6 +14,7 @@ const normalizeRole = (value) =>
   String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
     .toLowerCase()
     .replace(/\s+/g, "")
     .trim();
@@ -32,7 +34,7 @@ const projectService = {
     }
   },
 
-  createTaskForMember: async (MA_DA, requesterMaNv, payload) => {
+  createTaskForMember: async (MA_DA, requesterMaNv, requesterRole, payload) => {
     try {
       const normalizedMaDa = Number(MA_DA);
       if (!normalizedMaDa) {
@@ -51,11 +53,12 @@ const projectService = {
         throw new Error("Mã nhân viên được giao task là bắt buộc");
       }
 
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
       const isMember = await projectRepository.isEmployeeInProject(
         normalizedMaDa,
         requesterMaNv,
       );
-      if (!isMember) {
+      if (!isAdmin && !isMember) {
         throw new Error(
           "Bạn không thuộc dự án này nên không có quyền tạo task.",
         );
@@ -75,7 +78,7 @@ const projectService = {
     }
   },
 
-  updateTaskForMember: async (MA_DA, maNvDa, requesterMaNv, payload) => {
+  updateTaskForMember: async (MA_DA, maNvDa, requesterMaNv, requesterRole, payload) => {
     try {
       const normalizedMaDa = Number(MA_DA);
       const normalizedTaskId = Number(maNvDa);
@@ -89,11 +92,13 @@ const projectService = {
         throw new Error("Không xác định được nhân viên gọi API.");
       }
 
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
+
       const isMember = await projectRepository.isEmployeeInProject(
         normalizedMaDa,
         normalizedRequesterMaNv,
       );
-      if (!isMember) {
+      if (!isAdmin && !isMember) {
         throw new Error(
           "Bạn không thuộc dự án này nên không có quyền cập nhật task.",
         );
@@ -115,13 +120,14 @@ const projectService = {
       }
 
       const taskOwnerMaNv = String(existing.MaNV || "").trim();
-      if (!isProjectLead && taskOwnerMaNv !== normalizedRequesterMaNv) {
+      if (!isAdmin && !isProjectLead && taskOwnerMaNv !== normalizedRequesterMaNv) {
         throw new Error(
           "Bạn không có quyền cập nhật task này. Chỉ nhân viên được giao task mới được phép cập nhật.",
         );
       }
 
       if (
+        !isAdmin &&
         !isProjectLead &&
         payload?.MA_NV !== undefined &&
         String(payload.MA_NV || "").trim() !== normalizedRequesterMaNv
@@ -256,13 +262,13 @@ const projectService = {
 
       const createdProject = await projectRepository.createProject(data);
 
-      if (createdProject?.MADA) {
-        const room = await chatService.ensureProjectRoomCreated(
-          createdProject.MADA,
-          createdProject.TENDA,
-        );
+      const maDa = createdProject?.MADA || createdProject?.MA_DA;
+      const tenDa = createdProject?.TENDA || createdProject?.TEN_DA;
+
+      if (maDa) {
+        const room = await chatService.ensureProjectRoomCreated(maDa, tenDa);
         if (room?.MaPhong) {
-          await projectRepository.updateProjectChatRoom(createdProject.MADA, room.MaPhong);
+          await projectRepository.updateProjectChatRoom(maDa, room.MaPhong);
         }
       }
 
@@ -342,7 +348,7 @@ const projectService = {
     }
   },
 
-  removeProjectMember: async (MA_DA, MA_NV, requesterMaNv) => {
+  removeProjectMember: async (MA_DA, MA_NV, requesterMaNv, requesterRole) => {
     try {
       const normalizedMaDa = Number(MA_DA);
       const normalizedTargetMaNv = String(MA_NV || "").trim();
@@ -356,15 +362,17 @@ const projectService = {
         throw new Error("Không xác định được người gọi API");
       }
 
-      const requesterRole = await projectRepository.getProjectMemberRole(
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
+
+      const rRole = await projectRepository.getProjectMemberRole(
         normalizedMaDa,
         normalizedRequesterMaNv,
       );
       const isProjectLead =
-        normalizeProjectRole(requesterRole) ===
+        normalizeProjectRole(rRole) ===
         normalizeProjectRole("Trưởng dự án");
 
-      if (!isProjectLead) {
+      if (!isAdmin && !isProjectLead) {
         throw new Error(
           "Bạn không có quyền xóa thành viên. Chỉ Trưởng dự án mới được phép thực hiện.",
         );
