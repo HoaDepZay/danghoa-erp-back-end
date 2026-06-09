@@ -3,6 +3,7 @@ import { appPool, sql } from "../config/db";
 import { withUserConnection } from "../middleware/authMiddleware";
 import { createNotification } from "../controllers/notificationController";
 import { emitNotification } from "../server";
+import { sendLeaveApprovedEmail } from "../services/emailService";
 
 const router = express.Router();
 
@@ -63,6 +64,34 @@ router.post("/approve", withUserConnection, async (req: Request, res: Response) 
     }
 
     await request.execute("sp_approveLeave");
+
+    // Gửi email nếu đơn được duyệt thành công
+    if (TRANG_THAI === "Đã duyệt") {
+      try {
+        // Lấy thông tin đơn để gửi email
+        const donInfo = await appPool.request()
+          .input("MaDon2", sql.Int, maDon)
+          .query(`
+            SELECT d.MA_NV, d.TU_NGAY, d.DEN_NGAY, ln.TEN_LOAI_NGHI
+            FROM DON_NGHI_PHEP d
+            LEFT JOIN LOAI_NGHI_PHEP ln ON d.MA_LOAI_NGHI = ln.MA_LOAI_NGHI
+            WHERE d.MA_DON = @MaDon2
+          `);
+        const don = donInfo.recordset[0];
+        if (don) {
+          sendLeaveApprovedEmail(
+            don.MA_NV,
+            don.TU_NGAY,
+            don.DEN_NGAY,
+            don.TEN_LOAI_NGHI || "Nghỉ phép",
+            nguoiDuyet
+          ).catch(console.error);
+        }
+      } catch (emailErr) {
+        console.error("Lỗi gửi email nghỉ phép:", emailErr);
+      }
+    }
+
     res.json({ success: true, message: TRANG_THAI === "Đã duyệt" ? "Đã duyệt đơn nghỉ phép" : "Đã từ chối đơn nghỉ phép" });
   } catch (error: any) {
     console.error("Lỗi approve leave:", error);
