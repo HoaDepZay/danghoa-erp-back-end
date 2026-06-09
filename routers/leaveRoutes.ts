@@ -33,29 +33,37 @@ router.get("/types", withUserConnection, async (req: Request, res: Response) => 
 });
 
 // Duyệt đơn nghỉ phép (đa cấp)
+// POST /approve - Duyệt hoặc từ chối đơn nghỉ phép (1 cấp)
+// Quyền: Trưởng phòng của nhân viên đó, hoặc Giám đốc/Admin
 router.post("/approve", withUserConnection, async (req: Request, res: Response) => {
   try {
-    const { maDon, capDuyet, TRANG_THAI, lyDoTuChoi } = req.body;
-    // req.user được gán từ withUserConnection (middleware)
-    // Lấy mã NV của người duyệt
-    const nguoiDuyet = (req as any).user?.MANV || "ADMIN";
+    const { maDon, TRANG_THAI, lyDoTuChoi } = req.body;
+    const nguoiDuyet = (req as any).user?.userInfo?.MA_NV;
 
-    if (!maDon || !capDuyet || !TRANG_THAI) {
-      return res.status(400).json({ success: false, message: "Thiếu dữ liệu" });
+    if (!nguoiDuyet) {
+      return res.status(401).json({ success: false, message: "Không xác định được người duyệt" });
+    }
+    if (!maDon || !TRANG_THAI) {
+      return res.status(400).json({ success: false, message: "Thiếu maDon hoặc TRANG_THAI" });
+    }
+    if (!["Đã duyệt", "Từ chối"].includes(TRANG_THAI)) {
+      return res.status(400).json({ success: false, message: "Trạng thái không hợp lệ" });
+    }
+    if (TRANG_THAI === "Từ chối" && !lyDoTuChoi?.trim()) {
+      return res.status(400).json({ success: false, message: "Vui lòng nhập lý do từ chối" });
     }
 
     const request = appPool.request()
       .input("MaDon", sql.Int, maDon)
       .input("NguoiDuyet", sql.VarChar(20), nguoiDuyet)
-      .input("CapDuyet", sql.Int, capDuyet)
       .input("TrangThai", sql.NVarChar(50), TRANG_THAI);
 
     if (lyDoTuChoi) {
-      request.input("LyDoTuChoi", sql.NVarChar(500), lyDoTuChoi);
+      request.input("LyDoTuChoi", sql.NVarChar(500), lyDoTuChoi.trim());
     }
 
     await request.execute("sp_approveLeave");
-    res.json({ success: true, message: "Đã cập nhật trạng thái đơn nghỉ phép" });
+    res.json({ success: true, message: TRANG_THAI === "Đã duyệt" ? "Đã duyệt đơn nghỉ phép" : "Đã từ chối đơn nghỉ phép" });
   } catch (error: any) {
     console.error("Lỗi approve leave:", error);
     res.status(500).json({ success: false, message: "Lỗi máy chủ", error: error.message });
