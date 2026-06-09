@@ -108,8 +108,11 @@ const projectService = {
         normalizedMaDa,
         normalizedRequesterMaNv,
       );
+      const projectRoleNorm = normalizeRole(projectRole);
       const isProjectLead =
-        normalizeRole(projectRole) === normalizeRole("Trưởng dự án");
+        projectRoleNorm === normalizeRole("Trưởng dự án") ||
+        projectRoleNorm === normalizeRole("Quản lý") ||
+        projectRoleNorm === normalizeRole("Phó dự án");
 
       const existing = await projectRepository.getTaskByIdInProject(
         normalizedMaDa,
