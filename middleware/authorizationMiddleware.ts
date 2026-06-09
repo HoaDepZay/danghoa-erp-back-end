@@ -120,11 +120,13 @@ const requireProjectCreator = (req, res, next) => {
   if (
     normalizedRole !== "admin" &&
     normalizedRole !== "giamdoc" &&
-    normalizedRole !== "truongphong"
+    normalizedRole !== "truongphong" &&
+    normalizedRole !== "phophong" &&
+    normalizedRole !== "phoduan"
   ) {
     return res.status(403).json({
       success: false,
-      message: "Bạn không có quyền tạo dự án. Chỉ Giám đốc hoặc Trưởng phòng mới có thể thực hiện.",
+      message: "Bạn không có quyền tạo dự án. Chỉ Giám đốc, Trưởng/Phó phòng hoặc Phó dự án mới có thể thực hiện.",
     });
   }
 

@@ -9,6 +9,20 @@ const payrollRepository = {
       .output("ErrorDetail", sql.NVarChar(500))
       .execute("sp_CheckIn");
 
+    if (result.output.Result === 1) {
+      try {
+        await appPool.request()
+          .input("MaNV", sql.VarChar(20), MA_NV)
+          .query(`
+            UPDATE BAN_CHAM_CONG 
+            SET TRANG_THAI = N'Đang làm việc'
+            WHERE MA_NV = @MaNV AND NGAY = CAST(GETDATE() AS DATE)
+          `);
+      } catch (err) {
+        console.error("Lỗi cập nhật trạng thái BAN_CHAM_CONG:", err);
+      }
+    }
+
     return {
       success: result.output.Result === 1,
       result: result.output.Result,

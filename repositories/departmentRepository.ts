@@ -28,12 +28,19 @@ const departmentRepository = {
   // 4. Tạo phòng ban mới
   createDepartment: async (data) => {
     const request = appPool.request();
-    await request
-      .input("MaPhg", sql.Int, data.MA_PHG)
-      .input("TenPb", sql.NVarChar, data.tenpb)
-      .input("MaTruongPhg", sql.VarChar, data.matruongphg || null)
-      .input("NgThanhLap", sql.DateTime, data.ng_thanhlap || new Date())
-      .execute("sp_createDepartment");
+      await request
+        .input("MaPhg", sql.Int, data.MA_PHG)
+        .input("TenPb", sql.NVarChar, data.tenpb)
+        .input("MaTruongPhg", sql.VarChar, data.matruongphg || null)
+        .input("NgThanhLap", sql.DateTime, data.ng_thanhlap || new Date())
+        .execute("sp_createDepartment");
+
+      if (data.maphophg) {
+        await appPool.request()
+          .input("MaPhg", sql.Int, data.MA_PHG)
+          .input("MaPhoPhg", sql.VarChar(20), data.maphophg)
+          .query("UPDATE PHONG_BAN SET MA_PHO_PHG = @MaPhoPhg WHERE MA_PHG = @MaPhg");
+      }
   },
 
   // 5. Cập nhật phòng ban
@@ -62,6 +69,16 @@ const departmentRepository = {
 
       if (status === -1) {
         throw new Error("Lỗi trong SQL Server procedure");
+      }
+
+      if (status === 1 || status === 0 || status === null) {
+        const maPhoPhg = data?.maphophg ?? data?.MAPHOPHG;
+        if (maPhoPhg !== undefined) {
+           await appPool.request()
+             .input("MaPhg", sql.Int, maPhg)
+             .input("MaPhoPhg", sql.VarChar(20), maPhoPhg)
+             .query("UPDATE PHONG_BAN SET MA_PHO_PHG = @MaPhoPhg WHERE MA_PHG = @MaPhg");
+        }
       }
 
       if (status === 1) {

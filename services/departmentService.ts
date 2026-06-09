@@ -178,10 +178,10 @@ const departmentService = {
 
   getEmployeeDepartments: async (MA_NV, requesterMaNv, requesterRole) => {
     try {
-      // Kiểm tra quyền: chỉ admin hoặc chính người đó mới xem được
-      if (requesterRole !== "admin" && requesterMaNv !== MA_NV) {
-        throw new Error("Bạn không có quyền xem thông tin này.");
-      }
+      // Kiểm tra quyền: hiện tại cho phép mọi người trong công ty xem phòng ban của nhau
+      // if (requesterRole !== "admin" && requesterMaNv !== MA_NV) {
+      //   throw new Error("Bạn không có quyền xem thông tin này.");
+      // }
 
       const result = await departmentRepository.getDepartmentsByEmployee(MA_NV);
       return {
@@ -199,10 +199,10 @@ const departmentService = {
     requesterRole,
   ) => {
     try {
-      // Kiểm tra quyền
-      if (requesterRole !== "admin" && requesterMaNv !== MA_NV) {
-        throw new Error("Bạn không có quyền xem thông tin này.");
-      }
+      // Kiểm tra quyền: hiện tại cho phép mọi người trong công ty xem phòng ban của nhau
+      // if (requesterRole !== "admin" && requesterMaNv !== MA_NV) {
+      //   throw new Error("Bạn không có quyền xem thông tin này.");
+      // }
 
       const result =
         await departmentRepository.getDepartmentDetailsByEmployee(MA_NV);

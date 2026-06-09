@@ -19,11 +19,10 @@ router.get(
   departmentController.getEmployeeDepartments,
 );
 
-// Lấy danh sách phòng ban (admin)
+// Lấy danh sách phòng ban (cho phép tất cả nhân viên xem để dùng cho sơ đồ tổ chức)
 router.get(
   "/",
   withUserConnection,
-  requireAdmin,
   departmentController.getAllDepartments,
 );
 

@@ -117,12 +117,13 @@ const projectController = {
       const requesterRole = req.user?.userInfo?.role;
       const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
 
-      if (!isAdmin && requesterMaNv !== String(id || "").trim()) {
-        return res.status(403).json({
-          success: false,
-          message: "Bạn không có quyền xem danh sách dự án của nhân viên khác.",
-        });
-      }
+      // Cho phép tất cả nhân viên xem danh sách dự án của nhau
+      // if (!isAdmin && requesterMaNv !== String(id || "").trim()) {
+      //   return res.status(403).json({
+      //     success: false,
+      //     message: "Bạn không có quyền xem danh sách dự án của nhân viên khác.",
+      //   });
+      // }
 
       const result = await projectService.getEmployeeProjects(id);
       return res.status(200).json(result);
