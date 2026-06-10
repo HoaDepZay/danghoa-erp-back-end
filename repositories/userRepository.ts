@@ -25,6 +25,7 @@ const getMasterDbConfig = (): sql.config => ({
     idleTimeoutMillis: 30000,
   },
 });
+//jk
 
 const userRepository = {
   // 1. Tạo hoặc xóa contained database user ở DB nghiệp vụ
@@ -68,7 +69,11 @@ const userRepository = {
       .request()
       .input("EMAIL", sql.NVarChar(100), EMAIL)
       .input("OTPCODE", sql.NVarChar(6), otpCode)
-      .input("STATUS_VERIFIED", sql.VarChar(20), REGISTRATION_STATUS.OTP_VERIFIED)
+      .input(
+        "STATUS_VERIFIED",
+        sql.VarChar(20),
+        REGISTRATION_STATUS.OTP_VERIFIED,
+      )
       .input("STATUS_PENDING", sql.VarChar(20), REGISTRATION_STATUS.PENDING_OTP)
       .execute("sp_markOtpVerified");
 
@@ -82,9 +87,13 @@ const userRepository = {
         .request()
         .input("EMAIL", sql.NVarChar(100), EMAIL)
         .input("PASSWORD", sql.NVarChar(255), newPasswordHash)
-        .query("UPDATE TAI_KHOANG SET PASSWORD_HASH = @PASSWORD WHERE EMAIL = @EMAIL");
+        .query(
+          "UPDATE TAI_KHOANG SET PASSWORD_HASH = @PASSWORD WHERE EMAIL = @EMAIL",
+        );
     } catch (error: any) {
-      throw new Error("Không thể cập nhật mật khẩu. Chi tiết: " + error.message);
+      throw new Error(
+        "Không thể cập nhật mật khẩu. Chi tiết: " + error.message,
+      );
     }
   },
 
@@ -150,7 +159,11 @@ const userRepository = {
   getPendingApprovalList: async () => {
     const result = await appPool
       .request()
-      .input("STATUS_VERIFIED", sql.VarChar(20), REGISTRATION_STATUS.OTP_VERIFIED)
+      .input(
+        "STATUS_VERIFIED",
+        sql.VarChar(20),
+        REGISTRATION_STATUS.OTP_VERIFIED,
+      )
       .execute("sp_getPendingApprovalList");
 
     return result.recordset;
@@ -176,7 +189,11 @@ const userRepository = {
         .input("MAPHG", sql.Int, payload.MA_PHG ?? null)
         .input("LUONG", sql.Decimal(18, 2), payload.LUONG ?? null)
         .input("CHUCVU", sql.NVarChar(100), payload.CHUC_VU ?? null)
-        .input("STATUS_VERIFIED", sql.VarChar(20), REGISTRATION_STATUS.OTP_VERIFIED)
+        .input(
+          "STATUS_VERIFIED",
+          sql.VarChar(20),
+          REGISTRATION_STATUS.OTP_VERIFIED,
+        )
         .execute("sp_approvePendingRegistration");
 
       const row = result.recordset[0];
@@ -186,7 +203,7 @@ const userRepository = {
       return {
         Success: row.Success,
         Message: row.Message,
-        Data: { MA_NV: row.MaNV, EMAIL: row.Email }
+        Data: { MA_NV: row.MaNV, EMAIL: row.Email },
       };
     } catch (error) {
       throw error;
@@ -200,7 +217,11 @@ const userRepository = {
       .input("REJECTREASON", sql.NVarChar(sql.MAX), reason ?? null)
       .input("REJECTEDBY", sql.NVarChar(100), rejectedBy ?? null)
       .input("STATUS_PENDING", sql.VarChar(20), REGISTRATION_STATUS.PENDING_OTP)
-      .input("STATUS_VERIFIED", sql.VarChar(20), REGISTRATION_STATUS.OTP_VERIFIED)
+      .input(
+        "STATUS_VERIFIED",
+        sql.VarChar(20),
+        REGISTRATION_STATUS.OTP_VERIFIED,
+      )
       .input("STATUS_REJECTED", sql.VarChar(20), REGISTRATION_STATUS.REJECTED)
       .execute("sp_rejectPendingRegistration");
 
