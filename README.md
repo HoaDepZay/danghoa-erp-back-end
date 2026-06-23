@@ -1,4 +1,4 @@
-# HUIT ERP - BackEnd Project Documentation
+# DANGHOA-ERP - BackEnd Project Documentation
 
 Dự án này là hệ thống quản trị nhân sự (ERP) cho HUIT, được xây dựng bằng **Node.js** với **TypeScript**, sử dụng **SQL Server** làm cơ sở dữ liệu.
 
