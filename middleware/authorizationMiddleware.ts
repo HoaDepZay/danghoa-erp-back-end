@@ -1,23 +1,53 @@
 import { normalizeRole, isAdminRole } from "../utils/authHelper";
 
 /**
+ * Middleware kiểm tra quyền Giám đốc hoặc Admin
+ * Chỉ cho phép user có role = admin hoặc giamdoc
+ */
+const requireDirectorOrAdmin = (req, res, next) => {
+  const userRole = req.user?.userInfo?.role;
+  const normalizedRole = normalizeRole(userRole);
+
+  if (normalizedRole !== "admin" && normalizedRole !== "giamdoc") {
+    return res.status(403).json({
+      success: false,
+      message: "Bạn không có quyền truy cập tài nguyên này. Chỉ Giám đốc hoặc Admin mới có thể.",
+    });
+  }
+
+  next();
+};
+
+/**
+ * Middleware kiểm tra quyền Trưởng phòng
+ * Cho phép: admin, giamdoc, truongphong
+ */
+const requireDepartmentHead = (req, res, next) => {
+  const userRole = req.user?.userInfo?.role;
+  const normalizedRole = normalizeRole(userRole);
+
+  if (normalizedRole !== "admin" && normalizedRole !== "giamdoc" && normalizedRole !== "truongphong") {
+    return res.status(403).json({
+      success: false,
+      message: "Bạn không có quyền truy cập tài nguyên này. Chỉ Trưởng phòng trở lên mới có thể.",
+    });
+  }
+
+  next();
+};
+
+/**
  * Middleware kiểm tra quyền Admin
  * Chỉ cho phép user có role = admin
- *
- * Sử dụng: router.use(withUserConnection, requireAdmin)
  */
 const requireAdmin = (req, res, next) => {
   const userRole = req.user?.userInfo?.role;
-  const userEmail = req.user?.userEmail;
+  const normalizedRole = normalizeRole(userRole);
 
-  console.log(`🔒 Admin check for user: ${userEmail}, role: ${userRole}`);
-
-  // Chỉ cho phép đúng CHUCVU = admin
-  if (!isAdminRole(userRole)) {
+  if (normalizedRole !== "admin") {
     return res.status(403).json({
       success: false,
-      message:
-        "Bạn không có quyền truy cập tài nguyên này. Chỉ admin mới có thể.",
+      message: "Bạn không có quyền truy cập tài nguyên này. Chỉ Admin mới có thể quản lý tài khoản.",
     });
   }
 
@@ -211,6 +241,8 @@ const checkMaNVParamOwnershipOrManagerAdmin = (req, res, next) => {
 
 export {
   requireAdmin,
+  requireDirectorOrAdmin,
+  requireDepartmentHead,
   checkAdminOrPass,
   checkMaNVOwnership,
   requireManagerOrAdmin,

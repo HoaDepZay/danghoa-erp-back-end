@@ -1,14 +1,14 @@
-import express from "express";
+﻿import express from "express";
 const router = express.Router();
 import { appPool, sql as mssql } from "../config/db";
 import withUserConnection from "../middleware/authMiddleware";
-import { requireAdmin } from "../middleware/authorizationMiddleware";
+import { requireAdmin, requireDirectorOrAdmin, requireDepartmentHead } from "../middleware/authorizationMiddleware";
 import authController from "../controllers/authController";
 import { keysToCamelCase } from "../utils/camelCaseHelper";
 
-// --- QUẢN LÝ NHÂN VIÊN ---
+// --- QUáº¢N LÃ NHÃ‚N VIÃŠN ---
 
-// Danh sách hồ sơ đã xác thực OTP, chờ admin duyệt
+// Danh sÃ¡ch há»“ sÆ¡ Ä‘Ã£ xÃ¡c thá»±c OTP, chá» admin duyá»‡t
 router.get(
   "/onboarding/pending",
   withUserConnection,
@@ -16,7 +16,7 @@ router.get(
   authController.getPendingApprovals,
 );
 
-// Admin duyệt hồ sơ đăng ký và cấp thông tin nhân viên
+// Admin duyá»‡t há»“ sÆ¡ Ä‘Äƒng kÃ½ vÃ  cáº¥p thÃ´ng tin nhÃ¢n viÃªn
 router.post(
   "/onboarding/accept",
   withUserConnection,
@@ -24,7 +24,7 @@ router.post(
   authController.acceptPendingRegistration,
 );
 
-// Admin từ chối hồ sơ đăng ký
+// Admin tá»« chá»‘i há»“ sÆ¡ Ä‘Äƒng kÃ½
 router.post(
   "/onboarding/reject",
   withUserConnection,
@@ -32,13 +32,13 @@ router.post(
   authController.rejectPendingRegistration,
 );
 
-// 1. Sửa nhân viên (Admin) - Đã chuyển sang gọi Stored Procedure: sp_updateEmployee
+// 1. Sá»­a nhÃ¢n viÃªn (Admin) - ÄÃ£ chuyá»ƒn sang gá»i Stored Procedure: sp_updateEmployee
 router.put("/nhan-vien/edit", withUserConnection, requireAdmin, async (req: any, res: any) => {
   const { MA_NV, HO_TEN, CHUC_VU } = req.body;
   const MA_PHG = req.body.MA_PHG === null ? null : Number(req.body.MA_PHG);
   const LUONG = Number(req.body.LUONG || 0);
 
-  if (!MA_NV) return res.status(400).json({ error: "Thiếu mã nhân viên!" });
+  if (!MA_NV) return res.status(400).json({ error: "Thiáº¿u mÃ£ nhÃ¢n viÃªn!" });
 
   try {
     await appPool.request()
@@ -49,13 +49,13 @@ router.put("/nhan-vien/edit", withUserConnection, requireAdmin, async (req: any,
       .input("MAPHG", mssql.Int, MA_PHG)
       .execute("sp_updateEmployee");
     
-    return res.json({ success: true, message: "Cập nhật nhân sự thành công!" });
+    return res.json({ success: true, message: "Cáº­p nháº­t nhÃ¢n sá»± thÃ nh cÃ´ng!" });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
 });
 
-// 2. Xóa nhân viên (Admin) - Đã chuyển sang gọi Stored Procedure: sp_deleteEmployeeFull
+// 2. XÃ³a nhÃ¢n viÃªn (Admin) - ÄÃ£ chuyá»ƒn sang gá»i Stored Procedure: sp_deleteEmployeeFull
 router.delete(
   "/nhan-vien/:MA_NV",
   withUserConnection,
@@ -67,26 +67,26 @@ router.delete(
         .input("MANV", mssql.VarChar(20), MA_NV)
         .execute("sp_deleteEmployeeFull");
 
-      return res.json({ success: true, message: "Xóa nhân viên thành công!" });
+      return res.json({ success: true, message: "XÃ³a nhÃ¢n viÃªn thÃ nh cÃ´ng!" });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
   },
 );
 
-// --- QUẢN LÝ PHÒNG BAN ---
+// --- QUáº¢N LÃ PHÃ’NG BAN ---
 
-// 3. Lấy danh sách phòng ban (Admin) - Đã chuyển sang gọi Stored Procedure: sp_getAllDepartments
-router.get("/phong-ban", withUserConnection, requireAdmin, async (req: any, res: any) => {
+// 3. Láº¥y danh sÃ¡ch phÃ²ng ban (Admin) - ÄÃ£ chuyá»ƒn sang gá»i Stored Procedure: sp_getAllDepartments
+router.get("/phong-ban", withUserConnection, async (req: any, res: any) => {
   try {
     const result = await appPool.request().execute("sp_getAllDepartments");
     return res.json(result.recordset);
   } catch (err: any) {
-    return res.status(403).json({ error: "Lỗi truy xuất hoặc bạn không có quyền Admin" });
+    return res.status(403).json({ error: "Lá»—i truy xuáº¥t hoáº·c báº¡n khÃ´ng cÃ³ quyá»n Admin" });
   }
 });
 
-// 4. Tạo phòng ban (Admin) - Đã chuyển sang gọi Stored Procedure: sp_createDepartment
+// 4. Táº¡o phÃ²ng ban (Admin) - ÄÃ£ chuyá»ƒn sang gá»i Stored Procedure: sp_createDepartment
 router.post(
   "/phong-ban/create",
   withUserConnection,
@@ -94,7 +94,7 @@ router.post(
   async (req: any, res: any) => {
     const { tenpb } = req.body;
     if (!tenpb)
-      return res.status(400).json({ error: "Vui lòng nhập tên phòng ban!" });
+      return res.status(400).json({ error: "Vui lÃ²ng nháº­p tÃªn phÃ²ng ban!" });
 
     const maPhongBan = Math.floor(1000 + Math.random() * 9000);
     try {
@@ -105,18 +105,18 @@ router.post(
 
       return res.status(201).json({
         success: true,
-        message: `Tạo phòng ${tenpb} thành công!`,
+        message: `Táº¡o phÃ²ng ${tenpb} thÃ nh cÃ´ng!`,
         id: maPhongBan,
       });
     } catch (err: any) {
       if (err.message.includes("PRIMARY KEY"))
-        return res.status(500).json({ error: "Trùng ID, thử lại!" });
+        return res.status(500).json({ error: "TrÃ¹ng ID, thá»­ láº¡i!" });
       return res.status(500).json({ error: err.message });
     }
   },
 );
 
-// 5. Sửa phòng ban (Admin) - Đã có sẵn gọi Stored Procedure: sp_updateDepartment
+// 5. Sá»­a phÃ²ng ban (Admin) - ÄÃ£ cÃ³ sáºµn gá»i Stored Procedure: sp_updateDepartment
 router.put(
   "/phong-ban/edit",
   withUserConnection,
@@ -140,7 +140,7 @@ router.put(
           "[ADMIN][UPDATE_DEPARTMENT] Invalid MA_PHG:",
           req.body.MA_PHG,
         );
-        return res.status(400).json({ error: "Thiếu mã phòng ban!" });
+        return res.status(400).json({ error: "Thiáº¿u mÃ£ phÃ²ng ban!" });
       }
 
       if (tenpb === undefined && matruongphg === undefined) {
@@ -148,7 +148,7 @@ router.put(
           "[ADMIN][UPDATE_DEPARTMENT] Missing update fields tenpb/matruongphg",
         );
         return res.status(400).json({
-          error: "Thiếu dữ liệu cập nhật! Cần tenpb hoặc matruongphg.",
+          error: "Thiáº¿u dá»¯ liá»‡u cáº­p nháº­t! Cáº§n tenpb hoáº·c matruongphg.",
         });
       }
 
@@ -196,7 +196,7 @@ router.put(
         return res.status(400).json({
           success: false,
           message:
-            "Cập nhật thất bại. Kiểm tra mã phòng ban hoặc dữ liệu đầu vào.",
+            "Cáº­p nháº­t tháº¥t báº¡i. Kiá»ƒm tra mÃ£ phÃ²ng ban hoáº·c dá»¯ liá»‡u Ä‘áº§u vÃ o.",
           debug: {
             spStatus: status,
             requested: {
@@ -215,18 +215,18 @@ router.put(
         MA_PHG,
         status,
       });
-      return res.json({ success: true, message: "Cập nhật thành công!" });
+      return res.json({ success: true, message: "Cáº­p nháº­t thÃ nh cÃ´ng!" });
     } catch (err: any) {
       console.error("[ADMIN][UPDATE_DEPARTMENT] Exception:", {
         message: err?.message,
         stack: err?.stack,
       });
-      return res.status(500).json({ error: err?.message || "Lỗi hệ thống" });
+      return res.status(500).json({ error: err?.message || "Lá»—i há»‡ thá»‘ng" });
     }
   },
 );
 
-// 6. Xóa phòng ban (Admin) - Đã chuyển sang gọi Stored Procedure: sp_deleteDepartment
+// 6. XÃ³a phÃ²ng ban (Admin) - ÄÃ£ chuyá»ƒn sang gá»i Stored Procedure: sp_deleteDepartment
 router.delete(
   "/phong-ban/:MA_PHG",
   withUserConnection,
@@ -239,14 +239,14 @@ router.delete(
         .execute("sp_getEmployeesByDepartment");
 
       if (checkRows.recordset.length > 0) {
-        return res.status(400).json({ error: "Không thể xóa phòng có nhân viên!" });
+        return res.status(400).json({ error: "KhÃ´ng thá»ƒ xÃ³a phÃ²ng cÃ³ nhÃ¢n viÃªn!" });
       }
 
       await appPool.request()
         .input("MAPHG", mssql.Int, MA_PHG)
         .execute("sp_deleteDepartment");
 
-      return res.json({ success: true, message: "Xóa phòng ban thành công!" });
+      return res.json({ success: true, message: "XÃ³a phÃ²ng ban thÃ nh cÃ´ng!" });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
@@ -254,3 +254,4 @@ router.delete(
 );
 
 export default router;
+

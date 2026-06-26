@@ -1,6 +1,5 @@
 import cron from "node-cron";
 import { appPool } from "../config/db";
-import { createNotification } from "../controllers/notificationController";
 import { emitNotification } from "../server";
 
 export const initCronJobs = () => {
@@ -34,13 +33,30 @@ export const initCronJobs = () => {
           
         if (check.recordset.length === 0) {
           const daysLeft = Math.ceil((new Date(row.NGAYKETTHUC).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
-          const notif = await createNotification(
-            row.MANV,
-            `Dự án "${row.TENDA}" sắp đến hạn`,
-            `Dự án của bạn sẽ hết hạn trong ${daysLeft} ngày nữa. Vui lòng kiểm tra tiến độ!`,
-            "project_deadline",
-            `/projects/${row.MADA}`
-          );
+          const tieuDe = `Dự án "${row.TENDA}" sắp đến hạn`;
+          const noiDung = `Dự án của bạn sẽ hết hạn trong ${daysLeft} ngày nữa. Vui lòng kiểm tra tiến độ!`;
+          const link = `/projects/${row.MADA}`;
+          
+          const insertRes = await appPool.request()
+            .input("MaNV", row.MANV)
+            .input("TieuDe", tieuDe)
+            .input("NoiDung", noiDung)
+            .input("Loai", "project_deadline")
+            .input("Link", link)
+            .query(`
+              INSERT INTO THONG_BAO (MA_NV, TIEU_DE, NOI_DUNG, LOAI, LINK)
+              OUTPUT 
+                INSERTED.MA_TB AS MaTB, 
+                INSERTED.MA_NV AS MaNV, 
+                INSERTED.TIEU_DE AS TieuDe, 
+                INSERTED.NOI_DUNG AS NoiDung, 
+                INSERTED.LOAI AS Loai, 
+                INSERTED.DA_DOC AS DaDoc, 
+                INSERTED.NGAY_TAO AS NgayTao, 
+                INSERTED.LINK AS Link
+              VALUES (@MaNV, @TieuDe, @NoiDung, @Loai, @Link)
+            `);
+          const notif = insertRes.recordset[0];
           if (notif) emitNotification(row.MANV, notif);
         }
       }
@@ -69,13 +85,30 @@ export const initCronJobs = () => {
           
         if (check.recordset.length === 0) {
           const daysLeft = Math.ceil((new Date(row.NGAYKETTHUC).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
-          const notif = await createNotification(
-            row.MANV,
-            `Nhiệm vụ "${row.TENNHIEMVU}" sắp đến hạn`,
-            `Nhiệm vụ của bạn trong dự án sẽ hết hạn trong ${daysLeft} ngày nữa.`,
-            "task_deadline",
-            `/projects/${row.MADA}`
-          );
+          const tieuDe = `Nhiệm vụ "${row.TENNHIEMVU}" sắp đến hạn`;
+          const noiDung = `Nhiệm vụ của bạn trong dự án sẽ hết hạn trong ${daysLeft} ngày nữa.`;
+          const link = `/projects/${row.MADA}`;
+          
+          const insertRes = await appPool.request()
+            .input("MaNV", row.MANV)
+            .input("TieuDe", tieuDe)
+            .input("NoiDung", noiDung)
+            .input("Loai", "task_deadline")
+            .input("Link", link)
+            .query(`
+              INSERT INTO THONG_BAO (MA_NV, TIEU_DE, NOI_DUNG, LOAI, LINK)
+              OUTPUT 
+                INSERTED.MA_TB AS MaTB, 
+                INSERTED.MA_NV AS MaNV, 
+                INSERTED.TIEU_DE AS TieuDe, 
+                INSERTED.NOI_DUNG AS NoiDung, 
+                INSERTED.LOAI AS Loai, 
+                INSERTED.DA_DOC AS DaDoc, 
+                INSERTED.NGAY_TAO AS NgayTao, 
+                INSERTED.LINK AS Link
+              VALUES (@MaNV, @TieuDe, @NoiDung, @Loai, @Link)
+            `);
+          const notif = insertRes.recordset[0];
           if (notif) emitNotification(row.MANV, notif);
         }
       }

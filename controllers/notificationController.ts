@@ -42,19 +42,22 @@ export const markAsRead = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-// Helper function for backend to create notification programmatically
-export const createNotification = async (MA_NV: string, tieuDe: string, noiDung: string, loai: string, link: string = "") => {
+export const createNotification = async (MA_NV: string, title: string, message: string, type: string, link: string) => {
   try {
     const result = await appPool.request()
       .input("MaNV", MA_NV)
-      .input("TieuDe", tieuDe)
-      .input("NoiDung", noiDung)
-      .input("Loai", loai)
+      .input("TieuDe", title)
+      .input("NoiDung", message)
+      .input("LoaiTB", type)
       .input("Link", link)
-      .execute("sp_createNotification");
+      .query(`
+        INSERT INTO THONG_BAO (MA_NV, TIEU_DE, NOI_DUNG, LOAI_TB, LINK, DA_DOC, NGAY_TAO)
+        OUTPUT INSERTED.*
+        VALUES (@MaNV, @TieuDe, @NoiDung, @LoaiTB, @Link, 0, GETDATE())
+      `);
     return result.recordset[0];
-  } catch (error) {
-    console.error("Error creating notification:", error);
+  } catch (e) {
+    console.error("Error creating notification:", e);
     return null;
   }
 };

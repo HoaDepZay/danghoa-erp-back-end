@@ -10,10 +10,11 @@ const router = express.Router();
 // GET / - Lấy danh sách đơn (admin/manager xem tất cả, nhân viên xem của mình)
 router.get("/", withUserConnection, async (req: Request, res: Response) => {
   try {
-    const { MA_NV, trangThaiDuyet } = req.query;
+    const { MA_NV, trangThaiDuyet, MA_PHG } = req.query;
     const request = appPool.request();
     if (MA_NV) request.input("MaNV", sql.VarChar(20), MA_NV);
     if (trangThaiDuyet) request.input("TrangThaiDuyet", sql.NVarChar(50), trangThaiDuyet);
+    if (MA_PHG) request.input("MaPhg", sql.Int, MA_PHG);
 
     const result = await request.execute("sp_getLeaves");
     res.json({ success: true, data: result.recordset });
@@ -54,9 +55,13 @@ router.post("/approve", withUserConnection, async (req: Request, res: Response) 
       return res.status(400).json({ success: false, message: "Vui lòng nhập lý do từ chối" });
     }
 
+    const vaiTro = (req as any).user?.userInfo?.MA_VAI_TRO;
+    const capDuyet = (vaiTro === 1 || vaiTro === 2) ? 2 : 1;
+
     const request = appPool.request()
       .input("MaDon", sql.Int, maDon)
       .input("NguoiDuyet", sql.VarChar(20), nguoiDuyet)
+      .input("CapDuyet", sql.Int, capDuyet)
       .input("TrangThai", sql.NVarChar(50), TRANG_THAI);
 
     if (lyDoTuChoi) {
@@ -117,7 +122,7 @@ router.post("/", withUserConnection, async (req: Request, res: Response) => {
       .input("LYDO",   sql.NVarChar(500), lyDo)
       .input("MALOAINGHI", sql.Int,       maLoaiNghi)
       .query(`
-        INSERT INTO DON_NGHI_PHEP (MA_NV, TU_NGAY, DEN_NGAY, LY_DO, TRANG_THAI_DUYET, MA_LOAI_NGHI)
+        INSERT INTO DON_NGHI_PHEP (MaNV, TuNgay, DenNgay, LyDo, TrangThaiDuyet, MaLoaiNghi)
         VALUES (@MANV, @TUNGAY, @DENNGAY, @LYDO, N'Chờ duyệt', @MALOAINGHI)
       `);
 

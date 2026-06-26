@@ -1,4 +1,4 @@
-# HUIT ERP - Tài liệu API (Backend)
+# DANGHOA-ERP - Tài liệu API (Backend)
 
 Tài liệu này tổng hợp các danh sách endpoint của hệ thống Quản trị Nhân sự (ERP).
 

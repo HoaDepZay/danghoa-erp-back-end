@@ -1,12 +1,16 @@
 import express from "express";
 import payrollController from "../controllers/payrollController";
 import { withUserConnection } from "../middleware/authMiddleware";
-import { checkMaNVOwnership } from "../middleware/authorizationMiddleware";
+import { 
+  checkMaNVOwnership, 
+  requireManagerOrAdmin,
+  checkMaNVParamOwnershipOrManagerAdmin 
+} from "../middleware/authorizationMiddleware";
 
 const router = express.Router();
 
 // ===== PAYROLL =====
-// Check-in nhân viên (body: maNV)
+// Check-in nhÃ¢n viÃªn (body: maNV)
 router.post(
   "/check-in",
   withUserConnection,
@@ -14,7 +18,7 @@ router.post(
   payrollController.checkIn,
 );
 
-// Check-out nhân viên (body: maNV)
+// Check-out nhÃ¢n viÃªn (body: maNV)
 router.post(
   "/check-out",
   withUserConnection,
@@ -22,45 +26,59 @@ router.post(
   payrollController.checkOut,
 );
 
-// Lấy danh sách chấm công theo ngày
+// Láº¥y danh sÃ¡ch cháº¥m cÃ´ng theo ngÃ y
 router.get(
   "/attendance/:date",
   withUserConnection,
   payrollController.getAttendanceByDate,
 );
 
-// Lấy chấm công của nhân viên (có thể lọc theo ngày bắt đầu/kết thúc)
+// Láº¥y cháº¥m cÃ´ng cá»§a nhÃ¢n viÃªn (cÃ³ thá»ƒ lá» c theo ngÃ y báº¯t Ä‘áº§u/káº¿t thÃºc)
 router.get(
   "/attendance/employee/:id",
   withUserConnection,
+  checkMaNVParamOwnershipOrManagerAdmin,
   payrollController.getEmployeeAttendance,
 );
 
-// Lấy phiếu lương của cá nhân (id: MaNV). Có thể truyền thêm query ?year=...&month=...
+// Láº¥y phiáº¿u lÆ°Æ¡ng cá»§a cÃ¡ nhÃ¢n (id: MaNV). CÃ³ thá»ƒ truyá» n thÃªm query ?year=...&month=...
+// Láº¥y phiáº¿u lÆ°Æ¡ng cá»§a cÃ¡ nhÃ¢n (id: MaNV). CÃ³ thá»ƒ truyá» n thÃªm query ?year=...&month=...
 router.get(
   "/employee/:id",
   withUserConnection,
+  checkMaNVParamOwnershipOrManagerAdmin,
   payrollController.getEmployeePayslip,
 );
 
-// Lấy danh sách NV nhận lương theo tháng/năm
+// Láº¥y danh sÃ¡ch NV nháº­n lÆ°Æ¡ng theo thÃ¡ng/nÄƒm (Chỉ HR/Admin)
 router.get(
   "/:year/:month",
   withUserConnection,
+  requireManagerOrAdmin,
   payrollController.getPayrollByMonth,
 );
 
-// Chốt lương tháng
+// Chá»‘t lÆ°Æ¡ng thÃ¡ng (Chỉ HR/Admin)
 router.post(
   "/close/:year/:month",
   withUserConnection,
+  requireManagerOrAdmin,
   payrollController.closePayrollForMonth,
 );
 
-// Kiểm tra trạng thái chốt lương
+// Cập nhật lương (Chỉ HR/Admin)
+router.put(
+  "/salary/:id",
+  withUserConnection,
+  requireManagerOrAdmin,
+  payrollController.updatePayroll,
+);
+
+// Kiá»ƒm tra tráº¡ng thÃ¡i chá»‘t lÆ°Æ¡ng (Chỉ HR/Admin)
 router.get(
   "/status/:year/:month",
   withUserConnection,
+  requireManagerOrAdmin,
   payrollController.checkIfPayrollClosed,
 );
 

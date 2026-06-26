@@ -1,17 +1,17 @@
-import express from "express";
+﻿import express from "express";
 const router = express.Router();
 import withUserConnection from "../middleware/authMiddleware";
-import { requireAdmin } from "../middleware/authorizationMiddleware";
+import { requireAdmin, requireDirectorOrAdmin, requireDepartmentHead } from "../middleware/authorizationMiddleware";
 import employeeController from "../controllers/employeeController";
 import { appPool, sql as globalSql } from "../config/db";
 
-// ⚠️ ROUTES SPECIFIC PHẢI TRƯỚC GENERIC ROUTES (/:id)
+// âš ï¸ ROUTES SPECIFIC PHáº¢I TRÆ¯á»šC GENERIC ROUTES (/:id)
 
-// 1️⃣ SPECIFIC ROUTES (profile, my-projects, coworkers, update-info)
-// GET /api/employees/:id - Xem profile/chi tiết nhân viên (thay thế cho /profile/:MA_NV cũ)
+// 1ï¸âƒ£ SPECIFIC ROUTES (profile, my-projects, coworkers, update-info)
+// GET /api/employees/:id - Xem profile/chi tiáº¿t nhÃ¢n viÃªn (thay tháº¿ cho /profile/:MA_NV cÅ©)
 // (Defined below in generic routes section)
 
-// GET /api/employees/my-projects/:MA_NV - Xem dự án của tôi (dùng Stored Procedure)
+// GET /api/employees/my-projects/:MA_NV - Xem dá»± Ã¡n cá»§a tÃ´i (dÃ¹ng Stored Procedure)
 router.get("/my-projects/:MA_NV", withUserConnection, async (req: any, res: any) => {
   const { MA_NV } = req.params;
   try {
@@ -20,11 +20,11 @@ router.get("/my-projects/:MA_NV", withUserConnection, async (req: any, res: any)
       .execute("sp_getEmployeeProjects");
     res.json(result.recordset);
   } catch (err: any) {
-    return res.status(500).json({ error: "Lỗi truy vấn hoặc quyền hạn!" });
+    return res.status(500).json({ error: "Lá»—i truy váº¥n hoáº·c quyá»n háº¡n!" });
   }
 });
 
-// GET /api/employees/coworkers/:MA_PHG - Xem đồng nghiệp cùng phòng (dùng Stored Procedure)
+// GET /api/employees/coworkers/:MA_PHG - Xem Ä‘á»“ng nghiá»‡p cÃ¹ng phÃ²ng (dÃ¹ng Stored Procedure)
 router.get("/coworkers/:MA_PHG", withUserConnection, async (req: any, res: any) => {
   const MA_PHG = Number(req.params.MA_PHG);
   try {
@@ -37,7 +37,7 @@ router.get("/coworkers/:MA_PHG", withUserConnection, async (req: any, res: any) 
   }
 });
 
-// PUT /api/employees/update-info - Cập nhật thông tin cá nhân (dùng Stored Procedure)
+// PUT /api/employees/update-info - Cáº­p nháº­t thÃ´ng tin cÃ¡ nhÃ¢n (dÃ¹ng Stored Procedure)
 router.put("/update-info", async (req: any, res: any) => {
   try {
     const { MA_NV, EMAIL } = req.body;
@@ -45,17 +45,17 @@ router.put("/update-info", async (req: any, res: any) => {
       .input("MANV", globalSql.VarChar(20), MA_NV)
       .input("EMAIL", globalSql.NVarChar(100), EMAIL)
       .execute("sp_updateEmployee");
-    res.json({ message: "Cập nhật thành công" });
+    res.json({ message: "Cáº­p nháº­t thÃ nh cÃ´ng" });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 2️⃣ GENERIC ROUTES (list, detail, create, update, delete)
-// GET /api/employees - Lấy danh sách nhân viên
+// 2ï¸âƒ£ GENERIC ROUTES (list, detail, create, update, delete)
+// GET /api/employees - Láº¥y danh sÃ¡ch nhÃ¢n viÃªn
 router.get("/", withUserConnection, employeeController.getAllEmployees);
 
-// POST /api/employees - Thêm nhân viên mới (Admin)
+// POST /api/employees - ThÃªm nhÃ¢n viÃªn má»›i (Admin)
 router.post(
   "/",
   withUserConnection,
@@ -63,10 +63,10 @@ router.post(
   employeeController.createEmployee,
 );
 
-// GET /api/employees/:id - Xem chi tiết 1 nhân viên
+// GET /api/employees/:id - Xem chi tiáº¿t 1 nhÃ¢n viÃªn
 router.get("/:id", withUserConnection, employeeController.getEmployeeById);
 
-// PUT /api/employees/:id - Cập nhật thông tin nhân viên (Admin)
+// PUT /api/employees/:id - Cáº­p nháº­t thÃ´ng tin nhÃ¢n viÃªn (Admin)
 router.put(
   "/:id",
   withUserConnection,
@@ -74,7 +74,7 @@ router.put(
   employeeController.updateEmployee,
 );
 
-// DELETE /api/employees/:id - Xóa/Khóa nhân viên (Admin)
+// DELETE /api/employees/:id - XÃ³a/KhÃ³a nhÃ¢n viÃªn (Admin)
 router.delete(
   "/:id",
   withUserConnection,
@@ -83,3 +83,4 @@ router.delete(
 );
 
 export default router;
+

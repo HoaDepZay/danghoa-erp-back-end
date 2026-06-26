@@ -1,6 +1,6 @@
-# Phân Tích Kiến Trúc Backend HUIT ERP
+# Phân Tích Kiến Trúc Backend DANGHOA-ERP
 
-Tài liệu này tóm tắt kết quả nghiên cứu và phân tích cấu trúc mã nguồn dự án **HUIT ERP (Hệ thống Quản trị Nhân sự)** nhằm chuẩn bị cho việc thực hiện các task phát triển và sửa lỗi tiếp theo.
+Tài liệu này tóm tắt kết quả nghiên cứu và phân tích cấu trúc mã nguồn dự án **DANGHOA-ERP (Hệ thống Quản trị Nhân sự)** nhằm chuẩn bị cho việc thực hiện các task phát triển và sửa lỗi tiếp theo.
 
 ---
 
@@ -62,7 +62,7 @@ Lớp truy xuất dữ liệu duy nhất (**Data Access Layer - DAL**):
 
 ## 🔐 Cơ Chế Kết Nối Database Kép (Hybrid DB Connection)
 
-Đây là điểm đặc thù lớn nhất của dự án HUIT ERP:
+Đây là điểm đặc thù lớn nhất của dự án DANGHOA-ERP:
 
 ### Cách 1: Kết nối Tĩnh qua Connection Pool (`appPool`)
 *   Sử dụng cấu hình tài khoản hệ thống (thường là quyền admin `sa`) từ file `.env`.

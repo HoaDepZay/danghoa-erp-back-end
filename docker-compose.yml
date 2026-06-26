@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   erp-backend:
-    container_name: huit-erp-backend
-    image: ${DOCKER_USERNAME}/huit-erp-backend:latest
+    container_name: danghoa-erp-backend
+    image: ${DOCKER_USERNAME}/danghoa-erp-backend:latest
     restart: always
     network_mode: "host"
     environment:

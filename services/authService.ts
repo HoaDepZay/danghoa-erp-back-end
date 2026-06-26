@@ -13,7 +13,6 @@ import {
   rotateTokens,
   verifyRefreshToken,
 } from "../utils/jwtHelper";
-import { decrypt, encrypt } from "../utils/encryptionHelper";
 
 const REGISTRATION_STATUS = {
   PENDING_OTP: "PENDING_OTP",
@@ -124,6 +123,7 @@ const authService = {
     const otpCode = crypto.randomInt(100000, 999999).toString();
     const expiredAt = new Date(Date.now() + 10 * 60 * 1000);
 
+    // Sử dụng bcrypt để mã hóa một chiều ngay từ đầu
     const encryptedPass = bcrypt.hashSync(userData.password, 10);
 
     // Register chỉ lưu đăng ký tạm + OTP ở DB nghiệp vụ
@@ -240,7 +240,6 @@ const authService = {
       throw new Error("Tài khoản chưa có hồ sơ nhân viên trong hệ thống.");
     }
 
-    // 3. TẠO JWT ACCESS/REFRESH TOKEN
     const tokenPayload = {
       MA_NV: user?.MA_NV || "",
       HO_TEN: user?.HO_TEN || "",
@@ -248,12 +247,9 @@ const authService = {
       role: user?.CHUC_VU || "",
     };
 
-    const token = generateToken(
-      tokenPayload,
-      effectivePassword, // Pass mật khẩu plaintext để mã hóa vào token
-    );
+    const token = generateToken(tokenPayload);
     const refreshToken = generateRefreshToken(
-      createAccessPayload(tokenPayload, effectivePassword),
+      createAccessPayload(tokenPayload),
     );
 
     console.log("✅ Login successful for user:", trimmedEmail);
@@ -284,7 +280,28 @@ const authService = {
       throw new Error("Token gửi lên không phải refresh token");
     }
 
-    const rotated = rotateTokens(refreshToken);
+    let updatedSession = decoded.session;
+    try {
+      const email = decoded.session?.userEmail;
+      if (email) {
+        const userResult = await userRepository.getUserByEmail(email);
+        const user = userResult.recordset[0];
+        if (user) {
+          updatedSession = {
+            ...decoded.session,
+            userInfo: {
+              ...decoded.session.userInfo,
+              role: user.CHUC_VU || "",
+              HO_TEN: user.HO_TEN || ""
+            }
+          };
+        }
+      }
+    } catch(err) {
+       console.error("Error updating session with latest db info:", err);
+    }
+
+    const rotated = rotateTokens(refreshToken, updatedSession);
 
     return {
       success: true,
@@ -293,10 +310,10 @@ const authService = {
       accessToken: rotated.accessToken,
       refreshToken: rotated.refreshToken,
       user: {
-        MA_NV: decoded?.session?.userInfo?.MA_NV || "",
-        HO_TEN: decoded?.session?.userInfo?.HO_TEN || "",
-        EMAIL: decoded?.session?.userInfo?.EMAIL || "",
-        role: decoded?.session?.userInfo?.role || "",
+        MA_NV: updatedSession?.userInfo?.MA_NV || "",
+        HO_TEN: updatedSession?.userInfo?.HO_TEN || "",
+        EMAIL: updatedSession?.userInfo?.EMAIL || "",
+        role: updatedSession?.userInfo?.role || "",
       },
     };
   },
@@ -339,14 +356,11 @@ const authService = {
       String(staged.MA_NV || "").trim() ||
       generateEmployeeId();
 
-    let finalPasswordHash = staged.PASSWORD_MA_HOA;
+    let finalPasswordHash = staged.PASSWORD_HASH;
     if (finalPasswordHash && !finalPasswordHash.startsWith("$2")) {
-      try {
-        const plain = decrypt(finalPasswordHash);
-        finalPasswordHash = bcrypt.hashSync(plain, 10);
-      } catch (e) {
-        console.warn("Failed to decrypt old password format, ignoring.");
-      }
+      console.warn("Mật khẩu chưa được hash bcrypt. (Mật khẩu cũ?)");
+      // Mật khẩu hiện tại không phải bcrypt (có thể là mã hóa đối xứng cũ).
+      // Nhưng ta không có chìa khóa decrypt nữa. Sẽ cập nhật sau nếu user reset pass.
     }
 
     const result = await userRepository.approvePendingRegistration({
@@ -466,7 +480,7 @@ const authService = {
     const newHash = bcrypt.hashSync(newPassword, 10);
     await userRepository.updateDatabaseUserPassword(
       normalizedEmail,
-      newHash,
+      newHash
     );
 
     await userRepository.clearPasswordResetOtp(normalizedEmail);
@@ -541,6 +555,9 @@ const authService = {
       GIOI_TINH: data.GIOI_TINH,
       DIA_CHI: data.DIA_CHI || data.DIA_CHI, // Support both naming conventions
       SDT: data.SDT,
+      MA_SO_THUE: data.MA_SO_THUE,
+      SO_TAI_KHOAN: data.SO_TAI_KHOAN,
+      NGAN_HANG: data.NGAN_HANG,
     };
 
     // Lọc các trường undefined

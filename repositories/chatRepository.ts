@@ -1,10 +1,10 @@
 import { appPool, sql } from "../config/db";
 
 const ROOM_TYPE = {
-  DIRECT: 1,
-  DEPARTMENT: 2,
-  PROJECT: 3,
-  GROUP: 4,
+  DIRECT: "Nhan vien",
+  DEPARTMENT: "Phong ban",
+  PROJECT: "Du an",
+  GROUP: "Nhan vien",
 };
 
 // Generate random room reference ID for direct rooms and custom groups
@@ -18,7 +18,6 @@ const mapRoomRow = (row: any) => {
     MaPhong: row.MA_PHONG ?? row.MAPHONG ?? row.MaPhong,
     TenPhong: row.TEN_PHONG ?? row.TENPHONG ?? row.TenPhong,
     LoaiPhong: row.LOAI_PHONG ?? row.LOAIPHONG ?? row.LoaiPhong,
-    MaThamChieu: row.MA_THAM_CHIEU ?? row.MATHAMCHIEU ?? row.MaThamChieu,
     NgayTao: row.NGAY_TAO ?? row.NGAYTAO ?? row.NgayTao,
   };
 };
@@ -34,7 +33,6 @@ const chatRepository = {
       MaPhong: row.MA_PHONG ?? row.MAPHONG ?? row.MaPhong,
       TenPhong: row.TEN_PHONG ?? row.TENPHONG ?? row.TenPhong,
       LoaiPhong: row.LOAI_PHONG ?? row.LOAIPHONG ?? row.LoaiPhong,
-      MaThamChieu: row.MA_THAM_CHIEU ?? row.MATHAMCHIEU ?? row.MaThamChieu,
       NgayTao: row.NGAY_TAO ?? row.NGAYTAO ?? row.NgayTao,
       SoThanhVien: row.SoThanhVien ?? row.SO_THANH_VIEN,
       TinNhanGanNhat: row.TinNhanGanNhat ?? row.TIN_NHAN_GAN_NHAT,
@@ -44,7 +42,7 @@ const chatRepository = {
   isRoomMember: async (maPhong, MA_NV) => {
     const result = await appPool
       .request()
-      .input("MA_PHG", sql.Int, maPhong)
+      .input("MA_PHG", sql.NVarChar(100), String(maPhong))
       .input("MA_NV", sql.VarChar(20), MA_NV)
       .execute("sp_isRoomMember");
 
@@ -54,7 +52,7 @@ const chatRepository = {
   getRoomById: async (maPhong) => {
     const result = await appPool
       .request()
-      .input("MA_PHG", sql.Int, maPhong)
+      .input("MA_PHG", sql.NVarChar(100), String(maPhong))
       .execute("sp_getRoomById");
 
     return mapRoomRow(result.recordset[0]);
@@ -64,7 +62,7 @@ const chatRepository = {
     const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 200));
     const result = await appPool
       .request()
-      .input("MA_PHG", sql.Int, maPhong)
+      .input("MA_PHG", sql.NVarChar(100), String(maPhong))
       .input("Limit", sql.Int, safeLimit)
       .execute("sp_getRoomMessages");
 
@@ -81,7 +79,7 @@ const chatRepository = {
   getLatestMessageByRoom: async (maPhong) => {
     const result = await appPool
       .request()
-      .input("MAPHONG", sql.Int, maPhong)
+      .input("MAPHONG", sql.NVarChar(100), String(maPhong))
       .execute("sp_getLatestMessageByRoom");
 
     return result.recordset[0] || null;
@@ -90,7 +88,7 @@ const chatRepository = {
   searchMessagesByKeyword: async (maPhong, tuKhoa) => {
     const result = await appPool
       .request()
-      .input("MAPHONG", sql.Int, maPhong)
+      .input("MAPHONG", sql.NVarChar(100), String(maPhong))
       .input("TUKHOA", sql.NVarChar(sql.MAX), tuKhoa)
       .execute("sp_searchMessagesByKeyword");
 
@@ -106,11 +104,9 @@ const chatRepository = {
   sendMessage: async (maPhong, maNvGui, noiDung, fileUrl: string | null = null, fileType: string | null = null) => {
     const result = await appPool
       .request()
-      .input("MA_PHG", sql.Int, maPhong)
+      .input("MA_PHG", sql.NVarChar(100), String(maPhong))
       .input("MaNV_Gui", sql.VarChar(20), maNvGui)
       .input("NOI_DUNG", sql.NVarChar(sql.MAX), noiDung)
-      .input("FileUrl", sql.NVarChar(sql.MAX), fileUrl)
-      .input("FileType", sql.VarChar(50), fileType)
       .execute("sp_sendMessage");
 
     const row = result.recordset[0];
@@ -130,7 +126,7 @@ const chatRepository = {
   getRoomMembers: async (maPhong) => {
     const result = await appPool
       .request()
-      .input("MAPHONG", sql.Int, maPhong)
+      .input("MAPHONG", sql.NVarChar(100), String(maPhong))
       .execute("sp_getRoomMembers");
 
     return result.recordset;
@@ -141,7 +137,7 @@ const chatRepository = {
       .request()
       .input("MANVA", sql.VarChar(20), maNvA)
       .input("MANVB", sql.VarChar(20), maNvB)
-      .input("LOAIPHONG", sql.TinyInt, ROOM_TYPE.DIRECT)
+      .input("LOAIPHONG", sql.NVarChar(20), ROOM_TYPE.DIRECT)
       .execute("sp_findDirectRoom");
 
     return mapRoomRow(result.recordset[0]);
@@ -153,28 +149,34 @@ const chatRepository = {
       .request()
       .input("MANVA", sql.VarChar(20), maNvA)
       .input("MANVB", sql.VarChar(20), maNvB)
-      .input("LOAIPHONG", sql.TinyInt, ROOM_TYPE.DIRECT)
-      .input("MATHAMCHIEU", sql.VarChar(50), maThamChieu)
+      .input("LOAIPHONG", sql.NVarChar(20), ROOM_TYPE.DIRECT)
+      .input("MAPHONG", sql.NVarChar(100), maThamChieu)
       .execute("sp_createDirectRoom");
 
     return mapRoomRow(result.recordset[0]);
   },
 
   getOrCreateReferenceRoom: async (roomType, maThamChieu, tenPhong = null) => {
+    // MA_PHONG format: 'PB{id}' for department, 'DA{id}' for project
+    const maPhong = roomType === ROOM_TYPE.DEPARTMENT
+      ? `PB${maThamChieu}`
+      : roomType === ROOM_TYPE.PROJECT
+      ? `DA${maThamChieu}`
+      : String(maThamChieu);
     const result = await appPool
       .request()
-      .input("LOAIPHONG", sql.TinyInt, roomType)
-      .input("MATHAMCHIEU", sql.VarChar(50), String(maThamChieu))
+      .input("LOAIPHONG", sql.NVarChar(20), roomType)
+      .input("MAPHONG", sql.NVarChar(100), maPhong)
       .input("TENPHONG", sql.NVarChar(255), tenPhong)
       .execute("sp_getOrCreateReferenceRoom");
 
     return mapRoomRow(result.recordset[0]);
   },
 
-  addMemberIfNotExists: async (maPhong, MA_NV, vaiTro = "Thành viên") => {
+  addMemberIfNotExists: async (maPhong, MA_NV, vaiTro = "Thanh vien") => {
     await appPool
       .request()
-      .input("MAPHONG", sql.Int, maPhong)
+      .input("MAPHONG", sql.NVarChar(100), String(maPhong))
       .input("MANV", sql.VarChar(20), MA_NV)
       .input("VAITRO", sql.NVarChar(50), vaiTro)
       .execute("sp_addRoomMember");
@@ -183,7 +185,7 @@ const chatRepository = {
   removeMember: async (maPhong, MA_NV) => {
     await appPool
       .request()
-      .input("MAPHONG", sql.Int, maPhong)
+      .input("MAPHONG", sql.NVarChar(100), String(maPhong))
       .input("MANV", sql.VarChar(20), MA_NV)
       .execute("sp_removeRoomMember");
   },
@@ -245,7 +247,7 @@ const chatRepository = {
   getRoomMemberRole: async (maPhong, MA_NV) => {
     const result = await appPool
       .request()
-      .input("MAPHONG", sql.Int, maPhong)
+      .input("MAPHONG", sql.NVarChar(100), String(maPhong))
       .input("MANV", sql.VarChar(20), MA_NV)
       .execute("sp_getRoomMemberRole");
 

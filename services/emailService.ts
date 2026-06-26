@@ -47,7 +47,7 @@ const baseTemplate = (content: string) => `
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HUIT ERP Notification</title>
+  <title>DANGHOA-ERP Notification</title>
 </head>
 <body style="margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4f8;padding:40px 0;">
@@ -60,7 +60,7 @@ const baseTemplate = (content: string) => `
               <div style="width:40px;height:40px;background:#2563eb;border-radius:10px;display:inline-block;line-height:40px;text-align:center;">
                 <span style="color:#fff;font-size:20px;">🏢</span>
               </div>
-              <span style="color:#fff;font-size:22px;font-weight:700;letter-spacing:0.5px;vertical-align:middle;">HUIT ERP</span>
+              <span style="color:#fff;font-size:22px;font-weight:700;letter-spacing:0.5px;vertical-align:middle;">DANGHOA-ERP</span>
             </div>
             <p style="color:#94a3b8;font-size:13px;margin:6px 0 0;">Hệ thống Quản trị Nhân sự</p>
           </td>
@@ -72,7 +72,7 @@ const baseTemplate = (content: string) => `
             <!-- Footer -->
             <div style="margin-top:32px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:center;">
               <p style="color:#94a3b8;font-size:12px;margin:0;">
-                Email này được gửi tự động từ hệ thống HUIT ERP.<br>
+                Email này được gửi tự động từ hệ thống DANGHOA-ERP.<br>
                 Vui lòng không trả lời email này.
               </p>
             </div>
@@ -126,7 +126,7 @@ export const sendProjectAssignEmail = async (
       </div>
 
       <p style="color:#475569;font-size:14px;line-height:1.6;">
-        Hãy đăng nhập vào hệ thống <strong>HUIT ERP</strong> để xem chi tiết dự án, nhiệm vụ được giao và cộng tác với các thành viên khác.
+        Hãy đăng nhập vào hệ thống <strong>DANGHOA-ERP</strong> để xem chi tiết dự án, nhiệm vụ được giao và cộng tác với các thành viên khác.
       </p>
 
       <div style="text-align:center;margin-top:24px;">
@@ -137,7 +137,7 @@ export const sendProjectAssignEmail = async (
     `;
 
     await transporter.sendMail({
-      from: `"HUIT ERP" <${process.env.EMAIL_USER}>`,
+      from: `"DANGHOA-ERP" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: `📋 Bạn được thêm vào dự án: ${projectName}`,
       html: baseTemplate(content),
@@ -211,7 +211,7 @@ export const sendTaskAssignEmail = async (
     `;
 
     await transporter.sendMail({
-      from: `"HUIT ERP" <${process.env.EMAIL_USER}>`,
+      from: `"DANGHOA-ERP" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: `✅ Nhiệm vụ mới: ${taskName} — Dự án ${projectName}`,
       html: baseTemplate(content),
@@ -292,7 +292,7 @@ export const sendLeaveApprovedEmail = async (
     `;
 
     await transporter.sendMail({
-      from: `"HUIT ERP" <${process.env.EMAIL_USER}>`,
+      from: `"DANGHOA-ERP" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: `✅ Đơn nghỉ phép đã được duyệt — ${tuDate} đến ${denDate}`,
       html: baseTemplate(content),

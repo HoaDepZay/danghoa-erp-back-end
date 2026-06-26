@@ -1,4 +1,5 @@
 import payrollService from "../services/payrollService";
+import { normalizeRole } from "../utils/authHelper";
 
 const payrollController = {
   checkIn: async (req, res) => {
@@ -16,10 +17,8 @@ const payrollController = {
       return res.status(200).json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const statusCode =
-        message.includes("Không") || message.includes("đã check-in")
-          ? 400
-          : 500;
+      const isClientError = message.toLowerCase().includes("lỗi check-in") || message.includes("Không") || message.includes("check-in");
+      const statusCode = isClientError ? 400 : 500;
 
       return res.status(statusCode).json({
         success: false,
@@ -43,10 +42,8 @@ const payrollController = {
       return res.status(200).json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const statusCode =
-        message.includes("Không") || message.includes("lượt Check-in")
-          ? 400
-          : 500;
+      const isClientError = message.toLowerCase().includes("lỗi check-out") || message.includes("Không") || message.includes("check-out");
+      const statusCode = isClientError ? 400 : 500;
 
       return res.status(statusCode).json({
         success: false,
@@ -129,22 +126,18 @@ const payrollController = {
     try {
       const now = new Date();
       const { id } = req.params;
-      const month = req.params.month || req.query.month || now.getMonth() + 1;
-      const year = req.params.year || req.query.year || now.getFullYear();
-      const monthNum = parseInt(String(month));
-      const yearNum = parseInt(String(year));
+      const { month, year } = req.query;
 
-      if (!Number.isInteger(monthNum) || !Number.isInteger(yearNum)) {
-        return res.status(400).json({
-          success: false,
-          message: "Query month/year không hợp lệ",
-        });
-      }
+      const monthNum = parseInt(month as string, 10) || new Date().getMonth() + 1;
+      const yearNum = parseInt(year as string, 10) || new Date().getFullYear();
+
+      const userRole = (req as any).user?.userInfo?.role;
+      const normalizedRole = userRole ? normalizeRole(userRole) : "nhanvien";
 
       const result = await payrollService.getEmployeePayslip(
         id,
         monthNum,
-        yearNum,
+        yearNum
       );
       return res.status(200).json(result);
     } catch (error) {
@@ -188,6 +181,21 @@ const payrollController = {
       }
 
       const result = await payrollService.checkIfPayrollClosed(monthNum, yearNum);
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
+  // Cập nhật lương
+  updatePayroll: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const data = req.body;
+      if (!id) {
+        return res.status(400).json({ success: false, message: "Thiếu ID bản ghi lương" });
+      }
+      const result = await payrollService.updatePayroll(id, data);
       return res.status(200).json(result);
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });

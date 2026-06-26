@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 const router = express.Router();
 import authController from "../controllers/authController";
 import withUserConnection from "../middleware/authMiddleware";
@@ -18,3 +18,4 @@ router.put(
 router.put("/update-profile", withUserConnection, authController.updateProfile);
 
 export default router;
+

@@ -1,32 +1,32 @@
-import express from "express";
+﻿import express from "express";
 import departmentController from "../controllers/departmentController";
 import withUserConnection from "../middleware/authMiddleware";
-import { requireAdmin } from "../middleware/authorizationMiddleware";
+import { requireAdmin, requireDirectorOrAdmin, requireDepartmentHead } from "../middleware/authorizationMiddleware";
 
 const router = express.Router();
 
-// Lấy chi tiết phòng ban của nhân viên chỉ định (kèm danh sách nhân viên)
+// Láº¥y chi tiáº¿t phÃ²ng ban cá»§a nhÃ¢n viÃªn chá»‰ Ä‘á»‹nh (kÃ¨m danh sÃ¡ch nhÃ¢n viÃªn)
 router.get(
   "/employee/:id/detail",
   withUserConnection,
   departmentController.getEmployeeDepartmentWithMembers,
 );
 
-// Lấy danh sách phòng ban của nhân viên chỉ định (không cần admin)
+// Láº¥y danh sÃ¡ch phÃ²ng ban cá»§a nhÃ¢n viÃªn chá»‰ Ä‘á»‹nh (khÃ´ng cáº§n admin)
 router.get(
   "/employee/:id",
   withUserConnection,
   departmentController.getEmployeeDepartments,
 );
 
-// Lấy danh sách phòng ban (cho phép tất cả nhân viên xem để dùng cho sơ đồ tổ chức)
+// Láº¥y danh sÃ¡ch phÃ²ng ban (cho phÃ©p táº¥t cáº£ nhÃ¢n viÃªn xem Ä‘á»ƒ dÃ¹ng cho sÆ¡ Ä‘á»“ tá»• chá»©c)
 router.get(
   "/",
   withUserConnection,
   departmentController.getAllDepartments,
 );
 
-// Lấy chi tiết phòng ban theo ID (admin)
+// Láº¥y chi tiáº¿t phÃ²ng ban theo ID (admin)
 router.get(
   "/:id",
   withUserConnection,
@@ -34,7 +34,7 @@ router.get(
   departmentController.getDepartmentById,
 );
 
-// Thêm mới phòng ban
+// ThÃªm má»›i phÃ²ng ban
 router.post(
   "/",
   withUserConnection,
@@ -42,7 +42,7 @@ router.post(
   departmentController.createDepartment,
 );
 
-// Cập nhật phòng ban
+// Cáº­p nháº­t phÃ²ng ban
 router.put(
   "/:id",
   withUserConnection,
@@ -50,7 +50,7 @@ router.put(
   departmentController.updateDepartment,
 );
 
-// Xóa phòng ban
+// XÃ³a phÃ²ng ban
 router.delete(
   "/:id",
   withUserConnection,
@@ -59,3 +59,4 @@ router.delete(
 );
 
 export default router;
+

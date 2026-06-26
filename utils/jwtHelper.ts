@@ -1,5 +1,4 @@
 import jwt from "jsonwebtoken";
-import CryptoJS from "crypto-js";
 
 // Nên đưa SECRET_KEY vào biến môi trường (.env)
 const SECRET_KEY = process.env.SECRET_KEY || "DoAn_BaoMat_RatCao";
@@ -10,9 +9,7 @@ const ACCESS_TOKEN_EXPIRES_IN = (process.env.ACCESS_TOKEN_EXPIRES_IN ||
 const REFRESH_TOKEN_EXPIRES_IN = (process.env.REFRESH_TOKEN_EXPIRES_IN ||
   "7d") as jwt.SignOptions["expiresIn"];
 
-const createAccessPayload = (userData, password) => {
-  const encryptedPass = CryptoJS.AES.encrypt(password, SECRET_KEY).toString();
-
+const createAccessPayload = (userData) => {
   return {
     userEmail: userData.EMAIL,
     userInfo: {
@@ -21,7 +18,6 @@ const createAccessPayload = (userData, password) => {
       EMAIL: userData.EMAIL || "",
       role: userData.role || "",
     },
-    sqlPassEncrypted: encryptedPass,
   };
 };
 
@@ -30,13 +26,13 @@ const signAccessToken = (payload) => {
 };
 
 // Hàm tạo Token (Sign)
-const generateToken = (userData, password) => {
+const generateToken = (userData) => {
   // userData có thể là string (EMAIL) hoặc object với thông tin user
   if (typeof userData === "string") {
     userData = { EMAIL: userData };
   }
 
-  const accessPayload = createAccessPayload(userData, password);
+  const accessPayload = createAccessPayload(userData);
   return signAccessToken(accessPayload);
 };
 
@@ -51,15 +47,17 @@ const generateRefreshToken = (accessPayload) => {
   );
 };
 
-const rotateTokens = (refreshToken) => {
+const rotateTokens = (refreshToken, updatedSession = null) => {
   const decoded: any = jwt.verify(refreshToken, REFRESH_SECRET_KEY);
 
   if (decoded?.tokenType !== "refresh" || !decoded?.session?.userEmail) {
     throw new Error("Refresh token không hợp lệ");
   }
 
-  const newAccessToken = signAccessToken(decoded.session);
-  const newRefreshToken = generateRefreshToken(decoded.session);
+  const sessionToSign = updatedSession || decoded.session;
+
+  const newAccessToken = signAccessToken(sessionToSign);
+  const newRefreshToken = generateRefreshToken(sessionToSign);
 
   return {
     accessToken: newAccessToken,
@@ -76,12 +74,6 @@ const verifyRefreshToken = (token) => {
   return jwt.verify(token, REFRESH_SECRET_KEY);
 };
 
-// Hàm giải mã password từ token (để dùng tạo connection string)
-const decryptPasswordFromToken = (encryptedPass) => {
-  const decryptedBytes = CryptoJS.AES.decrypt(encryptedPass, SECRET_KEY);
-  return decryptedBytes.toString(CryptoJS.enc.Utf8);
-};
-
 export {
   createAccessPayload,
   generateToken,
@@ -89,7 +81,6 @@ export {
   rotateTokens,
   verifyToken,
   verifyRefreshToken,
-  decryptPasswordFromToken,
   SECRET_KEY, // Xuất ra nếu cần dùng ở middleware
   REFRESH_SECRET_KEY,
 };

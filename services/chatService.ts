@@ -41,7 +41,7 @@ const chatService = {
   },
 
   getRoomMessagesForMember: async (roomId, requesterMaNv, limit, requesterRole) => {
-    const maPhong = Number(roomId);
+    const maPhong = String(roomId || "").trim();
     if (!maPhong) {
       throw new Error("Mã phòng không hợp lệ.");
     }
@@ -65,7 +65,7 @@ const chatService = {
   },
 
   getLatestMessageForMember: async (roomId, requesterMaNv) => {
-    const maPhong = Number(roomId);
+    const maPhong = String(roomId || "").trim();
     if (!maPhong) {
       throw new Error("Mã phòng không hợp lệ.");
     }
@@ -83,7 +83,7 @@ const chatService = {
   },
 
   searchMessagesForMember: async (roomId, requesterMaNv, keyword) => {
-    const maPhong = Number(roomId);
+    const maPhong = String(roomId || "").trim();
     const tuKhoa = String(keyword || "").trim();
 
     if (!maPhong) {
@@ -110,7 +110,7 @@ const chatService = {
   },
 
   sendMessageToRoom: async (roomId, requesterMaNv, noiDung, fileUrl = null, fileType = null, requesterRole = null) => {
-    const maPhong = Number(roomId);
+    const maPhong = String(roomId || "").trim();
     const content = String(noiDung || "").trim();
 
     if (!maPhong) {
@@ -166,7 +166,7 @@ const chatService = {
   },
 
   addMemberToCustomGroup: async (roomId, requesterMaNv, memberMaNv) => {
-    const maPhong = Number(roomId);
+    const maPhong = String(roomId || "").trim();
     const target = String(memberMaNv || "").trim();
 
     if (!maPhong || !target) {
@@ -188,7 +188,7 @@ const chatService = {
   },
 
   removeMemberFromCustomGroup: async (roomId, requesterMaNv, memberMaNv) => {
-    const maPhong = Number(roomId);
+    const maPhong = String(roomId || "").trim();
     const target = String(memberMaNv || "").trim();
 
     if (!maPhong || !target) {

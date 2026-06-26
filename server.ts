@@ -19,7 +19,7 @@ import chatRoutes from "./routers/chatRoutes";
 import shiftRoutes from "./routers/shiftRoutes";
 import leaveRoutes from "./routers/leaveRoutes";
 import contractRoutes from "./routers/contractRoutes";
-import timesheetRoutes from "./routers/timesheetRoutes";
+import expensesRoutes from "./routers/expensesRoutes";
 import notificationRoutes from "./routers/notificationRoutes";
 
 import swaggerUi from "swagger-ui-express";
@@ -134,12 +134,12 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/payroll", payrollRoutes);
+app.use("/api/expenses", expensesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/shifts", shiftRoutes);
 app.use("/api/leaves", leaveRoutes);
 app.use("/api/contracts", contractRoutes);
-app.use("/api/timesheet", timesheetRoutes);
 
 const io = new SocketIOServer(httpServer, {
   cors: {
@@ -156,7 +156,9 @@ setupChatSocket(io);
 setupNotificationSocket(io);
 
 import { initCronJobs } from "./cron/notificationCron";
+import { initBackupCron } from "./cron/backupCron";
 initCronJobs();
+initBackupCron();
 
 console.log("🔍 Đang kết nối Database...");
 
@@ -164,7 +166,7 @@ console.log("🔍 Đang kết nối Database...");
 connectDB()
   .then(() => {
     httpServer.listen(PORT, () => {
-      console.log(`✅ HUIT ERP RUNNING AT http://localhost:${PORT}`);
+      console.log(`✅ DANGHOA-ERP RUNNING AT http://localhost:${PORT}`);
       console.log("✅ Chat WebSocket is running via Socket.IO");
     });
   })

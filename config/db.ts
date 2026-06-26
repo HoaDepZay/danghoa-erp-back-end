@@ -2,11 +2,14 @@ import sql from "mssql";
 import "dotenv/config";
 
 // 1. Cấu hình cơ sở (Base Config)
+const serverParts = (process.env.DB_SERVER || "").split("\\");
+const dbServer = serverParts[0];
+const instanceName = serverParts[1];
+
 const baseConfig: sql.config = {
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
-  server: process.env.DB_SERVER || "",
-  port: parseInt(process.env.DB_PORT || "1433"),
+  server: dbServer,
   options: {
     encrypt: false,
     trustServerCertificate: true,
@@ -18,6 +21,17 @@ const baseConfig: sql.config = {
     idleTimeoutMillis: 30000,
   },
 };
+
+if (instanceName) {
+  baseConfig.options = {
+    ...baseConfig.options,
+    instanceName: instanceName,
+  };
+} else if (process.env.DB_PORT) {
+  baseConfig.port = parseInt(process.env.DB_PORT);
+} else {
+  baseConfig.port = 1433; // Cổng mặc định
+}
 
 // 2. Cấu hình cho Database Nghiệp vụ (QuanTriNhanSu)
 const appConfig = {

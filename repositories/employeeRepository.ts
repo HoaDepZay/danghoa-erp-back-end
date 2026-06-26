@@ -126,6 +126,15 @@ const employeeRepository = {
     if (data.SDT !== undefined) {
       request.input("SDT", sql.NVarChar, data.SDT);
     }
+    if (data.MA_SO_THUE !== undefined) {
+      request.input("MaSoThue", sql.NVarChar, data.MA_SO_THUE);
+    }
+    if (data.SO_TAI_KHOAN !== undefined) {
+      request.input("SoTaiKhoan", sql.NVarChar, data.SO_TAI_KHOAN);
+    }
+    if (data.NGAN_HANG !== undefined) {
+      request.input("NganHang", sql.NVarChar, data.NGAN_HANG);
+    }
 
     return await request.execute("sp_updateProfile");
   },

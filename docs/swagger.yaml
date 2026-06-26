@@ -18,51 +18,51 @@ components:
     Department:
       type: object
       properties:
-        MAPHG:
+        MA_PHG:
           type: integer
-        TENPB:
+        TEN_PB:
           type: string
-        NG_THANHLAP:
+        NGAY_THANH_LAP:
           type: string
           format: date-time
-        MaTruongPhg:
+        MA_TRUONG_PHG:
           type: string
 
     Employee:
       type: object
       properties:
-        hoten:
+        HO_TEN:
           type: string
-        email:
+        EMAIL:
           type: string
-        chucvu:
+        CHUC_VU:
           type: string
-        luong:
+        LUONG_CB:
           type: number
-        maphg:
+        MA_PHG:
           type: integer
-        ngaysinh:
+        NGAY_SINH:
           type: string
           format: date
-        gioitinh:
+        GIOI_TINH:
           type: string
-        diachinhan:
+        DIA_CHI:
           type: string
 
     Project:
       type: object
       properties:
-        tenda:
+        TEN_DA:
           type: string
-        mota:
+        MO_TA:
           type: string
-        ngaybatdau:
-          type: string
-          format: date
-        ngayketthuc:
+        NGAY_BAT_DAU:
           type: string
           format: date
-        trangthai:
+        NGAY_KET_THUC:
+          type: string
+          format: date
+        TRANG_THAI:
           type: string
 
   responses:
@@ -430,7 +430,7 @@ paths:
           $ref: "#/components/responses/SuccessCreate"
 
   # =========================================================================
-  # TÍNH LƯƠNG
+  # TÍNH LƯƠNG & CHẤM CÔNG
   # =========================================================================
   /payroll/{year}/{month}:
     get:
@@ -474,3 +474,65 @@ paths:
       responses:
         "200":
           description: Trả về phiếu lương của nhân viên
+
+  /payroll/salary/{id}:
+    put:
+      summary: Cập nhật dữ liệu bảng lương
+      tags: [Payroll]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                SO_NGAY_CONG_THUC_TE:
+                  type: number
+                PHU_CAP:
+                  type: number
+                THUONG:
+                  type: number
+                KHAU_TRU_BHXH:
+                  type: number
+      responses:
+        "200":
+          $ref: "#/components/responses/SuccessUpdate"
+
+  /payroll/check-in:
+    post:
+      summary: Chấm công vào (Check-in)
+      tags: [Attendance]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [MA_NV]
+              properties:
+                MA_NV:
+                  type: string
+      responses:
+        "200":
+          description: Check-in thành công
+
+  /payroll/check-out:
+    post:
+      summary: Chấm công ra (Check-out)
+      tags: [Attendance]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [MA_NV]
+              properties:
+                MA_NV:
+                  type: string
+      responses:
+        "200":
+          description: Check-out thành công

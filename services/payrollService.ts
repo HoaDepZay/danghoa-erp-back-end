@@ -131,12 +131,12 @@ const payrollService = {
     }
   },
 
-  getEmployeePayslip: async (MA_NV, month, year) => {
+  getEmployeePayslip: async (id: string, month: number, year: number) => {
     try {
       const data = await payrollRepository.getEmployeePayslip(
-        MA_NV,
+        id,
         month,
-        year,
+        year
       );
       if (!data)
         throw new Error("Tháng này chưa có phiếu lương hoặc NV không tồn tại.");
@@ -170,6 +170,15 @@ const payrollService = {
       throw new Error(
         "Lỗi kiểm tra trạng thái chốt lương: " + resolveErrorMessage(error),
       );
+    }
+  },
+
+  updatePayroll: async (id, data) => {
+    try {
+      await payrollRepository.updatePayroll(id, data);
+      return { success: true, message: "Cập nhật lương thành công" };
+    } catch (error) {
+      throw new Error("Lỗi cập nhật lương: " + resolveErrorMessage(error));
     }
   },
 };

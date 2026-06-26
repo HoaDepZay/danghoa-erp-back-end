@@ -1,6 +1,6 @@
-# HƯỚNG DẪN QUY TRÌNH DEPLOY CI/CD HỆ THỐNG HUIT ERP BACKEND
+# HƯỚNG DẪN QUY TRÌNH DEPLOY CI/CD HỆ THỐNG DANGHOA-ERP BACKEND
 
-Tài liệu này mô tả chi tiết kiến trúc, quy trình tự động hóa tích hợp và triển khai liên tục (CI/CD) của dự án HUIT ERP Backend lên nền tảng đám mây Microsoft Azure thông qua Docker Container.
+Tài liệu này mô tả chi tiết kiến trúc, quy trình tự động hóa tích hợp và triển khai liên tục (CI/CD) của dự án DANGHOA-ERP Backend lên nền tảng đám mây Microsoft Azure thông qua Docker Container.
 
 ---
 

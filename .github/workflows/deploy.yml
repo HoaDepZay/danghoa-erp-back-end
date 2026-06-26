@@ -24,7 +24,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/huit-erp-backend:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/danghoa-erp-backend:latest
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
@@ -42,13 +42,13 @@ jobs:
           sudo apt-get update && sudo apt-get install -y sshpass
           
           # Copy docker-compose.yml to remote server via SCP (works for private repos)
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST "mkdir -p ~/huit-erp-backend"
-          sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no docker-compose.yml $SSH_USERNAME@$SSH_HOST:~/huit-erp-backend/docker-compose.yml
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST "mkdir -p ~/danghoa-erp-backend"
+          sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no docker-compose.yml $SSH_USERNAME@$SSH_HOST:~/danghoa-erp-backend/docker-compose.yml
           
           # Execute Docker commands
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
-            cd ~/huit-erp-backend
-            echo "$SSH_PASSWORD" | sudo -S docker pull $DOCKER_USERNAME/huit-erp-backend:latest
+            cd ~/danghoa-erp-backend
+            echo "$SSH_PASSWORD" | sudo -S docker pull $DOCKER_USERNAME/danghoa-erp-backend:latest
             echo "$SSH_PASSWORD" | sudo -S DOCKER_USERNAME=$DOCKER_USERNAME docker compose down
             echo "$SSH_PASSWORD" | sudo -S DOCKER_USERNAME=$DOCKER_USERNAME docker compose up -d
           EOF

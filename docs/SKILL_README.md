@@ -1,8 +1,8 @@
-# 🎯 HUIT ERP - Copilot Skill System (Quick Start)
+# 🎯 DANGHOA-ERP - Copilot Skill System (Quick Start)
 
 ## ✅ System Ready!
 
-Bạn đã setup thành công **hệ thống AI Skill tự động** cho dự án HUIT ERP Backend.
+Bạn đã setup thành công **hệ thống AI Skill tự động** cho dự án DANGHOA-ERP Backend.
 
 ---
 
@@ -200,4 +200,4 @@ A: ✅ Có! Tạo file skill mới, update `.copilot-instructions.md`
 ---
 
 Last Updated: May 10, 2026  
-Maintained by: HUIT ERP Development Team
+Maintained by: DANGHOA-ERP Development Team

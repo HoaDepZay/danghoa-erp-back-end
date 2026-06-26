@@ -210,9 +210,11 @@ const acceptPendingRegistration = async (req, res) => {
     const result = await authService.acceptPendingRegistration(req.body);
     return res.status(200).json(result);
   } catch (error) {
+    console.error("acceptPendingRegistration Error:", error);
     return res.status(400).json({
       success: false,
-      message: error.message,
+      message: error?.message || "Unknown error",
+      stack: error?.stack
     });
   }
 };

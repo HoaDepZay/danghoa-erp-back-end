@@ -64,7 +64,7 @@ const setupChatSocket = (io: Server) => {
 
     socket.on("chat:join_room", async (payload, ack) => {
       try {
-        const maPhong = Number(payload?.maPhong);
+        const maPhong = String(payload?.maPhong || "").trim();
         if (!maPhong) {
           throw new Error("Mã phòng không hợp lệ");
         }
@@ -92,7 +92,7 @@ const setupChatSocket = (io: Server) => {
 
     socket.on("chat:leave_room", async (payload, ack) => {
       try {
-        const maPhong = Number(payload?.maPhong);
+        const maPhong = String(payload?.maPhong || "").trim();
         if (!maPhong) {
           throw new Error("Mã phòng không hợp lệ");
         }
@@ -111,7 +111,7 @@ const setupChatSocket = (io: Server) => {
 
     socket.on("chat:send_message", async (payload, ack) => {
       try {
-        const maPhong = Number(payload?.maPhong);
+        const maPhong = String(payload?.maPhong || "").trim();
         const noiDung = String(payload?.noiDung || "");
         const fileUrl = payload?.fileUrl || null;
         const fileType = payload?.fileType || null;
@@ -141,22 +141,34 @@ const setupChatSocket = (io: Server) => {
         // Notify other room members
         try {
           const { appPool } = require("../config/db");
-          const { createNotification } = require("../controllers/notificationController");
           const { emitNotification } = require("../server");
           
+          // Trigger đã chèn dữ liệu vào THONG_BAO. Ta chỉ cần lấy bản ghi thông báo mới nhất vừa tạo của từng thành viên để emit qua socket.
           const members = await appPool.request().input("MaPhong", maPhong).query(`
             SELECT MA_NV AS MaNV FROM THANH_VIEN_PHONG_CHAT WHERE MA_PHONG = @MaPhong AND MA_NV != '${requesterMaNv}'
           `);
           
           for (const member of members.recordset) {
-            const notif = await createNotification(
-              member.MaNV,
-              "Tin nhắn mới",
-              `Bạn có tin nhắn mới từ ${requesterMaNv}`,
-              "chat_message",
-              "/messages"
-            );
-            if (notif) emitNotification(member.MaNV, notif);
+            const notifResult = await appPool.request()
+              .input("MaNV", member.MaNV)
+              .query(`
+                SELECT TOP 1 
+                  MA_TB AS MaTB, 
+                  MA_NV AS MaNV, 
+                  TIEU_DE AS TieuDe, 
+                  NOI_DUNG AS NoiDung, 
+                  LOAI AS Loai, 
+                  DA_DOC AS DaDoc, 
+                  NGAY_TAO AS NgayTao, 
+                  LINK AS Link 
+                FROM THONG_BAO 
+                WHERE MA_NV = @MaNV AND LOAI = 'TIN_NHAN'
+                ORDER BY NGAY_TAO DESC
+              `);
+            const notif = notifResult.recordset[0];
+            if (notif) {
+              emitNotification(member.MaNV, notif);
+            }
           }
         } catch (e) {
           console.error("Failed to push chat notification:", e);

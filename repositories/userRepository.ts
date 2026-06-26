@@ -27,23 +27,7 @@ const getMasterDbConfig = (): sql.config => ({
 });
 //jk
 
-const userRepository = {
-  // 1. Tạo hoặc xóa contained database user ở DB nghiệp vụ
-  handleDatabaseUser: async (EMAIL, password, action) => {
-    const normalizedAction = String(action || "").toUpperCase();
-    if (normalizedAction !== "CREATE" && normalizedAction !== "DROP") {
-      throw new Error("Action không hợp lệ. Chỉ hỗ trợ CREATE hoặc DROP");
-    }
-
-    await appPool
-      .request()
-      .input("Email", sql.NVarChar(100), EMAIL)
-      .input("Password", sql.NVarChar(255), password)
-      .input("Action", sql.VarChar(10), normalizedAction)
-      .execute("sp_handleDatabaseUser");
-  },
-
-  // 2. Lưu thông tin đăng ký tạm + OTP vào DANG_KY_CHO
+const userRepository = {  // 2. Lưu thông tin đăng ký tạm + OTP vào DANG_KY_CHO
   savePendingRegistration: async (data) => {
     await appPool
       .request()
@@ -80,9 +64,10 @@ const userRepository = {
     return (result.recordset?.[0]?.AffectedRows || 0) > 0;
   },
 
-  // 3. Đổi mật khẩu tài khoản
+  // Cập nhật mật khẩu trong CSDL
   updateDatabaseUserPassword: async (EMAIL, newPasswordHash) => {
     try {
+      // 1. Cập nhật mật khẩu trong bảng TAI_KHOANG
       await appPool
         .request()
         .input("EMAIL", sql.NVarChar(100), EMAIL)
@@ -92,7 +77,7 @@ const userRepository = {
         );
     } catch (error: any) {
       throw new Error(
-        "Không thể cập nhật mật khẩu. Chi tiết: " + error.message,
+        "Lỗi khi cập nhật mật khẩu CSDL: " + (error.message || error),
       );
     }
   },
@@ -159,11 +144,6 @@ const userRepository = {
   getPendingApprovalList: async () => {
     const result = await appPool
       .request()
-      .input(
-        "STATUS_VERIFIED",
-        sql.VarChar(20),
-        REGISTRATION_STATUS.OTP_VERIFIED,
-      )
       .execute("sp_getPendingApprovalList");
 
     return result.recordset;
@@ -184,7 +164,7 @@ const userRepository = {
         .request()
         .input("EMAIL", sql.NVarChar(100), payload.EMAIL)
         .input("PASSWORD", sql.NVarChar(255), payload.password)
-        .input("MANV", sql.VarChar(10), payload.MA_NV ?? null)
+        .input("MANV", sql.VarChar(20), payload.MA_NV ?? null)
         .input("HOTEN", sql.NVarChar(200), payload.HO_TEN ?? null)
         .input("MAPHG", sql.Int, payload.MA_PHG ?? null)
         .input("LUONG", sql.Decimal(18, 2), payload.LUONG ?? null)

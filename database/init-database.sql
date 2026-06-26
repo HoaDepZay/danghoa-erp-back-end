@@ -1,6 +1,6 @@
 /*
 ===================================================================================
-HUIT ERP - DATABASE INITIALIZATION SCRIPT
+DANGHOA-ERP - DATABASE INITIALIZATION SCRIPT
 Database Engine: SQL Server
 Description: Khởi tạo toàn bộ cấu trúc cơ sở dữ liệu cho hệ thống Quản trị nhân sự.
 ===================================================================================

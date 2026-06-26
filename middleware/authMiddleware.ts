@@ -1,13 +1,11 @@
 import jwt from "jsonwebtoken";
-import CryptoJS from "crypto-js";
 import "dotenv/config";
-import { buildAzureSqlAuthUser } from "../utils/authHelper";
 
 const SECRET_KEY = process.env.SECRET_KEY;
 
 /**
  * Middleware xác thực Token JWT
- * Kiểm tra token hợp lệ và tạo connection string cho SQL Server
+ * Kiểm tra token hợp lệ và thiết lập req.user
  *
  * Sử dụng: router.use(withUserConnection)
  */
@@ -19,18 +17,6 @@ const withUserConnection = (req, res, next) => {
   try {
     const decoded: any = jwt.verify(token, SECRET_KEY!);
 
-    // DEBUG: Log toàn bộ decoded token để xem cấu trúc
-    console.log(
-      "🔍 Decoded token structure:",
-      JSON.stringify(decoded, null, 2),
-    );
-    console.log("   - userEmail:", decoded.userEmail);
-    console.log("   - userInfo:", decoded.userInfo);
-    console.log(
-      "   - sqlPassEncrypted:",
-      decoded.sqlPassEncrypted ? "✅ exists" : "❌ missing",
-    );
-
     // Kiểm tra tokenFormat - có thể token cũ không có userEmail
     if (!decoded.userEmail) {
       console.error(
@@ -40,19 +26,7 @@ const withUserConnection = (req, res, next) => {
       throw new Error("Token format sai - hãy đăng nhập lại");
     }
 
-    // Giải mã pass SQL từ token
-    const decryptedBytes = CryptoJS.AES.decrypt(
-      decoded.sqlPassEncrypted,
-      SECRET_KEY,
-    );
-    const originalPassword = decryptedBytes.toString(CryptoJS.enc.Utf8);
-    const sqlAuthUser = buildAzureSqlAuthUser(decoded.userEmail);
-
-    // Tạo chuỗi kết nối động
-    console.log("🔐 Creating connection string for user:", sqlAuthUser);
-    const userConnStr = `Driver={ODBC Driver 17 for SQL Server};Server=${process.env.DB_SERVER};Database=${process.env.DB_NAME};UID=${sqlAuthUser};PWD=${originalPassword};Encrypt=yes;TrustServerCertificate=yes;Connection Timeout=10;`;
-    req.userConnectionString = userConnStr;
-    req.user = decoded; // Lưu thêm info user để dùng nếu cần
+    req.user = decoded; // Lưu info user để dùng
     next();
   } catch (err) {
     console.error("❌ Auth Error:", err.message);

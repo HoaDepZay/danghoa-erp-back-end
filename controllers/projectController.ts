@@ -1,6 +1,6 @@
 import projectService from "../services/projectService";
-import { createNotification } from "./notificationController";
 import { emitNotification } from "../server";
+import { appPool } from "../config/db";
 import { sendProjectAssignEmail, sendTaskAssignEmail } from "../services/emailService";
 
 const normalizeRole = (role) =>
@@ -43,13 +43,31 @@ const projectController = {
 
       // Thông báo realtime
       try {
-        const notif = await createNotification(
-          assignedMaNv,
-          "Nhiệm vụ mới",
-          `Bạn vừa được giao một nhiệm vụ mới: ${taskName}`,
-          "task_assign",
-          `/projects/${MA_DA}`
-        );
+        const tieuDe = "Nhiệm vụ mới";
+        const noiDung = `Bạn vừa được giao một nhiệm vụ mới: ${taskName}`;
+        const loai = "task_assign";
+        const link = `/projects/${MA_DA}`;
+
+        const insertRes = await appPool.request()
+          .input("MaNV", assignedMaNv)
+          .input("TieuDe", tieuDe)
+          .input("NoiDung", noiDung)
+          .input("Loai", loai)
+          .input("Link", link)
+          .query(`
+            INSERT INTO THONG_BAO (MA_NV, TIEU_DE, NOI_DUNG, LOAI, LINK)
+            OUTPUT 
+              INSERTED.MA_TB AS MaTB, 
+              INSERTED.MA_NV AS MaNV, 
+              INSERTED.TIEU_DE AS TieuDe, 
+              INSERTED.NOI_DUNG AS NoiDung, 
+              INSERTED.LOAI AS Loai, 
+              INSERTED.DA_DOC AS DaDoc, 
+              INSERTED.NGAY_TAO AS NgayTao, 
+              INSERTED.LINK AS Link
+            VALUES (@MaNV, @TieuDe, @NoiDung, @Loai, @Link)
+          `);
+        const notif = insertRes.recordset[0];
         if (notif) emitNotification(assignedMaNv, notif);
       } catch (e) { console.error("Notif task error", e); }
 
@@ -186,13 +204,31 @@ const projectController = {
 
       // Thông báo realtime
       try {
-        const notif = await createNotification(
-          MA_NV,
-          "Dự án mới",
-          `Bạn đã được thêm vào dự án với vai trò: ${VAI_TRO_DU_AN}`,
-          "project_assign",
-          `/projects/${MA_DA}`
-        );
+        const tieuDe = "Dự án mới";
+        const noiDung = `Bạn đã được thêm vào dự án với vai trò: ${VAI_TRO_DU_AN}`;
+        const loai = "project_assign";
+        const link = `/projects/${MA_DA}`;
+
+        const insertRes = await appPool.request()
+          .input("MaNV", MA_NV)
+          .input("TieuDe", tieuDe)
+          .input("NoiDung", noiDung)
+          .input("Loai", loai)
+          .input("Link", link)
+          .query(`
+            INSERT INTO THONG_BAO (MA_NV, TIEU_DE, NOI_DUNG, LOAI, LINK)
+            OUTPUT 
+              INSERTED.MA_TB AS MaTB, 
+              INSERTED.MA_NV AS MaNV, 
+              INSERTED.TIEU_DE AS TieuDe, 
+              INSERTED.NOI_DUNG AS NoiDung, 
+              INSERTED.LOAI AS Loai, 
+              INSERTED.DA_DOC AS DaDoc, 
+              INSERTED.NGAY_TAO AS NgayTao, 
+              INSERTED.LINK AS Link
+            VALUES (@MaNV, @TieuDe, @NoiDung, @Loai, @Link)
+          `);
+        const notif = insertRes.recordset[0];
         if (notif) emitNotification(MA_NV, notif);
       } catch (e) { console.error("Notif project error", e); }
 

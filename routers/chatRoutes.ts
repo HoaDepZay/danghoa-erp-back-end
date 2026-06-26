@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import multer from "multer";
 import path from "path";
 import chatController from "../controllers/chatController";
@@ -77,7 +77,7 @@ router.post(
   upload.single('file'),
   (req, res) => {
     try {
-      if (!req.file) return res.status(400).json({ success: false, message: "Không tìm thấy file" });
+      if (!req.file) return res.status(400).json({ success: false, message: "KhÃ´ng tÃ¬m tháº¥y file" });
       const fileUrl = `/uploads/${req.file.filename}`;
       res.json({ success: true, url: fileUrl, type: req.file.mimetype });
     } catch (err: any) {
@@ -87,3 +87,4 @@ router.post(
 );
 
 export default router;
+

@@ -212,7 +212,7 @@ const projectRepository = {
     await appPool
       .request()
       .input("MADA", sql.Int, MA_DA)
-      .input("MAPHONGCHAT", sql.Int, maPhongChat)
+      .input("MAPHONGCHAT", sql.NVarChar(100), String(maPhongChat))
       .query("UPDATE DU_AN SET MA_PHONG_CHAT = @MAPHONGCHAT WHERE MA_DA = @MADA");
   },
 

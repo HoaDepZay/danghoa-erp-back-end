@@ -1,26 +1,26 @@
 import express from "express";
 import projectController from "../controllers/projectController";
 import withUserConnection from "../middleware/authMiddleware";
-import { requireAdmin, requireProjectCreator } from "../middleware/authorizationMiddleware";
+import { requireAdmin, requireDirectorOrAdmin, requireDepartmentHead, requireProjectCreator } from "../middleware/authorizationMiddleware";
 
 const router = express.Router();
 
-// Nhân viên xem danh sách dự án mình tham gia (kèm đầy đủ thành viên của từng dự án)
+// NhÃ¢n viÃªn xem danh sÃ¡ch dá»± Ã¡n mÃ¬nh tham gia (kÃ¨m Ä‘áº§y Ä‘á»§ thÃ nh viÃªn cá»§a tá»«ng dá»± Ã¡n)
 router.get(
   "/my-projects/full",
   withUserConnection,
   projectController.getMyJoinedProjectsWithMembers,
 );
 
-// Lấy danh sách dự án
+// Láº¥y danh sÃ¡ch dá»± Ã¡n
 router.get(
   "/",
   withUserConnection,
-  requireAdmin,
+  requireDirectorOrAdmin,
   projectController.getAllProjects,
 );
 
-// Task theo dự án (chỉ nhân viên thuộc dự án mới truy cập được)
+// Task theo dá»± Ã¡n (chá»‰ nhÃ¢n viÃªn thuá»™c dá»± Ã¡n má»›i truy cáº­p Ä‘Æ°á»£c)
 router.get(
   "/:id/tasks",
   withUserConnection,
@@ -39,10 +39,10 @@ router.put(
   projectController.updateTaskForMember,
 );
 
-// Lấy chi tiết dự án & thành viên (nhân viên tham gia dự án hoặc admin)
+// Láº¥y chi tiáº¿t dá»± Ã¡n & thÃ nh viÃªn (nhÃ¢n viÃªn tham gia dá»± Ã¡n hoáº·c admin)
 router.get("/:id", withUserConnection, projectController.getProjectById);
 
-// Thêm dự án mới
+// ThÃªm dá»± Ã¡n má»›i
 router.post(
   "/",
   withUserConnection,
@@ -50,14 +50,14 @@ router.post(
   projectController.createProject,
 );
 
-// Xem dự án của 1 nhân viên
+// Xem dá»± Ã¡n cá»§a 1 nhÃ¢n viÃªn
 router.get(
   "/employee/:id",
   withUserConnection,
   projectController.getEmployeeProjects,
 );
 
-// Cập nhật dự án
+// Cáº­p nháº­t dá»± Ã¡n
 router.put(
   "/:id",
   withUserConnection,
@@ -65,7 +65,7 @@ router.put(
   projectController.updateProject,
 );
 
-// Xóa dự án
+// XÃ³a dá»± Ã¡n
 router.delete(
   "/:id",
   withUserConnection,
@@ -73,7 +73,7 @@ router.delete(
   projectController.deleteProject,
 );
 
-// Thành viên dự án
+// ThÃ nh viÃªn dá»± Ã¡n
 router.post(
   "/:id/members",
   withUserConnection,
@@ -87,3 +87,4 @@ router.delete(
 );
 
 export default router;
+
