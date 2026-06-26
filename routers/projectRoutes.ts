@@ -12,11 +12,17 @@ router.get(
   projectController.getMyJoinedProjectsWithMembers,
 );
 
-// Láº¥y danh sÃ¡ch dá»± Ã¡n
+// Lấy tất cả danh sách vai trò
+router.get(
+  "/roles/all",
+  withUserConnection,
+  projectController.getAllProjectRoles,
+);
+
+// Lấy danh sách dự án
 router.get(
   "/",
   withUserConnection,
-  requireDirectorOrAdmin,
   projectController.getAllProjects,
 );
 
@@ -75,9 +81,14 @@ router.delete(
 
 // ThÃ nh viÃªn dá»± Ã¡n
 router.post(
+  "/:id/roles",
+  withUserConnection,
+  projectController.createProjectRole,
+);
+
+router.post(
   "/:id/members",
   withUserConnection,
-  requireProjectCreator,
   projectController.addProjectMember,
 );
 router.delete(

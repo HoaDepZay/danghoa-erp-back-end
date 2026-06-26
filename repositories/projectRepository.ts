@@ -36,7 +36,7 @@ const projectRepository = {
       .input("MANV", sql.VarChar(20), MA_NV)
       .execute("sp_getProjectMemberRole");
 
-    return result.recordset[0]?.VaiTroDuAn || null;
+    return result.recordset[0]?.VAI_TRO || result.recordset[0]?.VaiTroDuAn || null;
   },
 
   getProjectTasks: async (MA_DA) => {
@@ -156,6 +156,7 @@ const projectRepository = {
       .input("NGAYBATDAU", sql.Date, data.NGAY_BAT_DAU || new Date())
       .input("NGAYKETTHUC", sql.Date, data.NGAY_KET_THUC || null)
       .input("TRANGTHAI", sql.NVarChar(50), data.TRANG_THAI || "Đang lên kế hoạch")
+      .input("CONGKHAI", sql.Bit, data.CONG_KHAI !== undefined ? data.CONG_KHAI : 1)
       .execute("sp_createProject");
 
     return result.recordset[0] || null;
@@ -175,6 +176,8 @@ const projectRepository = {
       .input("NGAYKETTHUC_PASSED", sql.Bit, data.NGAY_KET_THUC !== undefined ? 1 : 0)
       .input("TRANGTHAI", sql.NVarChar(50), data.TRANG_THAI ?? null)
       .input("TRANGTHAI_PASSED", sql.Bit, data.TRANG_THAI !== undefined ? 1 : 0)
+      .input("CONGKHAI", sql.Bit, data.CONG_KHAI ?? null)
+      .input("CONGKHAI_PASSED", sql.Bit, data.CONG_KHAI !== undefined ? 1 : 0)
       .execute("sp_updateProject");
   },
 
@@ -199,12 +202,12 @@ const projectRepository = {
       .execute("sp_deleteProject");
   },
 
-  addProjectMember: async (MA_DA, MA_NV, vaiTroDuAn) => {
+  addProjectMember: async (MA_DA, MA_NV, MA_VAI_TRO) => {
     await appPool
       .request()
       .input("MADA", sql.Int, MA_DA)
       .input("MANV", sql.VarChar(20), MA_NV)
-      .input("VaiTroDU_AN", sql.NVarChar(100), vaiTroDuAn)
+      .input("MA_VAI_TRO", sql.Int, MA_VAI_TRO)
       .execute("sp_addProjectMember");
   },
 
@@ -228,6 +231,26 @@ const projectRepository = {
       throw new Error("Nhân viên không tồn tại trong dự án");
     }
   },
+
+  getAllProjectRoles: async () => {
+    const result = await appPool.query("SELECT * FROM VAI_TRO_DU_AN ORDER BY MA_VAI_TRO ASC");
+    return result.recordset;
+  },
+
+  createProjectRole: async (tenVaiTro) => {
+    const check = await appPool.request()
+      .input("TenVaiTro", sql.NVarChar(100), tenVaiTro)
+      .query("SELECT * FROM VAI_TRO_DU_AN WHERE TEN_VAI_TRO = @TenVaiTro");
+    
+    if (check.recordset.length > 0) {
+      return check.recordset[0];
+    }
+
+    const insert = await appPool.request()
+      .input("TenVaiTro", sql.NVarChar(100), tenVaiTro)
+      .query("INSERT INTO VAI_TRO_DU_AN (TEN_VAI_TRO) OUTPUT INSERTED.* VALUES (@TenVaiTro)");
+    return insert.recordset[0];
+  }
 };
 
 export default projectRepository;

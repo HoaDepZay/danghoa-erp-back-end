@@ -41,6 +41,14 @@ const projectService = {
         throw new Error("Mã dự án không hợp lệ");
       }
 
+      const project = await projectRepository.getProjectById(normalizedMaDa);
+      if (!project) {
+        throw new Error("Dự án không tồn tại.");
+      }
+      if (project.TRANG_THAI && String(project.TRANG_THAI).trim().toLowerCase() === "hoàn thành") {
+        throw new Error("Không thể giao thêm nhiệm vụ vì dự án đã Hoàn thành.");
+      }
+
       if (!requesterMaNv || String(requesterMaNv).trim() === "") {
         throw new Error("Không xác định được nhân viên gọi API.");
       }
@@ -54,13 +62,20 @@ const projectService = {
       }
 
       const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
-      const isMember = await projectRepository.isEmployeeInProject(
+      const projectRole = await projectRepository.getProjectMemberRole(
         normalizedMaDa,
         requesterMaNv,
       );
-      if (!isAdmin && !isMember) {
+      
+      const isProjectLead = 
+        Number(projectRole) === 2 || 
+        Number(projectRole) === 3 || 
+        normalizeRole(projectRole) === normalizeRole("Trưởng dự án") || 
+        normalizeRole(projectRole) === normalizeRole("Phó dự án");
+
+      if (!isAdmin && !isProjectLead) {
         throw new Error(
-          "Bạn không thuộc dự án này nên không có quyền tạo task.",
+          "Bạn không có quyền tạo task. Chỉ Trưởng dự án, Phó dự án hoặc Admin mới được phép.",
         );
       }
 
@@ -108,11 +123,11 @@ const projectService = {
         normalizedMaDa,
         normalizedRequesterMaNv,
       );
-      const projectRoleNorm = normalizeRole(projectRole);
-      const isProjectLead =
-        projectRoleNorm === normalizeRole("Trưởng dự án") ||
-        projectRoleNorm === normalizeRole("Quản lý") ||
-        projectRoleNorm === normalizeRole("Phó dự án");
+      const isProjectLead = 
+        Number(projectRole) === 2 || 
+        Number(projectRole) === 3 || 
+        normalizeRole(projectRole) === normalizeRole("Trưởng dự án") || 
+        normalizeRole(projectRole) === normalizeRole("Phó dự án");
 
       const existing = await projectRepository.getTaskByIdInProject(
         normalizedMaDa,
@@ -131,13 +146,20 @@ const projectService = {
 
       if (
         !isAdmin &&
-        !isProjectLead &&
-        payload?.MA_NV !== undefined &&
-        String(payload.MA_NV || "").trim() !== normalizedRequesterMaNv
+        !isProjectLead
       ) {
-        throw new Error(
-          "Bạn không được chuyển task sang nhân viên khác qua API này.",
-        );
+        // Nếu không phải admin/quản lý, chỉ được phép sửa TRANG_THAI, PHAN_TRAM_HOAN_THANH và MO_TA
+        const allowedKeys = ['TRANG_THAI', 'PHAN_TRAM_HOAN_THANH', 'MO_TA'];
+        const keys = Object.keys(payload || {});
+        for (const k of keys) {
+          if (!allowedKeys.includes(k) && payload[k] !== undefined && payload[k] !== existing[k]) {
+             throw new Error("Bạn chỉ được phép cập nhật Trạng thái và % Hoàn thành của task mình được giao.");
+          }
+        }
+        
+        if (payload?.MA_NV !== undefined && String(payload.MA_NV || "").trim() !== normalizedRequesterMaNv) {
+          throw new Error("Bạn không được chuyển task sang nhân viên khác.");
+        }
       }
 
       const updated = await projectRepository.updateTask(
@@ -202,10 +224,18 @@ const projectService = {
     }
   },
 
-  getAllProjects: async () => {
+  getAllProjects: async (requesterMaNv, requesterRole) => {
     try {
       const data = await projectRepository.getAllProjects();
-      return { success: true, data };
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
+      
+      let filteredData = data;
+      if (!isAdmin && requesterMaNv) {
+        const myProjects = await projectRepository.getEmployeeProjects(requesterMaNv);
+        const myProjectIds = myProjects.map((p: any) => p.MA_DA);
+        filteredData = data.filter((proj: any) => proj.CONG_KHAI || myProjectIds.includes(proj.MA_DA));
+      }
+      return { success: true, data: filteredData };
     } catch (error) {
       throw new Error("Lỗi lấy danh sách dự án: " + error.message);
     }
@@ -218,21 +248,21 @@ const projectService = {
         throw new Error("Mã dự án không hợp lệ");
       }
 
-      // Check quyền: admin hoặc nhân viên tham gia dự án
+      const project = await projectRepository.getProjectById(normalizedMaDa);
+      if (!project) throw new Error("Dự án không tồn tại");
+
+      // Check quyền: admin hoặc nhân viên tham gia dự án hoặc dự án công khai
       const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
       const isMember = await projectRepository.isEmployeeInProject(
         normalizedMaDa,
         requesterMaNv,
       );
 
-      if (!isAdmin && !isMember) {
+      if (!isAdmin && !isMember && !project.CONG_KHAI) {
         throw new Error(
-          "Bạn không có quyền xem dự án này. Chỉ thành viên dự án hoặc admin mới được xem.",
+          "Bạn không có quyền xem dự án này. Dự án nội bộ chỉ dành cho thành viên hoặc admin.",
         );
       }
-
-      const project = await projectRepository.getProjectById(normalizedMaDa);
-      if (!project) throw new Error("Dự án không tồn tại");
 
       const members = await projectRepository.getProjectMembers(normalizedMaDa);
 
@@ -248,10 +278,19 @@ const projectService = {
     }
   },
 
-  getEmployeeProjects: async (MA_NV) => {
+  getEmployeeProjects: async (MA_NV, requesterMaNv, requesterRole) => {
     try {
       const data = await projectRepository.getEmployeeProjects(MA_NV);
-      return { success: true, data };
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
+      
+      let filteredData = data;
+      // If someone else is viewing this employee's projects, hide private ones they don't have access to
+      if (!isAdmin && requesterMaNv && String(MA_NV).trim() !== requesterMaNv) {
+        const myProjects = await projectRepository.getEmployeeProjects(requesterMaNv);
+        const myProjectIds = myProjects.map((p: any) => p.MA_DA);
+        filteredData = data.filter((proj: any) => proj.CONG_KHAI || myProjectIds.includes(proj.MA_DA));
+      }
+      return { success: true, data: filteredData };
     } catch (error) {
       throw new Error(
         "Lỗi lấy danh sách dự án của nhân viên: " + error.message,
@@ -259,8 +298,11 @@ const projectService = {
     }
   },
 
-  createProject: async (data) => {
+  createProject: async (data, requesterMaNv, requesterRole) => {
     try {
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
+      if (!isAdmin) throw new Error("Chỉ Giám đốc hoặc Admin mới có quyền tạo dự án.");
+
       if (!data.TEN_DA) throw new Error("Tên dự án là bắt buộc.");
 
       const createdProject = await projectRepository.createProject(data);
@@ -272,6 +314,19 @@ const projectService = {
         const room = await chatService.ensureProjectRoomCreated(maDa, tenDa);
         if (room?.MaPhong) {
           await projectRepository.updateProjectChatRoom(maDa, room.MaPhong);
+        }
+        
+        if (data.members && Array.isArray(data.members)) {
+          for (const member of data.members) {
+            if (member.MA_NV && member.MA_VAI_TRO) {
+              try {
+                await projectRepository.addProjectMember(maDa, member.MA_NV, member.MA_VAI_TRO);
+                await chatService.syncProjectMemberAdded(maDa, member.MA_NV, tenDa);
+              } catch (e) {
+                console.error("Lỗi thêm thành viên lúc tạo dự án:", e);
+              }
+            }
+          }
         }
       }
 
@@ -285,8 +340,13 @@ const projectService = {
     }
   },
 
-  updateProject: async (MA_DA, data) => {
+  updateProject: async (MA_DA, data, requesterMaNv, requesterRole) => {
     try {
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
+      const projectRole = await projectRepository.getProjectMemberRole(MA_DA, requesterMaNv);
+      const isProjectLead = Number(projectRole) === 2 || Number(projectRole) === 3 || normalizeRole(projectRole) === normalizeRole("Trưởng dự án") || normalizeRole(projectRole) === normalizeRole("Phó dự án");
+      if (!isAdmin && !isProjectLead) throw new Error("Chỉ Admin, Giám đốc, Trưởng dự án hoặc Phó dự án mới có quyền cập nhật dự án.");
+
       const existing = await projectRepository.getProjectById(MA_DA);
       if (!existing) throw new Error("Dự án không tồn tại.");
 
@@ -296,11 +356,27 @@ const projectService = {
         NGAY_BAT_DAU: data.NGAY_BAT_DAU,
         NGAY_KET_THUC: data.NGAY_KET_THUC,
         TRANG_THAI: data.TRANG_THAI,
+        CONG_KHAI: data.CONG_KHAI,
       };
 
       Object.keys(updateData).forEach(
         (k) => updateData[k] === undefined && delete updateData[k],
       );
+
+      if (updateData.TRANG_THAI && String(updateData.TRANG_THAI).trim().toLowerCase() === "hoàn thành") {
+        const tasks = await projectRepository.getProjectTasks(MA_DA);
+        if (tasks && tasks.length > 0) {
+          const incompleteTasks = tasks.filter((t: any) => {
+            const status = String(t.TRANG_THAI || t.TRANGTHAI || t.TrangThai || "").trim().toLowerCase();
+            const percent = Number(t.PHAN_TRAM_HOAN_THANH ?? t.PHANTRAMHOANTHANH ?? t.PhanTramHoanThanh) || 0;
+            return status !== "hoàn thành" || percent < 100;
+          });
+          if (incompleteTasks.length > 0) {
+            console.log("DEBUG INCOMPLETE TASKS:", JSON.stringify(incompleteTasks, null, 2));
+            throw new Error(`Không thể chuyển trạng thái dự án sang Hoàn thành. Vẫn còn ${incompleteTasks.length} nhiệm vụ chưa hoàn tất 100%.`);
+          }
+        }
+      }
 
       await projectRepository.updateProject(MA_DA, updateData);
       return { success: true, message: "Cập nhật dự án thành công" };
@@ -309,8 +385,13 @@ const projectService = {
     }
   },
 
-  deleteProject: async (MA_DA) => {
+  deleteProject: async (MA_DA, requesterMaNv, requesterRole) => {
     try {
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
+      const projectRole = await projectRepository.getProjectMemberRole(MA_DA, requesterMaNv);
+      const isProjectLead = Number(projectRole) === 2 || Number(projectRole) === 3 || normalizeRole(projectRole) === normalizeRole("Trưởng dự án") || normalizeRole(projectRole) === normalizeRole("Phó dự án");
+      if (!isAdmin && !isProjectLead) throw new Error("Chỉ Admin, Giám đốc, Trưởng dự án hoặc Phó dự án mới có quyền xóa dự án.");
+
       const existing = await projectRepository.getProjectById(MA_DA);
       if (!existing) throw new Error("Dự án không tồn tại.");
 
@@ -329,8 +410,13 @@ const projectService = {
     }
   },
 
-  addProjectMember: async (MA_DA, MA_NV, vaiTro) => {
+  addProjectMember: async (MA_DA, MA_NV, vaiTro, requesterMaNv, requesterRole) => {
     try {
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
+      const projectRole = await projectRepository.getProjectMemberRole(MA_DA, requesterMaNv);
+      const isProjectLead = Number(projectRole) === 2 || Number(projectRole) === 3 || normalizeRole(projectRole) === normalizeRole("Trưởng dự án") || normalizeRole(projectRole) === normalizeRole("Phó dự án");
+      if (!isAdmin && !isProjectLead) throw new Error("Chỉ Admin, Giám đốc, Trưởng dự án hoặc Phó dự án mới có quyền thêm thành viên.");
+
       if (!vaiTro) throw new Error("Vai trò dự án là bắt buộc.");
 
       const existing = await projectRepository.getProjectById(MA_DA);
@@ -371,13 +457,11 @@ const projectService = {
         normalizedMaDa,
         normalizedRequesterMaNv,
       );
-      const isProjectLead =
-        normalizeProjectRole(rRole) ===
-        normalizeProjectRole("Trưởng dự án");
+      const isProjectLead = Number(rRole) === 2 || Number(rRole) === 3 || normalizeRole(rRole) === normalizeRole("Trưởng dự án") || normalizeRole(rRole) === normalizeRole("Phó dự án");
 
       if (!isAdmin && !isProjectLead) {
         throw new Error(
-          "Bạn không có quyền xóa thành viên. Chỉ Trưởng dự án mới được phép thực hiện.",
+          "Bạn không có quyền xóa thành viên. Chỉ Trưởng dự án, Phó dự án hoặc admin mới được xóa.",
         );
       }
 
@@ -396,6 +480,41 @@ const projectService = {
       throw new Error("Lỗi xóa thành viên: " + error.message);
     }
   },
+
+  getAllProjectRoles: async () => {
+    try {
+      const data = await projectRepository.getAllProjectRoles();
+      return { success: true, data };
+    } catch (error) {
+      throw new Error("Lỗi lấy danh sách vai trò dự án: " + error.message);
+    }
+  },
+
+  createProjectRole: async (MA_DA, TEN_VAI_TRO, requesterMaNv, requesterRole) => {
+    try {
+      if (!TEN_VAI_TRO || !TEN_VAI_TRO.trim()) {
+        throw new Error("Tên vai trò không được để trống");
+      }
+      
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
+      
+      let isProjectLead = false;
+      if (!isAdmin && MA_DA && requesterMaNv) {
+        const rRole = await projectRepository.getProjectMemberRole(Number(MA_DA), requesterMaNv);
+        const normRole = normalizeProjectRole(rRole);
+        isProjectLead = normRole === normalizeProjectRole("Trưởng dự án") || normRole === normalizeProjectRole("Phó dự án");
+      }
+
+      if (!isAdmin && !isProjectLead) {
+        throw new Error("Bạn không có quyền tạo vai trò mới. Chỉ Giám đốc, Trưởng dự án hoặc Phó dự án mới được phép.");
+      }
+
+      const newRole = await projectRepository.createProjectRole(TEN_VAI_TRO.trim());
+      return { success: true, data: newRole, message: "Tạo vai trò thành công" };
+    } catch (error) {
+      throw new Error("Lỗi tạo vai trò dự án: " + error.message);
+    }
+  }
 };
 
 export default projectService;

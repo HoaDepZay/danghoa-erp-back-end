@@ -29,8 +29,8 @@ const projectController = {
   createTaskForMember: async (req, res) => {
     try {
       const { id: MA_DA } = req.params;
-      const requesterMaNv = req.user?.userInfo?.MA_NV;
-      const requesterRole = req.user?.userInfo?.role;
+      const requesterMaNv = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role || req.user?.role;
       const result = await projectService.createTaskForMember(
         MA_DA,
         requesterMaNv,
@@ -94,8 +94,8 @@ const projectController = {
   updateTaskForMember: async (req, res) => {
     try {
       const { id: MA_DA, taskId } = req.params;
-      const requesterMaNv = req.user?.userInfo?.MA_NV;
-      const requesterRole = req.user?.userInfo?.role;
+      const requesterMaNv = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role || req.user?.role;
       const result = await projectService.updateTaskForMember(
         MA_DA,
         taskId,
@@ -122,7 +122,9 @@ const projectController = {
 
   getAllProjects: async (req, res) => {
     try {
-      const result = await projectService.getAllProjects();
+      const requesterMaNv = String(req.user?.userInfo?.MA_NV || req.user?.MA_NV || "").trim();
+      const requesterRole = req.user?.userInfo?.role || req.user?.role;
+      const result = await projectService.getAllProjects(requesterMaNv, requesterRole);
       return res.status(200).json(result);
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
@@ -132,8 +134,8 @@ const projectController = {
   getProjectById: async (req, res) => {
     try {
       const { id } = req.params;
-      const requesterMaNv = req.user?.userInfo?.MA_NV;
-      const requesterRole = req.user?.userInfo?.role;
+      const requesterMaNv = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role || req.user?.role;
       const result = await projectService.getProjectById(
         id,
         requesterMaNv,
@@ -148,8 +150,8 @@ const projectController = {
   getEmployeeProjects: async (req, res) => {
     try {
       const { id } = req.params; // Lấy employeeId
-      const requesterMaNv = String(req.user?.userInfo?.MA_NV || "").trim();
-      const requesterRole = req.user?.userInfo?.role;
+      const requesterMaNv = String(req.user?.userInfo?.MA_NV || req.user?.MA_NV || "").trim();
+      const requesterRole = req.user?.userInfo?.role || req.user?.role;
       const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
 
       // Cho phép tất cả nhân viên xem danh sách dự án của nhau
@@ -160,7 +162,7 @@ const projectController = {
       //   });
       // }
 
-      const result = await projectService.getEmployeeProjects(id);
+      const result = await projectService.getEmployeeProjects(id, requesterMaNv, requesterRole);
       return res.status(200).json(result);
     } catch (error) {
       return res.status(404).json({ success: false, message: error.message });
@@ -169,7 +171,9 @@ const projectController = {
 
   createProject: async (req, res) => {
     try {
-      const result = await projectService.createProject(req.body);
+      const requesterMaNv = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role || req.user?.role;
+      const result = await projectService.createProject(req.body, requesterMaNv, requesterRole);
       return res.status(201).json(result);
     } catch (error) {
       return res.status(400).json({ success: false, message: error.message });
@@ -179,7 +183,9 @@ const projectController = {
   updateProject: async (req, res) => {
     try {
       const { id } = req.params;
-      const result = await projectService.updateProject(id, req.body);
+      const requesterMaNv = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role || req.user?.role;
+      const result = await projectService.updateProject(id, req.body, requesterMaNv, requesterRole);
       return res.status(200).json(result);
     } catch (error) {
       return res.status(400).json({ success: false, message: error.message });
@@ -189,7 +195,9 @@ const projectController = {
   deleteProject: async (req, res) => {
     try {
       const { id } = req.params;
-      const result = await projectService.deleteProject(id);
+      const requesterMaNv = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role || req.user?.role;
+      const result = await projectService.deleteProject(id, requesterMaNv, requesterRole);
       return res.status(200).json(result);
     } catch (error) {
       return res.status(400).json({ success: false, message: error.message });
@@ -199,44 +207,26 @@ const projectController = {
   addProjectMember: async (req, res) => {
     try {
       const { id: MA_DA } = req.params;
-      const { MA_NV, VAI_TRO_DU_AN } = req.body;
-      const result = await projectService.addProjectMember(MA_DA, MA_NV, VAI_TRO_DU_AN);
+      const { MA_NV, MA_VAI_TRO } = req.body;
+      const requesterMaNv = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role || req.user?.role;
+      const result = await projectService.addProjectMember(MA_DA, MA_NV, MA_VAI_TRO, requesterMaNv, requesterRole);
 
-      // Thông báo realtime
-      try {
-        const tieuDe = "Dự án mới";
-        const noiDung = `Bạn đã được thêm vào dự án với vai trò: ${VAI_TRO_DU_AN}`;
-        const loai = "project_assign";
-        const link = `/projects/${MA_DA}`;
-
-        const insertRes = await appPool.request()
-          .input("MaNV", MA_NV)
-          .input("TieuDe", tieuDe)
-          .input("NoiDung", noiDung)
-          .input("Loai", loai)
-          .input("Link", link)
-          .query(`
-            INSERT INTO THONG_BAO (MA_NV, TIEU_DE, NOI_DUNG, LOAI, LINK)
-            OUTPUT 
-              INSERTED.MA_TB AS MaTB, 
-              INSERTED.MA_NV AS MaNV, 
-              INSERTED.TIEU_DE AS TieuDe, 
-              INSERTED.NOI_DUNG AS NoiDung, 
-              INSERTED.LOAI AS Loai, 
-              INSERTED.DA_DOC AS DaDoc, 
-              INSERTED.NGAY_TAO AS NgayTao, 
-              INSERTED.LINK AS Link
-            VALUES (@MaNV, @TieuDe, @NoiDung, @Loai, @Link)
-          `);
-        const notif = insertRes.recordset[0];
-        if (notif) emitNotification(MA_NV, notif);
-      } catch (e) { console.error("Notif project error", e); }
+      // Đã có Trigger xử lý tạo thông báo trong DB.
+      // Bạn có thể tự viết thêm hàm đọc thông báo mới nhất ra để emit nếu cần.
 
       // Gửi email thông báo (async, không chặn response)
       try {
         const proj = await projectService.getProjectById(MA_DA, MA_NV, null);
         const projectName = proj?.data?.TEN_DA || `Dự án #${MA_DA}`;
-        sendProjectAssignEmail(MA_NV, projectName, MA_DA, VAI_TRO_DU_AN).catch(console.error);
+        // Lấy tên vai trò cho email
+        let tenVaiTro = "Thành viên";
+        if (MA_VAI_TRO == 1) tenVaiTro = "Thành viên";
+        else if (MA_VAI_TRO == 2) tenVaiTro = "Trưởng dự án";
+        else if (MA_VAI_TRO == 3) tenVaiTro = "Phó dự án";
+        else if (MA_VAI_TRO == 4) tenVaiTro = "Backend Developer";
+        else if (MA_VAI_TRO == 5) tenVaiTro = "Frontend Developer";
+        sendProjectAssignEmail(MA_NV, projectName, MA_DA, tenVaiTro).catch(console.error);
       } catch (e) { console.error("Email project error", e); }
 
       return res.status(201).json(result);
@@ -248,8 +238,8 @@ const projectController = {
   removeProjectMember: async (req, res) => {
     try {
       const { id: MA_DA, employeeId: MA_NV } = req.params;
-      const requesterMaNv = req.user?.userInfo?.MA_NV;
-      const requesterRole = req.user?.userInfo?.role;
+      const requesterMaNv = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role || req.user?.role;
       const result = await projectService.removeProjectMember(
         MA_DA,
         MA_NV,
@@ -261,6 +251,33 @@ const projectController = {
       return res.status(400).json({ success: false, message: error.message });
     }
   },
+
+  getAllProjectRoles: async (req, res) => {
+    try {
+      const result = await projectService.getAllProjectRoles();
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  createProjectRole: async (req, res) => {
+    try {
+      const { id: MA_DA } = req.params;
+      const { TEN_VAI_TRO } = req.body;
+      const requesterMaNv = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role || req.user?.role;
+      const result = await projectService.createProjectRole(
+        MA_DA,
+        TEN_VAI_TRO,
+        requesterMaNv,
+        requesterRole
+      );
+      return res.status(201).json(result);
+    } catch (error) {
+      return res.status(403).json({ success: false, message: error.message });
+    }
+  }
 };
 
 export default projectController;
