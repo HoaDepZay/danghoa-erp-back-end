@@ -12,7 +12,7 @@ import authRoutes from "./routers/authRoutes";
 import employeeRoutes from "./routers/employee";
 import adminRoutes from "./routers/admin";
 import departmentRoutes from "./routers/departmentRoutes";
-import projectRoutes from "./routers/projectRoutes";
+import projectRoutes from "./routers/project/projectRoutes";
 import payrollRoutes from "./routers/payrollRoutes";
 import dashboardRoutes from "./routers/dashboardRoutes";
 import chatRoutes from "./routers/chatRoutes";
@@ -21,6 +21,7 @@ import leaveRoutes from "./routers/leaveRoutes";
 import contractRoutes from "./routers/contractRoutes";
 import expensesRoutes from "./routers/expensesRoutes";
 import notificationRoutes from "./routers/notificationRoutes";
+import phaseRoutes from "./routers/project/phaseRoutes";
 
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
@@ -140,6 +141,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/shifts", shiftRoutes);
 app.use("/api/leaves", leaveRoutes);
 app.use("/api/contracts", contractRoutes);
+app.use("/api/phases", phaseRoutes);
 
 const io = new SocketIOServer(httpServer, {
   cors: {

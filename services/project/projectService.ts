@@ -1,5 +1,5 @@
-import projectRepository from "../repositories/projectRepository";
-import chatService from "./chatService";
+import projectRepository from "../../repositories/project/projectRepository";
+import chatService from "../chatService";
 
 const normalizeProjectRole = (role: unknown) =>
   String(role || "")
@@ -295,6 +295,25 @@ const projectService = {
       throw new Error(
         "Lỗi lấy danh sách dự án của nhân viên: " + error.message,
       );
+    }
+  },
+
+  createProjectFull: async (data, requesterMaNv, requesterRole) => {
+    try {
+      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
+      if (!isAdmin) throw new Error("Chỉ Giám đốc hoặc Admin mới có quyền tạo dự án.");
+
+      if (!data?.project?.TEN_DA) throw new Error("Tên dự án là bắt buộc.");
+
+      const maDa = await projectRepository.createProjectFullTransaction(data);
+
+      return {
+        success: true,
+        message: "Tạo dự án thành công (Transaction)",
+        data: { MA_DA: maDa },
+      };
+    } catch (error) {
+      throw new Error("Lỗi tạo dự án: " + error.message);
     }
   },
 

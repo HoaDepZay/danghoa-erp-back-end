@@ -1,7 +1,7 @@
-import projectService from "../services/projectService";
-import { emitNotification } from "../server";
-import { appPool } from "../config/db";
-import { sendProjectAssignEmail, sendTaskAssignEmail } from "../services/emailService";
+import projectService from "../../services/project/projectService";
+import { emitNotification } from "../../server";
+import { appPool } from "../../config/db";
+import { sendProjectAssignEmail, sendTaskAssignEmail } from "../../services/emailService";
 
 const normalizeRole = (role) =>
   String(role || "")
@@ -174,6 +174,17 @@ const projectController = {
       const requesterMaNv = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
       const requesterRole = req.user?.userInfo?.role || req.user?.role;
       const result = await projectService.createProject(req.body, requesterMaNv, requesterRole);
+      return res.status(201).json(result);
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  createProjectFull: async (req, res) => {
+    try {
+      const requesterMaNv = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
+      const requesterRole = req.user?.userInfo?.role || req.user?.role;
+      const result = await projectService.createProjectFull(req.body, requesterMaNv, requesterRole);
       return res.status(201).json(result);
     } catch (error) {
       return res.status(400).json({ success: false, message: error.message });

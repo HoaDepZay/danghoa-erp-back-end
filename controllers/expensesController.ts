@@ -22,10 +22,12 @@ export const getExpense = async (req: Request, res: Response) => {
 
 export const createExpense = async (req: Request, res: Response) => {
   try {
-    const { tenKhoanChi, soTien, ngayChi } = req.body;
+    const tenKhoanChi = req.body.tenKhoanChi || req.body.TenKhoanChi;
+    const soTien = req.body.soTien ?? req.body.SoTien;
+    const ngayChi = req.body.ngayChi || req.body.NgayChi;
     const maNvPhuTrach = (req as any).user?.userInfo?.MA_NV;
-
-    if (!tenKhoanChi || !soTien || !ngayChi) {
+    
+    if (!tenKhoanChi || soTien === undefined || soTien === null || !ngayChi) {
       return res.status(400).json({ success: false, message: "Vui lòng cung cấp đủ thông tin" });
     }
 
@@ -45,9 +47,12 @@ export const createExpense = async (req: Request, res: Response) => {
 export const updateExpense = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const { tenKhoanChi, soTien, ngayChi, trangThai } = req.body;
+    const tenKhoanChi = req.body.tenKhoanChi || req.body.TenKhoanChi;
+    const soTien = req.body.soTien ?? req.body.SoTien;
+    const ngayChi = req.body.ngayChi || req.body.NgayChi;
+    const trangThai = req.body.trangThai || req.body.TrangThai;
 
-    if (!tenKhoanChi || !soTien || !ngayChi || !trangThai) {
+    if (!tenKhoanChi || soTien === undefined || soTien === null || !ngayChi || !trangThai) {
       return res.status(400).json({ success: false, message: "Vui lòng cung cấp đủ thông tin cập nhật" });
     }
 

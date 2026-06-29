@@ -1,7 +1,7 @@
 import express from "express";
-import projectController from "../controllers/projectController";
-import withUserConnection from "../middleware/authMiddleware";
-import { requireAdmin, requireDirectorOrAdmin, requireDepartmentHead, requireProjectCreator } from "../middleware/authorizationMiddleware";
+import projectController from "../../controllers/project/projectController";
+import withUserConnection from "../../middleware/authMiddleware";
+import { requireAdmin, requireDirectorOrAdmin, requireDepartmentHead, requireProjectCreator } from "../../middleware/authorizationMiddleware";
 
 const router = express.Router();
 
@@ -47,6 +47,14 @@ router.put(
 
 // Láº¥y chi tiáº¿t dá»± Ã¡n & thÃ nh viÃªn (nhÃ¢n viÃªn tham gia dá»± Ã¡n hoáº·c admin)
 router.get("/:id", withUserConnection, projectController.getProjectById);
+
+// Thêm dự án đầy đủ (Transaction)
+router.post(
+  "/full",
+  withUserConnection,
+  requireProjectCreator,
+  projectController.createProjectFull,
+);
 
 // ThÃªm dá»± Ã¡n má»›i
 router.post(

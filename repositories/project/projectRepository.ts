@@ -1,4 +1,4 @@
-import { appPool, sql } from "../config/db";
+import { appPool, sql } from "../../config/db";
 
 const mapTaskRow = (row: any) => {
   if (!row) return null;
@@ -250,6 +250,91 @@ const projectRepository = {
       .input("TenVaiTro", sql.NVarChar(100), tenVaiTro)
       .query("INSERT INTO VAI_TRO_DU_AN (TEN_VAI_TRO) OUTPUT INSERTED.* VALUES (@TenVaiTro)");
     return insert.recordset[0];
+  },
+
+  createProjectFullTransaction: async (data: any) => {
+    const transaction = new sql.Transaction(appPool);
+    await transaction.begin();
+
+    try {
+      // 1. Create Project
+      const reqProject = new sql.Request(transaction);
+      reqProject.input("TENDA", sql.NVarChar(255), data.project.TEN_DA);
+      reqProject.input("MOTA", sql.NVarChar(sql.MAX), data.project.MO_TA || null);
+      reqProject.input("NGAYBATDAU", sql.Date, data.project.NGAY_BAT_DAU || new Date());
+      reqProject.input("NGAYKETTHUC", sql.Date, data.project.NGAY_KET_THUC || null);
+      reqProject.input("TRANGTHAI", sql.NVarChar(50), data.project.TRANG_THAI || "Đang lên kế hoạch");
+      reqProject.input("CONGKHAI", sql.Bit, data.project.CONG_KHAI !== undefined ? data.project.CONG_KHAI : 1);
+      
+      const projectResult = await reqProject.execute("sp_createProject");
+      const maDa = projectResult.recordset[0]?.MA_DA;
+      
+      if (!maDa) throw new Error("Could not create project");
+
+      // 2. Create Project Members
+      for (const member of data.members || []) {
+         const reqMember = new sql.Request(transaction);
+         reqMember.input("MADA", sql.Int, maDa);
+         reqMember.input("MANV", sql.VarChar(20), member.MA_NV);
+         reqMember.input("MA_VAI_TRO", sql.Int, member.MA_VAI_TRO);
+         await reqMember.execute("sp_addProjectMember");
+      }
+
+      // 3. Create Phases & Tasks
+      for (const phase of data.phases || []) {
+         const reqPhase = new sql.Request(transaction);
+         reqPhase.input("MADA", sql.Int, maDa);
+         reqPhase.input("TENGD", sql.NVarChar(255), phase.tenGd);
+         reqPhase.input("NGAYBATDAU", sql.Date, phase.ngayBatDau || new Date());
+         reqPhase.input("NGAYKETTHUC", sql.Date, phase.ngayKetThuc || null);
+         reqPhase.input("TRANGTHAI", sql.NVarChar(50), phase.trangThai || 'Chưa bắt đầu');
+         
+         const phaseResult = await reqPhase.query(`
+           INSERT INTO GIAI_DOAN (MA_DA, TEN_GD, NGAY_BAT_DAU, NGAY_KET_THUC, TRANG_THAI)
+           VALUES (@MADA, @TENGD, @NGAYBATDAU, @NGAYKETTHUC, @TRANGTHAI);
+           SELECT SCOPE_IDENTITY() AS MA_GD;
+         `);
+         const maGd = phaseResult.recordset[0]?.MA_GD;
+         if (!maGd) throw new Error("Could not create phase");
+
+         // Phase Members
+         for (const pm of phase.members || []) {
+           const reqPm = new sql.Request(transaction);
+           reqPm.input("MAGD", sql.Int, maGd);
+           reqPm.input("MANV", sql.VarChar(20), pm.MA_NV);
+           reqPm.input("VAITRO", sql.NVarChar(50), pm.VAI_TRO || 'Nhân viên');
+           reqPm.input("MADA", sql.Int, maDa);
+           await reqPm.query(`
+              INSERT INTO PHAN_CONG_GIAI_DOAN (MA_GD, MA_NV, VAI_TRO, MA_DA) VALUES (@MAGD, @MANV, @VAITRO, @MADA);
+           `);
+         }
+
+         // Tasks
+         for (const task of phase.tasks || []) {
+           const reqTask = new sql.Request(transaction);
+           reqTask.input("MAGD", sql.Int, maGd);
+           reqTask.input("MANV", sql.VarChar(20), task.maNv || null);
+           reqTask.input("TENNHIEMVU", sql.NVarChar(255), task.tenNhiemVu);
+           reqTask.input("MOTA", sql.NVarChar(sql.MAX), task.moTa || null);
+           reqTask.input("NGAYBATDAU", sql.Date, task.ngayBatDau || null);
+           reqTask.input("NGAYKETTHUC", sql.Date, task.ngayKetThuc || null);
+           reqTask.input("DOUUTIEN", sql.NVarChar(20), task.doUuTien || null);
+           reqTask.input("TRANGTHAI", sql.NVarChar(50), task.trangThai || 'Mới');
+           reqTask.input("PHANTRAM", sql.Int, task.phanTramHoanThanh || 0);
+           
+           await reqTask.query(`
+             INSERT INTO NHIEM_VU_GIAI_DOAN (MA_GD, MA_NV, TENNHIEMVU, MOTA, NGAYBATDAU, NGAYKETTHUC, DOUUTIEN, TRANGTHAI, PHANTRAMHOANTHANH)
+             VALUES (@MAGD, @MANV, @TENNHIEMVU, @MOTA, @NGAYBATDAU, @NGAYKETTHUC, @DOUUTIEN, @TRANGTHAI, @PHANTRAM);
+           `);
+         }
+      }
+
+      await transaction.commit();
+      return maDa;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 };
 
