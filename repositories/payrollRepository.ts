@@ -15,7 +15,7 @@ const payrollRepository = {
           .query(`
             UPDATE BAN_CHAM_CONG 
             SET TRANG_THAI = N'Đang làm việc'
-            WHERE MA_NV = @MaNV AND NGAY = CAST(GETDATE() AS DATE)
+            WHERE MA_NV = @MaNV AND NGAY = CAST(DATEADD(HOUR, 7, GETUTCDATE()) AS DATE)
           `);
       } catch (err) {
         console.error("Lỗi cập nhật trạng thái BAN_CHAM_CONG:", err);
