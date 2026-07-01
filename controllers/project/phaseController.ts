@@ -20,10 +20,12 @@ async function canManageTasks(maGd: number, maNv: string, userRole: string): Pro
   if (!phase) return false;
   
   const projectRole = await projectRepository.getProjectMemberRole(phase.MA_DA, maNv);
-  if (projectRole === "Trưởng dự án" || projectRole === "Phó dự án") return true;
+  const normProjectRole = normalizeRole(projectRole);
+  if (normProjectRole === normalizeRole("Trưởng dự án") || normProjectRole === normalizeRole("Phó dự án") || normProjectRole === normalizeRole("Quản lý")) return true;
 
   const phaseRole = await phaseRepository.getEmployeeRoleInPhase(maGd, maNv);
-  if (phaseRole === "Trưởng giai đoạn") return true;
+  const normPhaseRole = normalizeRole(phaseRole);
+  if (normPhaseRole === normalizeRole("Trưởng giai đoạn")) return true;
 
   return false;
 }
@@ -96,6 +98,20 @@ export const phaseController = {
     try {
       const maGd = Number(req.params.phaseId);
       const { maNv, vaiTro } = req.body;
+      
+      const assignments = await phaseRepository.getPhaseAssignments(maGd);
+      const isDowngradingManager = vaiTro?.toLowerCase() !== "trưởng giai đoạn";
+      
+      if (isDowngradingManager) {
+        const targetAssignment = assignments.find((a: any) => String(a.MA_NV).trim() === String(maNv).trim());
+        if (targetAssignment && targetAssignment.VAI_TRO?.toLowerCase().includes("trưởng")) {
+          const managersCount = assignments.filter((a: any) => a.VAI_TRO?.toLowerCase().includes("trưởng")).length;
+          if (managersCount <= 1) {
+             return res.status(400).json({ success: false, message: "Không thể giáng chức Trưởng giai đoạn duy nhất của giai đoạn này" });
+          }
+        }
+      }
+
       await phaseRepository.addPhaseAssignment(maGd, maNv, vaiTro);
       res.json({ success: true, message: "Đã phân công nhân sự" });
     } catch (error: any) {
@@ -107,6 +123,17 @@ export const phaseController = {
     try {
       const maGd = Number(req.params.phaseId);
       const maNv = req.params.employeeId;
+      
+      const assignments = await phaseRepository.getPhaseAssignments(maGd);
+      const targetAssignment = assignments.find((a: any) => String(a.MA_NV).trim() === String(maNv).trim());
+      
+      if (targetAssignment && targetAssignment.VAI_TRO?.toLowerCase().includes("trưởng")) {
+         const managersCount = assignments.filter((a: any) => a.VAI_TRO?.toLowerCase().includes("trưởng")).length;
+         if (managersCount <= 1) {
+             return res.status(400).json({ success: false, message: "Không thể xóa Trưởng giai đoạn duy nhất của giai đoạn này" });
+         }
+      }
+
       await phaseRepository.removePhaseAssignment(maGd, maNv);
       res.json({ success: true, message: "Đã xóa nhân sự khỏi giai đoạn" });
     } catch (error: any) {
@@ -134,7 +161,8 @@ export const phaseController = {
       }
 
       const userRole = user.userInfo?.role || user.role;
-      const hasPerm = await canManageTasks(maGd, user.MA_NV || user.maNv, userRole);
+      const maNv = user.userInfo?.MA_NV || user.MA_NV || user.maNv;
+      const hasPerm = await canManageTasks(maGd, maNv, userRole);
       if (!hasPerm) {
         return res.status(403).json({ success: false, message: "Không có quyền tạo công việc trong giai đoạn này" });
       }
@@ -162,9 +190,18 @@ export const phaseController = {
       }
       
       const userRole = user.userInfo?.role || user.role;
-      const hasPerm = await canManageTasks(taskObj.MA_GD, user.MA_NV || user.maNv, userRole);
-      if (!hasPerm) {
+      const maNv = user.userInfo?.MA_NV || user.MA_NV || user.maNv;
+      const hasPerm = await canManageTasks(taskObj.MA_GD, maNv, userRole);
+      const isAssignee = String(taskObj.MA_NV).trim() === String(maNv).trim();
+
+      if (!hasPerm && !isAssignee) {
         return res.status(403).json({ success: false, message: "Không có quyền sửa/duyệt công việc này" });
+      }
+
+      if (!hasPerm && isAssignee) {
+        if (req.body.trangThai === "Đã duyệt" || req.body.TRANG_THAI === "Đã duyệt") {
+          return res.status(403).json({ success: false, message: "Chỉ quản lý mới được phép duyệt công việc" });
+        }
       }
 
       const task = await phaseRepository.updateTask(maNvGd, req.body);
@@ -182,7 +219,8 @@ export const phaseController = {
       const taskObj = await phaseRepository.getTaskById(maNvGd);
       if (taskObj) {
         const userRole = user.userInfo?.role || user.role;
-        const hasPerm = await canManageTasks(taskObj.MA_GD, user.MA_NV || user.maNv, userRole);
+        const maNv = user.userInfo?.MA_NV || user.MA_NV || user.maNv;
+        const hasPerm = await canManageTasks(taskObj.MA_GD, maNv, userRole);
         if (!hasPerm) {
           return res.status(403).json({ success: false, message: "Không có quyền xóa" });
         }

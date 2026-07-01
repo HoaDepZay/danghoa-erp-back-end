@@ -83,7 +83,7 @@ router.put(
 router.delete(
   "/:id",
   withUserConnection,
-  requireProjectCreator,
+  requireDirectorOrAdmin,
   projectController.deleteProject,
 );
 

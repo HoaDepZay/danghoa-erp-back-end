@@ -157,6 +157,8 @@ const projectRepository = {
       .input("NGAYKETTHUC", sql.Date, data.NGAY_KET_THUC || null)
       .input("TRANGTHAI", sql.NVarChar(50), data.TRANG_THAI || "Đang lên kế hoạch")
       .input("CONGKHAI", sql.Bit, data.CONG_KHAI !== undefined ? data.CONG_KHAI : 1)
+      .input("ICON", sql.NVarChar(50), data.ICON || 'FolderKanban')
+      .input("COLOR", sql.NVarChar(20), data.COLOR || '#3b82f6')
       .execute("sp_createProject");
 
     return result.recordset[0] || null;
@@ -178,6 +180,10 @@ const projectRepository = {
       .input("TRANGTHAI_PASSED", sql.Bit, data.TRANG_THAI !== undefined ? 1 : 0)
       .input("CONGKHAI", sql.Bit, data.CONG_KHAI ?? null)
       .input("CONGKHAI_PASSED", sql.Bit, data.CONG_KHAI !== undefined ? 1 : 0)
+      .input("ICON", sql.NVarChar(50), data.ICON ?? null)
+      .input("ICON_PASSED", sql.Bit, data.ICON !== undefined ? 1 : 0)
+      .input("COLOR", sql.NVarChar(20), data.COLOR ?? null)
+      .input("COLOR_PASSED", sql.Bit, data.COLOR !== undefined ? 1 : 0)
       .execute("sp_updateProject");
   },
 
@@ -196,10 +202,32 @@ const projectRepository = {
   },
 
   deleteProject: async (MA_DA) => {
-    await appPool
-      .request()
-      .input("MADA", sql.Int, MA_DA)
-      .execute("sp_deleteProject");
+    const transaction = new sql.Transaction(appPool);
+    await transaction.begin();
+    try {
+      const request = transaction.request();
+      request.input("MADA", sql.Int, MA_DA);
+      
+      // Xóa nhiệm vụ (NHIEM_VU_GIAI_DOAN)
+      await request.query("DELETE FROM NHIEM_VU_GIAI_DOAN WHERE MA_GD IN (SELECT MA_GD FROM GIAI_DOAN WHERE MA_DA = @MADA)");
+      
+      // Xóa phân công giai đoạn (PHAN_CONG_GIAI_DOAN)
+      await request.query("DELETE FROM PHAN_CONG_GIAI_DOAN WHERE MA_DA = @MADA");
+      
+      // Xóa giai đoạn (GIAI_DOAN)
+      await request.query("DELETE FROM GIAI_DOAN WHERE MA_DA = @MADA");
+      
+      // Xóa phân công dự án (PHANCONG_DU_AN)
+      await request.query("DELETE FROM PHANCONG_DU_AN WHERE MA_DA = @MADA");
+      
+      // Xóa dự án (DU_AN)
+      await request.query("DELETE FROM DU_AN WHERE MA_DA = @MADA");
+      
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   },
 
   addProjectMember: async (MA_DA, MA_NV, MA_VAI_TRO) => {
@@ -265,6 +293,8 @@ const projectRepository = {
       reqProject.input("NGAYKETTHUC", sql.Date, data.project.NGAY_KET_THUC || null);
       reqProject.input("TRANGTHAI", sql.NVarChar(50), data.project.TRANG_THAI || "Đang lên kế hoạch");
       reqProject.input("CONGKHAI", sql.Bit, data.project.CONG_KHAI !== undefined ? data.project.CONG_KHAI : 1);
+      reqProject.input("ICON", sql.NVarChar(50), data.project.ICON || 'FolderKanban');
+      reqProject.input("COLOR", sql.NVarChar(20), data.project.COLOR || '#3b82f6');
       
       const projectResult = await reqProject.execute("sp_createProject");
       const maDa = projectResult.recordset[0]?.MA_DA;

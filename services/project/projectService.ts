@@ -213,9 +213,12 @@ const projectService = {
         }
       }
 
+      const sortedData = Array.from(projectMap.values());
+      sortedData.sort((a: any, b: any) => (b.MADA || b.MA_DA || 0) - (a.MADA || a.MA_DA || 0));
+
       return {
         success: true,
-        data: Array.from(projectMap.values()),
+        data: sortedData,
       };
     } catch (error) {
       throw new Error(
@@ -235,6 +238,7 @@ const projectService = {
         const myProjectIds = myProjects.map((p: any) => p.MA_DA);
         filteredData = data.filter((proj: any) => proj.CONG_KHAI || myProjectIds.includes(proj.MA_DA));
       }
+      filteredData.sort((a: any, b: any) => (b.MA_DA || b.MADA || 0) - (a.MA_DA || a.MADA || 0));
       return { success: true, data: filteredData };
     } catch (error) {
       throw new Error("Lỗi lấy danh sách dự án: " + error.message);
@@ -290,6 +294,7 @@ const projectService = {
         const myProjectIds = myProjects.map((p: any) => p.MA_DA);
         filteredData = data.filter((proj: any) => proj.CONG_KHAI || myProjectIds.includes(proj.MA_DA));
       }
+      filteredData.sort((a: any, b: any) => (b.MA_DA || b.MADA || 0) - (a.MA_DA || a.MADA || 0));
       return { success: true, data: filteredData };
     } catch (error) {
       throw new Error(
@@ -376,6 +381,8 @@ const projectService = {
         NGAY_KET_THUC: data.NGAY_KET_THUC,
         TRANG_THAI: data.TRANG_THAI,
         CONG_KHAI: data.CONG_KHAI,
+        ICON: data.ICON,
+        COLOR: data.COLOR,
       };
 
       Object.keys(updateData).forEach(
@@ -406,21 +413,10 @@ const projectService = {
 
   deleteProject: async (MA_DA, requesterMaNv, requesterRole) => {
     try {
-      const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
-      const projectRole = await projectRepository.getProjectMemberRole(MA_DA, requesterMaNv);
-      const isProjectLead = Number(projectRole) === 2 || Number(projectRole) === 3 || normalizeRole(projectRole) === normalizeRole("Trưởng dự án") || normalizeRole(projectRole) === normalizeRole("Phó dự án");
-      if (!isAdmin && !isProjectLead) throw new Error("Chỉ Admin, Giám đốc, Trưởng dự án hoặc Phó dự án mới có quyền xóa dự án.");
-
       const existing = await projectRepository.getProjectById(MA_DA);
       if (!existing) throw new Error("Dự án không tồn tại.");
 
-      // Bước 1: Xóa danh sách nhiệm vụ của dự án
-      await projectRepository.deleteProjectTasks(MA_DA);
-
-      // Bước 2: Xóa phân công nhân viên của dự án
-      await projectRepository.deleteProjectAssignments(MA_DA);
-
-      // Bước 3: Xóa dự án
+      // Xóa toàn bộ dữ liệu dự án (Cascade Delete Transaction)
       await projectRepository.deleteProject(MA_DA);
 
       return { success: true, message: "Xóa dự án thành công" };
@@ -440,6 +436,26 @@ const projectService = {
 
       const existing = await projectRepository.getProjectById(MA_DA);
       if (!existing) throw new Error("Dự án không tồn tại.");
+
+      const members = await projectRepository.getProjectMembers(MA_DA);
+      const isDowngradingPM = Number(vaiTro) !== 2 && String(vaiTro).toLowerCase() !== "trưởng dự án";
+      
+      if (isDowngradingPM) {
+        const targetMember = members.find((m: any) => String(m.MA_NV || m.MANV).trim() === String(MA_NV).trim());
+        if (targetMember) {
+           const role = targetMember.VAI_TRO_DU_AN || targetMember.VAI_TRO || targetMember.VaiTroDuAn;
+           if (Number(role) === 2 || String(role).toLowerCase() === "trưởng dự án") {
+              const pmCount = members.filter((m: any) => {
+                const r = m.VAI_TRO_DU_AN || m.VAI_TRO || m.VaiTroDuAn;
+                return Number(r) === 2 || String(r).toLowerCase() === "trưởng dự án";
+              }).length;
+              
+              if (pmCount <= 1) {
+                throw new Error("Không thể giáng chức Trưởng dự án duy nhất của dự án này");
+              }
+           }
+        }
+      }
 
       await projectRepository.addProjectMember(MA_DA, MA_NV, vaiTro);
 
@@ -482,6 +498,23 @@ const projectService = {
         throw new Error(
           "Bạn không có quyền xóa thành viên. Chỉ Trưởng dự án, Phó dự án hoặc admin mới được xóa.",
         );
+      }
+
+      const members = await projectRepository.getProjectMembers(normalizedMaDa);
+      const targetMember = members.find((m: any) => String(m.MA_NV || m.MANV).trim() === normalizedTargetMaNv);
+      
+      if (targetMember) {
+        const role = targetMember.VAI_TRO_DU_AN || targetMember.VAI_TRO || targetMember.VaiTroDuAn;
+        if (Number(role) === 2 || String(role).toLowerCase() === "trưởng dự án") {
+          const pmCount = members.filter((m: any) => {
+            const r = m.VAI_TRO_DU_AN || m.VAI_TRO || m.VaiTroDuAn;
+            return Number(r) === 2 || String(r).toLowerCase() === "trưởng dự án";
+          }).length;
+          
+          if (pmCount <= 1) {
+            throw new Error("Không thể xóa Trưởng dự án duy nhất của dự án này");
+          }
+        }
       }
 
       await projectRepository.removeProjectMember(

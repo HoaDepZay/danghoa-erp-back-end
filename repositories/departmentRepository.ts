@@ -33,6 +33,8 @@ const departmentRepository = {
         .input("TenPb", sql.NVarChar, data.tenpb)
         .input("MaTruongPhg", sql.VarChar, data.matruongphg || null)
         .input("NgThanhLap", sql.DateTime, data.ng_thanhlap || new Date())
+        .input("ICON", sql.NVarChar(50), data.ICON || data.icon || 'Building')
+        .input("COLOR", sql.NVarChar(20), data.COLOR || data.color || '#3b82f6')
         .execute("sp_createDepartment");
 
       if (data.maphophg) {
@@ -49,8 +51,23 @@ const departmentRepository = {
       const request = appPool.request();
 
       request.input("MaPhg", sql.Int, maPhg);
-      request.input("TenPb", sql.NVarChar(100), data?.tenpb ?? data?.TEN_PB ?? null);
-      request.input("MaTruongPhg", sql.VarChar(10), data?.matruongphg ?? data?.MATRUONGPHG ?? null);
+      
+      const tenPb = data?.tenpb ?? data?.TEN_PB;
+      request.input("TenPb", sql.NVarChar(100), tenPb ?? null);
+      request.input("TenPb_PASSED", sql.Bit, tenPb !== undefined ? 1 : 0);
+      
+      const maTruongPhg = data?.matruongphg ?? data?.MATRUONGPHG;
+      request.input("MaTruongPhg", sql.VarChar(10), maTruongPhg ?? null);
+      request.input("MaTruongPhg_PASSED", sql.Bit, maTruongPhg !== undefined ? 1 : 0);
+      
+      const icon = data?.ICON ?? data?.icon;
+      request.input("ICON", sql.NVarChar(50), icon ?? null);
+      request.input("ICON_PASSED", sql.Bit, icon !== undefined ? 1 : 0);
+      
+      const color = data?.COLOR ?? data?.color;
+      request.input("COLOR", sql.NVarChar(20), color ?? null);
+      request.input("COLOR_PASSED", sql.Bit, color !== undefined ? 1 : 0);
+      
       request.output("Status", sql.Int);
 
       const result = await request.execute("sp_updateDepartment");
