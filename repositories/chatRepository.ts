@@ -36,6 +36,7 @@ const chatRepository = {
       NgayTao: row.NGAY_TAO ?? row.NGAYTAO ?? row.NgayTao,
       SoThanhVien: row.SoThanhVien ?? row.SO_THANH_VIEN,
       TinNhanGanNhat: row.TinNhanGanNhat ?? row.TIN_NHAN_GAN_NHAT,
+      HINH_DAI_DIEN: row.HINH_DAI_DIEN ?? row.HinhDaiDien,
     }));
   },
 
@@ -72,7 +73,10 @@ const chatRepository = {
       MaNV_Gui: row.MANV_GUI ?? row.MaNV_Gui,
       TenNguoiGui: row.TenNguoiGui ?? row.TEN_NGUOI_GUI,
       NoiDung: row.NOI_DUNG ?? row.NOIDUNG ?? row.NoiDung,
+      FileUrl: row.FILE_URL ?? row.FILEURL ?? row.FileUrl,
+      FileType: row.FILE_TYPE ?? row.FILETYPE ?? row.FileType,
       ThoiGianGui: row.THOI_GIAN_GUI ?? row.THOIGIANGUI ?? row.ThoiGianGui,
+      HINH_DAI_DIEN: row.HINH_DAI_DIEN ?? row.HinhDaiDien,
     }));
   },
 
@@ -97,6 +101,8 @@ const chatRepository = {
       MaPhong: row.MA_PHONG ?? row.MAPHONG ?? row.MaPhong,
       MaNV_Gui: row.MANV_GUI ?? row.MaNV_Gui,
       NoiDung: row.NOI_DUNG ?? row.NOIDUNG ?? row.NoiDung,
+      FileUrl: row.FILE_URL ?? row.FILEURL ?? row.FileUrl,
+      FileType: row.FILE_TYPE ?? row.FILETYPE ?? row.FileType,
       ThoiGianGui: row.THOI_GIAN_GUI ?? row.THOIGIANGUI ?? row.ThoiGianGui,
     }));
   },
@@ -107,19 +113,35 @@ const chatRepository = {
       .input("MA_PHG", sql.NVarChar(100), String(maPhong))
       .input("MaNV_Gui", sql.VarChar(20), maNvGui)
       .input("NOI_DUNG", sql.NVarChar(sql.MAX), noiDung)
+      .input("FILE_URL", sql.NVarChar(sql.MAX), fileUrl)
+      .input("FILE_TYPE", sql.VarChar(100), fileType)
       .execute("sp_sendMessage");
 
     const row = result.recordset[0];
     if (!row) return null;
 
+    let hinhDaiDien = null;
+    let tenNguoiGui = null;
+    try {
+      const userRes = await appPool.request().input("MaNV", sql.VarChar(20), maNvGui).query("SELECT HO_TEN, HINH_DAI_DIEN FROM NHAN_VIEN WHERE MA_NV = @MaNV");
+      if (userRes.recordset[0]) {
+        hinhDaiDien = userRes.recordset[0].HINH_DAI_DIEN;
+        tenNguoiGui = userRes.recordset[0].HO_TEN;
+      }
+    } catch (err) {
+      console.error("Error fetching user info for new message:", err);
+    }
+
     return {
       MaTN: row.MA_TN ?? row.MATN ?? row.MaTN,
       MaPhong: row.MA_PHONG ?? row.MAPHONG ?? row.MaPhong,
       MaNV_Gui: row.MANV_GUI ?? row.MaNV_Gui,
+      TenNguoiGui: row.TenNguoiGui ?? row.TEN_NGUOI_GUI ?? tenNguoiGui,
       NoiDung: row.NOI_DUNG ?? row.NOIDUNG ?? row.NoiDung,
       ThoiGianGui: row.THOI_GIAN_GUI ?? row.THOIGIANGUI ?? row.ThoiGianGui,
       FileUrl: row.FILE_URL ?? row.FILEURL ?? row.FileUrl ?? null,
       FileType: row.FILE_TYPE ?? row.FILETYPE ?? row.FileType ?? null,
+      HINH_DAI_DIEN: row.HINH_DAI_DIEN ?? row.HinhDaiDien ?? hinhDaiDien,
     };
   },
 
