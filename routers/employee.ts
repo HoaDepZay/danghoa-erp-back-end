@@ -1,9 +1,12 @@
-﻿import express from "express";
+import express from "express";
 const router = express.Router();
 import withUserConnection from "../middleware/authMiddleware";
 import { requireAdmin, requireDirectorOrAdmin, requireDepartmentHead } from "../middleware/authorizationMiddleware";
 import employeeController from "../controllers/employeeController";
 import { appPool, sql as globalSql } from "../config/db";
+import multer from "multer";
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 // âš ï¸ ROUTES SPECIFIC PHáº¢I TRÆ¯á»šC GENERIC ROUTES (/:id)
 
@@ -72,6 +75,14 @@ router.put(
   withUserConnection,
   requireAdmin,
   employeeController.updateEmployee,
+);
+
+// POST /api/employees/:id/avatar - Upload Avatar
+router.post(
+  "/:id/avatar",
+  withUserConnection,
+  upload.single("avatar"),
+  employeeController.uploadAvatar
 );
 
 // DELETE /api/employees/:id - XÃ³a/KhÃ³a nhÃ¢n viÃªn (Admin)

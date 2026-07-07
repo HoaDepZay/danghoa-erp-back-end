@@ -1,4 +1,5 @@
 import employeeRepository from "../repositories/employeeRepository";
+import { uploadFileToMinIO } from "../utils/minioClient";
 import { encrypt, decrypt } from "../utils/encryptionHelper";
 import crypto from "crypto";
 import { normalizeRole } from "../utils/authHelper";
@@ -127,6 +128,7 @@ const employeeService = {
         GIOI_TINH: data.GIOI_TINH,
         SDT: data.SDT,
         DIA_CHI: data.DIA_CHI,
+        HINH_DAI_DIEN: data.HINH_DAI_DIEN,
       };
 
       // Lọc các trường undefined
@@ -209,6 +211,7 @@ const employeeService = {
         NGAY_SINH: data.NGAY_SINH,
         GIOI_TINH: data.GIOI_TINH,
         DIA_CHI: data.DIA_CHI || data.DIA_CHI, // Support both naming conventions
+        HINH_DAI_DIEN: data.HINH_DAI_DIEN,
       };
 
       // Lọc các trường undefined
@@ -226,6 +229,32 @@ const employeeService = {
       throw new Error("Lỗi cập nhật profile: " + error.message);
     }
   },
+
+  // 8. Upload Avatar
+  uploadAvatar: async (MA_NV: string, file: any) => {
+    try {
+      if (!file) throw new Error("Không tìm thấy file ảnh");
+      
+      // Kiểm tra nhân viên tồn tại
+      const existing = await employeeRepository.getEmployeeById(MA_NV);
+      if (!existing) throw new Error("Nhân viên không tồn tại");
+
+      const fileName = await uploadFileToMinIO(file.buffer, file.originalname, file.mimetype);
+      const cdnUrl = process.env.CDN_BASE_URL || "https://cdn.danghoa-erp.site/media";
+      const fullUrl = `${cdnUrl}/${fileName}`;
+
+      // Cập nhật URL vào DB
+      await employeeRepository.updateEmployee(MA_NV, { HINH_DAI_DIEN: fullUrl });
+
+      return {
+        success: true,
+        message: "Tải lên ảnh đại diện thành công",
+        avatarUrl: fullUrl
+      };
+    } catch (error) {
+      throw new Error("Lỗi upload ảnh: " + error.message);
+    }
+  }
 };
 
 export default employeeService;

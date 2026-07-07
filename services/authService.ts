@@ -245,6 +245,7 @@ const authService = {
       HO_TEN: user?.HO_TEN || "",
       EMAIL: user?.EMAIL || trimmedEmail,
       role: user?.CHUC_VU || "",
+      HINH_DAI_DIEN: user?.HINH_DAI_DIEN || "",
     };
 
     const token = generateToken(tokenPayload);
@@ -266,6 +267,7 @@ const authService = {
         HO_TEN: tokenPayload.HO_TEN,
         EMAIL: tokenPayload.EMAIL,
         role: tokenPayload.role,
+        HINH_DAI_DIEN: tokenPayload.HINH_DAI_DIEN,
       },
     };
   },
@@ -292,7 +294,8 @@ const authService = {
             userInfo: {
               ...decoded.session.userInfo,
               role: user.CHUC_VU || "",
-              HO_TEN: user.HO_TEN || ""
+              HO_TEN: user.HO_TEN || "",
+              HINH_DAI_DIEN: user.HINH_DAI_DIEN || ""
             }
           };
         }
@@ -314,6 +317,7 @@ const authService = {
         HO_TEN: updatedSession?.userInfo?.HO_TEN || "",
         EMAIL: updatedSession?.userInfo?.EMAIL || "",
         role: updatedSession?.userInfo?.role || "",
+        HINH_DAI_DIEN: updatedSession?.userInfo?.HINH_DAI_DIEN || "",
       },
     };
   },

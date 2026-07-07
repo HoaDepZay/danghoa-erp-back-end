@@ -90,6 +90,23 @@ const employeeController = {
       });
     }
   },
+
+  // 6. POST /api/employees/:id/avatar - Upload Avatar
+  uploadAvatar: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const file = req.file;
+
+      const result = await employeeService.uploadAvatar(id, file);
+      
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
 };
 
 export default employeeController;

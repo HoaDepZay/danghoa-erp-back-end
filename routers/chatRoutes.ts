@@ -1,6 +1,7 @@
-﻿import express from "express";
+import express from "express";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import chatController from "../controllers/chatController";
 import withUserConnection from "../middleware/authMiddleware";
 import { checkAdminOrPass } from "../middleware/authorizationMiddleware";
@@ -17,7 +18,10 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 200 * 1024 * 1024 } 
+});
 
 router.get("/rooms", withUserConnection, chatController.getMyRooms);
 router.post(
@@ -77,7 +81,25 @@ router.post(
   upload.single('file'),
   (req, res) => {
     try {
-      if (!req.file) return res.status(400).json({ success: false, message: "KhÃ´ng tÃ¬m tháº¥y file" });
+      if (!req.file) return res.status(400).json({ success: false, message: "Không tìm thấy file" });
+      
+      const sizeMB = req.file.size / (1024 * 1024);
+      const isImage = req.file.mimetype.startsWith('image/');
+      const isVideo = req.file.mimetype.startsWith('video/');
+
+      if (isImage && sizeMB > 150) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ success: false, message: "Hình ảnh tải lên không được vượt quá 150MB!" });
+      }
+      if (isVideo && sizeMB > 200) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ success: false, message: "Video tải lên không được vượt quá 200MB!" });
+      }
+      if (!isImage && !isVideo && sizeMB > 20) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ success: false, message: "Tệp tải lên không được vượt quá 20MB!" });
+      }
+
       const fileUrl = `/uploads/${req.file.filename}`;
       res.json({ success: true, url: fileUrl, type: req.file.mimetype });
     } catch (err: any) {

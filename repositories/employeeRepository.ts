@@ -84,6 +84,9 @@ const employeeRepository = {
     if (data.DIA_CHI !== undefined) {
       request.input("DiaChi", sql.NVarChar, data.DIA_CHI);
     }
+    if (data.HINH_DAI_DIEN !== undefined) {
+      request.input("HinhDaiDien", sql.NVarChar, data.HINH_DAI_DIEN);
+    }
 
     return await request.execute("sp_updateEmployee");
   },
@@ -134,6 +137,9 @@ const employeeRepository = {
     }
     if (data.NGAN_HANG !== undefined) {
       request.input("NganHang", sql.NVarChar, data.NGAN_HANG);
+    }
+    if (data.HINH_DAI_DIEN !== undefined) {
+      request.input("HinhDaiDien", sql.NVarChar, data.HINH_DAI_DIEN);
     }
 
     return await request.execute("sp_updateProfile");
