@@ -59,12 +59,13 @@ const chatRepository = {
     return mapRoomRow(result.recordset[0]);
   },
 
-  getRoomMessages: async (maPhong, limit = 50) => {
+  getRoomMessages: async (maPhong, limit = 50, maNv = "") => {
     const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 200));
     const result = await appPool
       .request()
       .input("MA_PHG", sql.NVarChar(100), String(maPhong))
       .input("Limit", sql.Int, safeLimit)
+      .input("MA_NV", sql.VarChar(20), maNv)
       .execute("sp_getRoomMessages");
 
     return result.recordset.reverse().map((row) => ({
@@ -77,6 +78,8 @@ const chatRepository = {
       FileType: row.FILE_TYPE ?? row.FILETYPE ?? row.FileType,
       ThoiGianGui: row.THOI_GIAN_GUI ?? row.THOIGIANGUI ?? row.ThoiGianGui,
       HINH_DAI_DIEN: row.HINH_DAI_DIEN ?? row.HinhDaiDien,
+      DA_CHINH_SUA: row.DA_CHINH_SUA,
+      DA_THU_HOI: row.DA_THU_HOI,
     }));
   },
 
@@ -143,6 +146,37 @@ const chatRepository = {
       FileType: row.FILE_TYPE ?? row.FILETYPE ?? row.FileType ?? null,
       HINH_DAI_DIEN: row.HINH_DAI_DIEN ?? row.HinhDaiDien ?? hinhDaiDien,
     };
+  },
+
+  editMessage: async (maTn, maNv, noiDung) => {
+    const result = await appPool
+      .request()
+      .input("MA_TN", sql.Int, maTn)
+      .input("MA_NV", sql.VarChar(20), maNv)
+      .input("NOI_DUNG", sql.NVarChar(sql.MAX), noiDung)
+      .execute("sp_editMessage");
+
+    return result.recordset[0];
+  },
+
+  revokeMessage: async (maTn, maNv) => {
+    const result = await appPool
+      .request()
+      .input("MA_TN", sql.Int, maTn)
+      .input("MA_NV", sql.VarChar(20), maNv)
+      .execute("sp_revokeMessage");
+
+    return result.recordset[0];
+  },
+
+  deleteMessageForMe: async (maTn, maNv) => {
+    const result = await appPool
+      .request()
+      .input("MA_TN", sql.Int, maTn)
+      .input("MA_NV", sql.VarChar(20), maNv)
+      .execute("sp_deleteMessageForMe");
+
+    return result.recordset[0];
   },
 
   getRoomMembers: async (maPhong) => {

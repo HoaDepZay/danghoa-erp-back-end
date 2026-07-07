@@ -22,6 +22,7 @@ import contractRoutes from "./routers/contractRoutes";
 import expensesRoutes from "./routers/expensesRoutes";
 import notificationRoutes from "./routers/notificationRoutes";
 import phaseRoutes from "./routers/project/phaseRoutes";
+import fileRoutes from "./routers/fileRoutes";
 
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
@@ -142,6 +143,7 @@ app.use("/api/shifts", shiftRoutes);
 app.use("/api/leaves", leaveRoutes);
 app.use("/api/contracts", contractRoutes);
 app.use("/api/phases", phaseRoutes);
+app.use("/api/files", fileRoutes);
 
 const io = new SocketIOServer(httpServer, {
   cors: {

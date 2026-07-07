@@ -1,5 +1,8 @@
 import chatService from "../services/chatService";
 import userRepository from "../repositories/userRepository";
+import fs from "fs";
+import path from "path";
+import { fileService } from "../services/fileService";
 
 const resolveRequesterContext = async (req) => {
   const requesterMaNv = String(
@@ -206,6 +209,59 @@ const chatController = {
       return res.status(200).json(result);
     } catch (error) {
       return res.status(403).json({ success: false, message: error.message });
+    }
+  },
+
+  editMessage: async (req, res) => {
+    try {
+      const { requesterMaNv } = await resolveRequesterContext(req);
+      const { messageId } = req.params;
+      const { noiDung } = req.body;
+      const result = await chatService.editMessage(messageId, requesterMaNv, noiDung);
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(403).json({ success: false, message: error.message });
+    }
+  },
+
+  revokeMessage: async (req, res) => {
+    try {
+      const { requesterMaNv } = await resolveRequesterContext(req);
+      const { messageId } = req.params;
+      const result = await chatService.revokeMessage(messageId, requesterMaNv);
+      
+      // Delete file physically if it exists
+      if (result.fileUrlToDelete) {
+        try {
+          if (result.fileUrlToDelete.startsWith("http")) {
+            // Delete from MinIO via fileService
+            await fileService.deleteFile(result.fileUrlToDelete);
+          } else {
+            // Delete from local uploads (backward compatibility)
+            const filename = path.basename(result.fileUrlToDelete);
+            const filepath = path.join(__dirname, "..", "uploads", filename);
+            if (fs.existsSync(filepath)) {
+              fs.unlinkSync(filepath);
+            }
+          }
+        } catch (err) {
+          console.error("Lỗi khi xóa file đính kèm:", err);
+        }
+      }
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(403).json({ success: false, message: error.message });
+    }
+  },
+
+  deleteMessageForMe: async (req, res) => {
+    try {
+      const { requesterMaNv } = await resolveRequesterContext(req);
+      const { messageId } = req.params;
+      const result = await chatService.deleteMessageForMe(messageId, requesterMaNv);
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message });
     }
   },
 };

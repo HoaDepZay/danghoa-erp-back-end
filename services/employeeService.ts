@@ -1,5 +1,5 @@
 import employeeRepository from "../repositories/employeeRepository";
-import { uploadFileToMinIO } from "../utils/minioClient";
+import { fileService } from "./fileService";
 import { encrypt, decrypt } from "../utils/encryptionHelper";
 import crypto from "crypto";
 import { normalizeRole } from "../utils/authHelper";
@@ -239,9 +239,8 @@ const employeeService = {
       const existing = await employeeRepository.getEmployeeById(MA_NV);
       if (!existing) throw new Error("Nhân viên không tồn tại");
 
-      const fileName = await uploadFileToMinIO(file.buffer, file.originalname, file.mimetype);
-      const cdnUrl = process.env.CDN_BASE_URL || "https://cdn.danghoa-erp.site/media";
-      const fullUrl = `${cdnUrl}/${fileName}`;
+      // Upload qua fileService
+      const fullUrl = await fileService.uploadFile(file.buffer, file.originalname, file.mimetype);
 
       // Cập nhật URL vào DB
       await employeeRepository.updateEmployee(MA_NV, { HINH_DAI_DIEN: fullUrl });

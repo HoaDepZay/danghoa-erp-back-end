@@ -183,6 +183,20 @@ const setupChatSocket = (io: Server) => {
         }
       }
     });
+    socket.on("chat:message_edited", (payload) => {
+      const maPhong = String(payload?.maPhong || "").trim();
+      if (maPhong) {
+        socket.to(toRoomChannel(maPhong)).emit("chat:message_edited", payload);
+      }
+    });
+
+    socket.on("chat:message_revoked", (payload) => {
+      const maPhong = String(payload?.maPhong || "").trim();
+      if (maPhong) {
+        socket.to(toRoomChannel(maPhong)).emit("chat:message_revoked", payload);
+      }
+    });
+
   });
 };
 

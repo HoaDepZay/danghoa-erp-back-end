@@ -53,7 +53,7 @@ const chatService = {
     }
 
     const room = await chatRepository.getRoomById(maPhong);
-    const messages = await chatRepository.getRoomMessages(maPhong, limit);
+    const messages = await chatRepository.getRoomMessages(maPhong, limit, requesterMaNv);
 
     return {
       success: true,
@@ -80,6 +80,39 @@ const chatService = {
       success: true,
       data: message,
     };
+  },
+
+  editMessage: async (messageId, requesterMaNv, noiDung) => {
+    if (!messageId || !requesterMaNv) {
+      throw new Error("Dữ liệu không hợp lệ.");
+    }
+    const result = await chatRepository.editMessage(messageId, requesterMaNv, noiDung);
+    if (!result || !result.Success) {
+      throw new Error(result?.Message || "Không thể sửa tin nhắn.");
+    }
+    return { success: true, message: result.Message };
+  },
+
+  revokeMessage: async (messageId, requesterMaNv) => {
+    if (!messageId || !requesterMaNv) {
+      throw new Error("Dữ liệu không hợp lệ.");
+    }
+    const result = await chatRepository.revokeMessage(messageId, requesterMaNv);
+    if (!result || !result.Success) {
+      throw new Error(result?.Message || "Không thể thu hồi tin nhắn.");
+    }
+    return { success: true, fileUrlToDelete: result.FileUrlToDelete, message: result.Message };
+  },
+
+  deleteMessageForMe: async (messageId, requesterMaNv) => {
+    if (!messageId || !requesterMaNv) {
+      throw new Error("Dữ liệu không hợp lệ.");
+    }
+    const result = await chatRepository.deleteMessageForMe(messageId, requesterMaNv);
+    if (!result || !result.Success) {
+      throw new Error("Không thể xóa tin nhắn.");
+    }
+    return { success: true };
   },
 
   searchMessagesForMember: async (roomId, requesterMaNv, keyword) => {
