@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
 import withUserConnection from "../middleware/authMiddleware";
-import { requireAdmin, requireDirectorOrAdmin, requireDepartmentHead } from "../middleware/authorizationMiddleware";
+import { requireAdmin, requireDirectorOrAdmin, requireDepartmentHead, checkMaNVOwnership, checkMaNVParamOwnershipOrManagerAdmin } from "../middleware/authorizationMiddleware";
 import employeeController from "../controllers/employeeController";
 import { appPool, sql as globalSql } from "../config/db";
 import multer from "multer";
@@ -40,8 +40,8 @@ router.get("/coworkers/:MA_PHG", withUserConnection, async (req: any, res: any) 
   }
 });
 
-// PUT /api/employees/update-info - Cáº­p nháº­t thÃ´ng tin cÃ¡ nhÃ¢n (dÃ¹ng Stored Procedure)
-router.put("/update-info", async (req: any, res: any) => {
+// PUT /api/employees/update-info - Cập nhật thông tin cá nhân (dùng Stored Procedure)
+router.put("/update-info", withUserConnection, checkMaNVOwnership, async (req: any, res: any) => {
   try {
     const { MA_NV, EMAIL } = req.body;
     await appPool.request()
@@ -81,6 +81,7 @@ router.put(
 router.post(
   "/:id/avatar",
   withUserConnection,
+  checkMaNVParamOwnershipOrManagerAdmin,
   upload.single("avatar"),
   employeeController.uploadAvatar
 );

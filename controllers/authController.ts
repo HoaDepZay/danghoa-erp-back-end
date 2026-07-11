@@ -136,12 +136,15 @@ const resetForgotPassword = async (req, res) => {
 
 const changePassword = async (req, res) => {
   try {
-    const { EMAIL, oldPassword, newPassword } = req.body;
+    const { oldPassword, newPassword } = req.body;
+    
+    // Lấy EMAIL từ token để đảm bảo user chỉ có thể đổi mật khẩu của chính mình
+    const EMAIL = req.user?.userEmail;
 
     if (!EMAIL || !oldPassword || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: "Vui lòng nhập đầy đủ EMAIL, mật khẩu cũ và mật khẩu mới!",
+        message: "Vui lòng nhập đầy đủ mật khẩu cũ và mật khẩu mới!",
       });
     }
 

@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import departmentController from "../controllers/departmentController";
 import withUserConnection from "../middleware/authMiddleware";
 import { requireAdmin, requireDirectorOrAdmin, requireDepartmentHead } from "../middleware/authorizationMiddleware";
@@ -26,11 +26,10 @@ router.get(
   departmentController.getAllDepartments,
 );
 
-// Láº¥y chi tiáº¿t phÃ²ng ban theo ID (admin)
+// Lấy chi tiết phòng ban theo ID (cho phép mọi nhân viên xem)
 router.get(
   "/:id",
   withUserConnection,
-  requireAdmin,
   departmentController.getDepartmentById,
 );
 
