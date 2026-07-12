@@ -3,7 +3,6 @@ import multer from "multer";
 import chatController from "../controllers/chatController";
 import withUserConnection from "../middleware/authMiddleware";
 import { checkAdminOrPass } from "../middleware/authorizationMiddleware";
-import { uploadFileToMinIO } from "../utils/minioClient";
 
 const router = express.Router();
 

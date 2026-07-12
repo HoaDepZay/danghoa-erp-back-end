@@ -232,7 +232,7 @@ const projectService = {
       const data = await projectRepository.getAllProjects();
       const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
       
-      let filteredData = data;
+      let filteredData: any[] = data;
       if (!isAdmin && requesterMaNv) {
         const myProjects = await projectRepository.getEmployeeProjects(requesterMaNv);
         const myProjectIds = myProjects.map((p: any) => p.MA_DA);
@@ -287,7 +287,7 @@ const projectService = {
       const data = await projectRepository.getEmployeeProjects(MA_NV);
       const isAdmin = normalizeRole(requesterRole) === "admin" || normalizeRole(requesterRole) === "giamdoc";
       
-      let filteredData = data;
+      let filteredData: any[] = data;
       // If someone else is viewing this employee's projects, hide private ones they don't have access to
       if (!isAdmin && requesterMaNv && String(MA_NV).trim() !== requesterMaNv) {
         const myProjects = await projectRepository.getEmployeeProjects(requesterMaNv);

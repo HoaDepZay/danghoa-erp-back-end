@@ -3,7 +3,7 @@ import { appPool } from "../config/db";
 
 export const getNotifications = async (req: Request, res: Response): Promise<void> => {
   try {
-    const MA_NV = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
+    const MA_NV = (req as any).user?.userInfo?.MA_NV || (req as any).user?.MA_NV;
     if (!MA_NV) {
       res.status(401).json({ message: "Unauthorized" });
       return;
@@ -22,7 +22,7 @@ export const getNotifications = async (req: Request, res: Response): Promise<voi
 
 export const markAsRead = async (req: Request, res: Response): Promise<void> => {
   try {
-    const MA_NV = req.user?.userInfo?.MA_NV || req.user?.MA_NV;
+    const MA_NV = (req as any).user?.userInfo?.MA_NV || (req as any).user?.MA_NV;
     const { id } = req.params;
     
     if (!MA_NV) {
