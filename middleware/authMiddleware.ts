@@ -30,7 +30,7 @@ const withUserConnection = (req, res, next) => {
     next();
   } catch (err) {
     console.error("❌ Auth Error:", err.message);
-    return res.status(403).json({
+    return res.status(401).json({
       error: "Token không hợp lệ hoặc đã hết hạn. " + err.message,
     });
   }
