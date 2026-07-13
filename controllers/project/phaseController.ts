@@ -122,7 +122,7 @@ export const phaseController = {
   removePhaseAssignment: async (req: Request, res: Response) => {
     try {
       const maGd = Number(req.params.phaseId);
-      const maNv = req.params.employeeId;
+      const maNv = req.params.employeeId as string;
       
       const assignments = await phaseRepository.getPhaseAssignments(maGd);
       const targetAssignment = assignments.find((a: any) => String(a.MA_NV).trim() === String(maNv).trim());
