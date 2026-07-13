@@ -13,8 +13,11 @@ RUN npm install
 # Copy toàn bộ mã nguồn vào container
 COPY . .
 
+# Build code (compile TS to JS)
+RUN npm run build
+
 # Expose port 5000 để docker-compose có thể map
 EXPOSE 5000
 
-# Lệnh khởi chạy ứng dụng bằng script start trong package.json
-CMD ["npm", "start"]
+# Lệnh khởi chạy ứng dụng bằng script start (cập nhật thành file js đã build)
+CMD ["node", "dist/server.js"]
