@@ -91,7 +91,7 @@ router.post("/", withUserConnection, requireDirectorOrAdmin, async (req: Request
 // PUT /api/contracts/:id - Cập nhật hợp đồng
 router.put("/:id", withUserConnection, requireDirectorOrAdmin, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const {
       MA_NV,
       LOAI_HOP_DONG,
@@ -154,7 +154,7 @@ router.put("/:id", withUserConnection, requireDirectorOrAdmin, async (req: Reque
 // PUT /api/contracts/:id/status - Cập nhật trạng thái hợp đồng
 router.put("/:id/status", withUserConnection, requireDirectorOrAdmin, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const { TRANG_THAI } = req.body;
 
     if (!TRANG_THAI) {
@@ -188,7 +188,7 @@ router.put("/:id/status", withUserConnection, requireDirectorOrAdmin, async (req
 // GET /api/contracts/:id/history - Lấy lịch sử hợp đồng
 router.get("/:id/history", withUserConnection, requireDirectorOrAdmin, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const history = await contractRepository.getContractHistory(id);
     res.json({ success: true, data: history });
   } catch (error: any) {
@@ -239,7 +239,7 @@ router.get(
   checkMaNVParamOwnershipOrDirectorAdmin,
   async (req: Request, res: Response) => {
     try {
-      const { MA_NV } = req.params;
+      const MA_NV = String(req.params.MA_NV);
       const data = await contractRepository.getContracts(MA_NV);
       res.json({ success: true, data });
     } catch (error: any) {

@@ -97,6 +97,7 @@ const contractRepository = {
     LOAI_HOP_DONG: string;
     TU_NGAY: string;
     DEN_NGAY?: string;
+    NGAY_KY?: string;
     LUONG_CO_BAN: string | number;
     GHI_CHU?: string;
     URL_CHI_TIET?: string;
@@ -138,7 +139,9 @@ const contractRepository = {
     LOAI_HOP_DONG: string;
     TU_NGAY: string;
     DEN_NGAY?: string;
+    NGAY_KY?: string;
     LUONG_CO_BAN: string | number;
+    GHI_CHU?: string;
     URL_CHI_TIET?: string;
     TRANG_THAI?: string;
   }) => {
@@ -151,6 +154,8 @@ const contractRepository = {
       .input("LUONG_CO_BAN", sql.Decimal(18, 2), data.LUONG_CO_BAN);
 
     if (data.DEN_NGAY) request.input("DEN_NGAY", sql.Date, data.DEN_NGAY);
+    if (data.NGAY_KY) request.input("NgayKy", sql.Date, data.NGAY_KY);
+    if (data.GHI_CHU) request.input("GhiChu", sql.NVarChar(500), data.GHI_CHU);
     if (data.URL_CHI_TIET) request.input("URL_CHI_TIET", sql.NVarChar(sql.MAX), data.URL_CHI_TIET);
     if (data.TRANG_THAI) request.input("TRANG_THAI", sql.VarChar(50), data.TRANG_THAI);
 
