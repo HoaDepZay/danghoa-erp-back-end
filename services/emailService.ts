@@ -303,3 +303,51 @@ export const sendLeaveApprovedEmail = async (
     console.error("[emailService] Lỗi gửi email nghỉ phép:", e);
   }
 };
+
+// ── 5. Email xác nhận ứng tuyển thành công (Company Web) ───────────────────
+export const sendApplySuccessEmail = async (
+  email: string,
+  hoTen: string,
+  tieuDe: string
+) => {
+  try {
+    if (!email) return;
+
+    const content = `
+      <h2 style="margin:0 0 16px;color:#0f172a;font-size:20px;font-weight:700;">
+        🎉 Cảm ơn bạn đã ứng tuyển!
+      </h2>
+
+      <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 16px;">
+        Xin chào <strong>${hoTen}</strong>,<br>
+        Phòng Nhân sự DANGHOA-ERP đã nhận được hồ sơ ứng tuyển của bạn cho vị trí:
+      </p>
+
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #2563eb;border-radius:8px;padding:16px;margin:0 0 20px;">
+        <h3 style="margin:0 0 8px;color:#1e293b;font-size:16px;font-weight:600;">
+          📌 Vị trí: ${tieuDe}
+        </h3>
+        <p style="margin:0;color:#64748b;font-size:13px;">
+          Hồ sơ của bạn đang được đội ngũ Tuyển dụng đánh giá. Chúng tôi sẽ liên hệ lại với bạn trong thời gian sớm nhất nếu hồ sơ phù hợp.
+        </p>
+      </div>
+
+      <p style="color:#475569;font-size:14px;line-height:1.6;">
+        Chúc bạn một ngày tốt lành và hy vọng sớm được hợp tác cùng bạn tại DANGHOA-ERP! 😊<br>
+        <strong>Bộ phận Tuyển dụng DANGHOA-ERP</strong>
+      </p>
+    `;
+
+    await transporter.sendMail({
+      from: `"Tuyển Dụng DANGHOA-ERP" <${process.env.EMAIL_USER || "no-reply@company.com"}>`,
+      to: email,
+      subject: `🎉 Xác nhận ứng tuyển thành công — Vị trí: ${tieuDe}`,
+      html: baseTemplate(content),
+    });
+
+    console.log(`✉️ [Email] Gửi thành công xác nhận ứng tuyển → ${email} (${tieuDe})`);
+  } catch (e) {
+    console.error("[emailService] Lỗi gửi email xác nhận ứng tuyển:", e);
+  }
+};
+

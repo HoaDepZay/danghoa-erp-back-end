@@ -239,6 +239,46 @@ const checkMaNVParamOwnershipOrManagerAdmin = (req, res, next) => {
   }
 };
 
+/**
+ * Middleware kiểm tra quyền truy cập theo MaNV trên params
+ * Cho phép:
+ * - Admin/Giám đốc: xem dữ liệu của mọi nhân viên
+ * - Nhân viên thường: chỉ xem dữ liệu của chính mình
+ */
+const checkMaNVParamOwnershipOrDirectorAdmin = (req, res, next) => {
+  try {
+    const userRole = req.user?.userInfo?.role;
+    const normalizedRole = normalizeRole(userRole);
+    const tokenMaNV = req.user?.userInfo?.MA_NV || req.user?.userInfo?.manv;
+    const paramMaNV = req.params?.MA_NV || req.params?.maNV || req.params?.id;
+
+    if (!paramMaNV) {
+      return res.status(400).json({
+        success: false,
+        message: "Mã nhân viên (MA_NV) là bắt buộc trên đường dẫn API",
+      });
+    }
+
+    if (normalizedRole === "admin" || normalizedRole === "giamdoc") {
+      return next();
+    }
+
+    if (tokenMaNV !== paramMaNV) {
+      return res.status(403).json({
+        success: false,
+        message: "Bạn chỉ được phép xem dữ liệu của chính mình",
+      });
+    }
+
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi kiểm tra quyền: " + error.message,
+    });
+  }
+};
+
 export {
   requireAdmin,
   requireDirectorOrAdmin,
@@ -249,4 +289,5 @@ export {
   requireProjectCreator,
   checkMaNVParamOwnership,
   checkMaNVParamOwnershipOrManagerAdmin,
+  checkMaNVParamOwnershipOrDirectorAdmin,
 };

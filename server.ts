@@ -23,6 +23,8 @@ import expensesRoutes from "./routers/expensesRoutes";
 import notificationRoutes from "./routers/notificationRoutes";
 import phaseRoutes from "./routers/project/phaseRoutes";
 import fileRoutes from "./routers/fileRoutes";
+import recruitmentRoutes from "./routers/recruitmentRoutes";
+import publicRoutes from "./routers/publicRoutes";
 
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
@@ -144,6 +146,8 @@ app.use("/api/leaves", leaveRoutes);
 app.use("/api/contracts", contractRoutes);
 app.use("/api/phases", phaseRoutes);
 app.use("/api/files", fileRoutes);
+app.use("/api/recruitment", recruitmentRoutes);
+app.use("/api/public", publicRoutes);
 
 const io = new SocketIOServer(httpServer, {
   cors: {
@@ -161,8 +165,10 @@ setupNotificationSocket(io);
 
 import { initCronJobs } from "./cron/notificationCron";
 import { initBackupCron } from "./cron/backupCron";
+import { initContractCron } from "./cron/contractCron";
 initCronJobs();
 initBackupCron();
+initContractCron();
 
 console.log("🔍 Đang kết nối Database...");
 

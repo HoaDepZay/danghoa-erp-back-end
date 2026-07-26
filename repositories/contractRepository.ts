@@ -75,6 +75,14 @@ const contractRepository = {
     return result.recordset;
   },
 
+  getContractById: async (MA_HD: string) => {
+    const result = await appPool
+      .request()
+      .input("MA_HD", sql.VarChar(50), MA_HD)
+      .execute("sp_getContractById");
+    return result.recordset[0];
+  },
+
   getExpiringContracts: async (SO_NGAY = 30) => {
     const result = await appPool
       .request()
@@ -90,8 +98,9 @@ const contractRepository = {
     TU_NGAY: string;
     DEN_NGAY?: string;
     LUONG_CO_BAN: string | number;
-    NGAY_KY?: string;
     GHI_CHU?: string;
+    URL_CHI_TIET?: string;
+    TRANG_THAI?: string;
   }) => {
     for (let attempt = 0; attempt < 3; attempt++) {
       const MA_HD = await generateUniqueContractCode();
@@ -105,8 +114,9 @@ const contractRepository = {
 
       if (data.DEN_NGAY) request.input("DEN_NGAY", sql.Date, data.DEN_NGAY);
       if (data.NGAY_KY) request.input("NgayKy", sql.Date, data.NGAY_KY);
-      if (data.GHI_CHU)
-        request.input("GhiChu", sql.NVarChar(500), data.GHI_CHU);
+      if (data.GHI_CHU) request.input("GhiChu", sql.NVarChar(500), data.GHI_CHU);
+      if (data.URL_CHI_TIET) request.input("URL_CHI_TIET", sql.NVarChar(sql.MAX), data.URL_CHI_TIET);
+      if (data.TRANG_THAI) request.input("TRANG_THAI", sql.VarChar(50), data.TRANG_THAI);
 
       try {
         await request.execute("sp_createContract");
@@ -120,6 +130,65 @@ const contractRepository = {
     }
 
     throw new Error("Không thể tạo mã hợp đồng duy nhất");
+  },
+
+  updateContract: async (data: {
+    MA_HD: string;
+    MA_NV: string;
+    LOAI_HOP_DONG: string;
+    TU_NGAY: string;
+    DEN_NGAY?: string;
+    LUONG_CO_BAN: string | number;
+    URL_CHI_TIET?: string;
+    TRANG_THAI?: string;
+  }) => {
+    const request = appPool
+      .request()
+      .input("MA_HD", sql.VarChar(50), data.MA_HD)
+      .input("MA_NV", sql.VarChar(20), data.MA_NV)
+      .input("LOAI_HOP_DONG", sql.NVarChar(100), data.LOAI_HOP_DONG)
+      .input("TU_NGAY", sql.Date, data.TU_NGAY)
+      .input("LUONG_CO_BAN", sql.Decimal(18, 2), data.LUONG_CO_BAN);
+
+    if (data.DEN_NGAY) request.input("DEN_NGAY", sql.Date, data.DEN_NGAY);
+    if (data.URL_CHI_TIET) request.input("URL_CHI_TIET", sql.NVarChar(sql.MAX), data.URL_CHI_TIET);
+    if (data.TRANG_THAI) request.input("TRANG_THAI", sql.VarChar(50), data.TRANG_THAI);
+
+    await request.execute("sp_updateContract");
+  },
+
+  updateContractStatus: async (MA_HD: string, TRANG_THAI: string) => {
+    await appPool
+      .request()
+      .input("MA_HD", sql.VarChar(50), MA_HD)
+      .input("TRANG_THAI", sql.VarChar(50), TRANG_THAI)
+      .execute("sp_updateContractStatus");
+  },
+
+  logContractHistory: async (MA_HD: string, NGUOI_THAY_DOI: string, NOI_DUNG_THAY_DOI: string) => {
+    await appPool
+      .request()
+      .input("MA_HD", sql.VarChar(50), MA_HD)
+      .input("NGUOI_THAY_DOI", sql.VarChar(20), NGUOI_THAY_DOI)
+      .input("NOI_DUNG_THAY_DOI", sql.NVarChar(sql.MAX), NOI_DUNG_THAY_DOI)
+      .query(`
+        INSERT INTO LICH_SU_HOP_DONG (MA_HD, NGUOI_THAY_DOI, NOI_DUNG_THAY_DOI)
+        VALUES (@MA_HD, @NGUOI_THAY_DOI, @NOI_DUNG_THAY_DOI)
+      `);
+  },
+
+  getContractHistory: async (MA_HD: string) => {
+    const result = await appPool
+      .request()
+      .input("MA_HD", sql.VarChar(50), MA_HD)
+      .query(`
+        SELECT l.*, n.HO_TEN as TEN_NGUOI_THAY_DOI
+        FROM LICH_SU_HOP_DONG l
+        LEFT JOIN NHAN_VIEN n ON l.NGUOI_THAY_DOI = n.MA_NV
+        WHERE l.MA_HD = @MA_HD
+        ORDER BY l.THOI_GIAN DESC
+      `);
+    return result.recordset;
   },
 
   updateEmployeeLegal: async (data: {
